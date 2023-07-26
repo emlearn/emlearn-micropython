@@ -1,11 +1,11 @@
 
     // !!! This file is generated using emlearn !!!
 
-#if 0
+#if 1
     #include <eml_trees.h>
     
 
-EmlTreesNode simple_rgb_pink_yellow_other_nodes[42] = {
+const EmlTreesNode simple_rgb_pink_yellow_other_nodes[42] = {
   { 0, 185.5, 1, 6 },
   { 1, 250.0, 2, 3 },
   { 2, 329.5, 3, 4 },
@@ -51,13 +51,13 @@ EmlTreesNode simple_rgb_pink_yellow_other_nodes[42] = {
 };
 
 
-int32_t simple_rgb_pink_yellow_other_tree_roots[10] = { 0, 7, 11, 15, 18, 23, 26, 29, 34, 38 };
+const int32_t simple_rgb_pink_yellow_other_tree_roots[10] = { 0, 7, 11, 15, 18, 23, 26, 29, 34, 38 };
 
-EmlTrees simple_rgb_pink_yellow_other = {
+const EmlTrees simple_rgb_pink_yellow_other = {
         42,
-        simple_rgb_pink_yellow_other_nodes,	  
+        (EmlTreesNode *)simple_rgb_pink_yellow_other_nodes,	  
         10,
-        simple_rgb_pink_yellow_other_tree_roots,
+        (int32_t *)simple_rgb_pink_yellow_other_tree_roots,
     };
 #endif
 
