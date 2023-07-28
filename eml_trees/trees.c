@@ -71,28 +71,37 @@ STATIC mp_obj_t builder_addnode(size_t n_args, const mp_obj_t *args) {
     const int16_t right = mp_obj_get_int(args[2]);
     const int8_t feature = mp_obj_get_int(args[3]);
     const float value = mp_obj_get_float(args[4]);
-    const bool root = mp_obj_get_int(args[5]) != 0;
 
     if (self->trees.n_nodes >= self->max_nodes) {
         mp_raise_ValueError(MP_ERROR_TEXT("max nodes"));
     }
 
-    if (root && (self->trees.n_trees >= self->max_trees)) {
-        mp_raise_ValueError(MP_ERROR_TEXT("max trees"));
-    }
-
     const int node_index = self->trees.n_nodes++;
     self->trees.nodes[node_index] = (EmlTreesNode){ feature, value, left, right };
 
-    if (root) {
-        const int root_index = self->trees.n_trees++;
-        self->trees.tree_roots[root_index] = node_index;
+    return mp_const_none;
+ }
+STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(builder_addnode_obj, 5, 5, builder_addnode);
+
+
+// Add a node to the tree
+STATIC mp_obj_t builder_addroot(size_t n_args, const mp_obj_t *args) {
+
+    mp_obj_trees_builder_t *o = MP_OBJ_TO_PTR(args[0]);
+    EmlTreesBuilder *self = &o->builder;    
+
+    const int16_t root = mp_obj_get_int(args[1]);
+
+    if (self->trees.n_trees >= self->max_trees) {
+        mp_raise_ValueError(MP_ERROR_TEXT("max trees"));
     }
- 
+
+    const int root_index = self->trees.n_trees++;
+    self->trees.tree_roots[root_index] = root; 
 
     return mp_const_none;
  }
-STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(builder_addnode_obj, 6, 6, builder_addnode);
+STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(builder_addroot_obj, 2, 2, builder_addroot);
 
 
 
@@ -144,6 +153,7 @@ mp_obj_t mpy_init(mp_obj_fun_bc_t *self, size_t n_args, size_t n_kw, mp_obj_t *a
 
     mp_store_global(MP_QSTR_predict, MP_DYNRUNTIME_MAKE_FUNCTION(predict));
     mp_store_global(MP_QSTR_addnode, MP_OBJ_FROM_PTR(&builder_addnode_obj));
+    mp_store_global(MP_QSTR_addroot, MP_OBJ_FROM_PTR(&builder_addroot_obj));
 
     mp_store_global(MP_QSTR_open, MP_OBJ_FROM_PTR(&builder_new_obj));
 
