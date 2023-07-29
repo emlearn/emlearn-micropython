@@ -5,6 +5,19 @@
 
 #include <eml_trees.h>
 
+#include <string.h>
+
+// memset is used by some standard C constructs
+#if !defined(__linux__)
+void *memcpy(void *dst, const void *src, size_t n) {
+    return mp_fun_table.memmove_(dst, src, n);
+}
+void *memset(void *s, int c, size_t n) {
+    return mp_fun_table.memset_(s, c, n);
+}
+#endif
+
+
 // For building up an EmlTrees structure
 typedef struct _EmlTreesBuilder {
     EmlTrees trees;
@@ -20,20 +33,21 @@ typedef struct _mp_obj_trees_builder_t {
 
 STATIC const mp_obj_type_t trees_builder_type;
 
-
-
 // Create a new tree builder
 STATIC mp_obj_t builder_new(mp_obj_t trees_obj, mp_obj_t nodes_obj) {
 
     mp_int_t max_nodes = mp_obj_get_int(nodes_obj);
     mp_int_t max_trees = mp_obj_get_int(trees_obj);
 
-    mp_printf(&mp_plat_print, "builder-new nodes=%d trees=%d\n", max_nodes, max_trees);
+    //mp_printf(&mp_plat_print, "builder-new nodes=%d trees=%d\n", max_nodes, max_trees);
 
     // create builder
     mp_obj_trees_builder_t *o = mp_obj_malloc(mp_obj_trees_builder_t, (mp_obj_type_t *)&trees_builder_type);
 
     EmlTreesBuilder *self = &o->builder;
+
+    memset(self, 1, sizeof(EmlTreesBuilder)); // HACK: try to get memset symbol in
+
     self->max_nodes = max_nodes;
     self->max_trees = max_trees;
 
@@ -48,7 +62,7 @@ STATIC mp_obj_t builder_new(mp_obj_t trees_obj, mp_obj_t nodes_obj) {
     self->trees.n_trees = 0;
     self->trees.tree_roots = roots;
 
-    mp_printf(&mp_plat_print, "fin \n");
+    //mp_printf(&mp_plat_print, "fin \n");
 
     return MP_OBJ_FROM_PTR(o);
 
@@ -70,7 +84,7 @@ STATIC mp_obj_t builder_addnode(size_t n_args, const mp_obj_t *args) {
     const int16_t left = mp_obj_get_int(args[1]);
     const int16_t right = mp_obj_get_int(args[2]);
     const int8_t feature = mp_obj_get_int(args[3]);
-    const float value = mp_obj_get_float(args[4]);
+    const float value = mp_obj_get_float_to_f(args[4]);
 
     if (self->trees.n_nodes >= self->max_nodes) {
         mp_raise_ValueError(MP_ERROR_TEXT("max nodes"));

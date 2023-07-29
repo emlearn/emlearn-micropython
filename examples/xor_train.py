@@ -26,7 +26,7 @@ cmodel = emlearn.convert(estimator, method='inline')
 # Save model
 def save_csv(trees):
     """
-    Code to export emlearn model as CSV format, loadable by emlearn-micropython
+    Code to export in format loadable by emlearn-micropython
     """
 
     nodes, roots = trees.forest_
