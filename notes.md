@@ -27,6 +27,9 @@ https://gcc.gnu.org/onlinedocs/gccint/Soft-float-library-routines.html
 
 https://github.com/gcc-mirror/gcc/blob/master/libgcc/soft-fp/divsf3.c
 
+Division operation came from  `out[0] = sum / forest->n_trees;`
+in `eml_trees_regress`
+
 arm32_aeabi_softfloat.c
 
 
