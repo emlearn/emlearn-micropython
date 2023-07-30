@@ -20,7 +20,6 @@ jobs:
       working-directory: micropython
       run: make -C eml_trees/ ARCH=x64 V=1 MPY_DIR=../micropython
     - name: Build module x64
-      working-directory: micropython
       run: mkdir -p dist && cp ./eml_trees/emltrees.mpy dist/
     - name: Archive production artifacts
       uses: actions/upload-artifact@v3
