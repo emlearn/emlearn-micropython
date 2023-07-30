@@ -13,9 +13,12 @@ jobs:
         repository: micropython/micropython
         path: micropython
         ref: v1.20.0
+    - name: Setup MicroPython X86
+      working-directory: micropython
+      run: source tools/ci.sh && ci_unix_standard_build
     - name: Setup MicroPython ARM
       working-directory: micropython
       run: source tools/ci.sh && ci_rp2_setup
     - name: Setup MicroPython ESP32
       working-directory: micropython
-      run: source tools/ci.sh && ci_esp32_setup
+      run: source tools/ci.sh && ci_esp32_idf44_setup
