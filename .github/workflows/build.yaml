@@ -35,7 +35,7 @@ jobs:
       working-directory: micropython
       run: source tools/ci.sh && ci_esp32_idf50_setup
     - name: Build module xtensawin
-      run: make -C eml_trees/ dist clean ARCH=xtensawin V=1 MPY_DIR=../micropython
+      run: source micropython/esp-idf/export.sh && make -C eml_trees/ dist clean ARCH=xtensawin V=1 MPY_DIR=../micropython
     - name: Archive production artifacts
       uses: actions/upload-artifact@v3
       with:
