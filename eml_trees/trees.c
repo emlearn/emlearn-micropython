@@ -1,8 +1,7 @@
 // Include the header file to get access to the MicroPython API
 #include "py/dynruntime.h"
 
-//#include "model.h"
-
+#define EML_TREES_REGRESSION_ENABLE 0
 #include <eml_trees.h>
 
 #include <string.h>

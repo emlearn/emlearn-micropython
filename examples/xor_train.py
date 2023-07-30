@@ -23,24 +23,7 @@ assert score > 0.90, score # verify that we learned the function
 # Convert model using emlearn
 cmodel = emlearn.convert(estimator, method='inline')
 
-# Save model
-def save_csv(trees):
-    """
-    Code to export in format loadable by emlearn-micropython
-    """
-
-    nodes, roots = trees.forest_
-    nodes = nodes.copy()
-    lines = []
-    for r in roots:
-        lines.append(f'r,{r}')
-    for n in nodes:
-        lines.append(f'n,{n[0]},{n[1]},{n[2]},{n[3]}')
-    code = '\r\n'.join(lines) 
-    return code
-
+# Save as loadable .csv file
 path = 'xor_model.csv'
-exported = save_csv(cmodel)
-with open(path, 'w') as f: 
-    f.write(exported)
+cmodel.save(file=path, name='xor', format='csv')
 print('Wrote model to', path)
