@@ -1,2 +1,4 @@
 build/
+tmp/
+*.o
 *.mpy
