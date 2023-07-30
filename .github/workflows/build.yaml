@@ -33,7 +33,7 @@ jobs:
       run: make -C eml_trees/ dist clean ARCH=armv7emsp V=1 MPY_DIR=../micropython
     - name: Setup MicroPython ESP32
       working-directory: micropython
-      run: source tools/ci.sh && ci_esp32_idf44_setup
+      run: source tools/ci.sh && ci_esp32_idf50_setup
     - name: Build module xtensa
       run: make -C eml_trees/ dist clean ARCH=xtensa V=1 MPY_DIR=../micropython
     - name: Build module xtensawin
