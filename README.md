@@ -95,7 +95,7 @@ Running with a very simple RandomForest, 7 trees.
 Reaches approx 86% accuracy.
 Tested on Raspberry PI Pico, with RP2040 microcontroller (ARM Cortex M0 @ 133 MHz).
 
-![Inferences per second](./benchmarks/digits_results.png)
+![Inferences per second](./benchmarks/digits_bench.png)
 
 NOTE: over half of the time for emlearn case,
 is spent on converting the Python lists of integers into a float array.
