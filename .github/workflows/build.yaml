@@ -34,8 +34,6 @@ jobs:
     - name: Setup MicroPython ESP32
       working-directory: micropython
       run: source tools/ci.sh && ci_esp32_idf50_setup
-    - name: Build module xtensa
-      run: make -C eml_trees/ dist clean ARCH=xtensa V=1 MPY_DIR=../micropython
     - name: Build module xtensawin
       run: make -C eml_trees/ dist clean ARCH=xtensawin V=1 MPY_DIR=../micropython
     - name: Archive production artifacts
