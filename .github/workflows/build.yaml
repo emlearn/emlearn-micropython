@@ -14,7 +14,7 @@ jobs:
         path: micropython
         ref: v1.20.0
     - name: Install Python dependencies
-      run: pip install emlearn scikit-learn
+      run: pip install -r requirements.txt
     - name: Setup MicroPython X86
       working-directory: micropython
       run: source tools/ci.sh && ci_unix_32bit_setup && ci_unix_standard_build
