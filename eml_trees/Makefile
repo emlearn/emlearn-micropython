@@ -7,6 +7,8 @@ ARCH = x64
 # Location of emlearn library
 EMLEARN_DIR := $(shell python3 -c "import emlearn; print(emlearn.includedir)")
 
+DIST_DIR := ../dist
+
 # Name of module
 # NOTE: cannot contain _ - functions do not register on the module then?
 MOD = emltrees
@@ -26,16 +28,16 @@ endif
 
 ifeq ($(SOFTFP_ENABLE), 1)
 	SRC_O += $(SOFTFP_O)
+	CLEAN_EXTRA += $(SOFTFP_O)
 endif
 
-$(info $(SOFTFP_ENABLE) $(SRC_O))
+# Releases
+DIST_FILE = $(DIST_DIR)/$(MOD)_$(ARCH).mpy
+$(DIST_DIR):
+	mkdir -p $<
 
-# None of these seem to work...
-#CFLAGS += -static-libgcc
-#CFLAGS += -mfloat-abi=soft
-# CFLAGS += /usr/lib/gcc/arm-none-eabi/13.1.0/thumb/v6-m/nofp/libgcc.a
-# arm-none-eabi-gcc: warning: /usr/lib/gcc/arm-none-eabi/13.1.0/thumb/v6-m/nofp/libgcc.a: linker input file unused because linking not done
-
+$(DIST_FILE): $(MOD).mpy
+	cp $< $@
 
 # Include to get the rules for compiling and linking the module
 include $(MPY_DIR)/py/dynruntime.mk
@@ -49,3 +51,4 @@ _arm_cmpsf2.o:
 
 CFLAGS += -I$(EMLEARN_DIR)
 
+dist: $(DIST_FILE)
