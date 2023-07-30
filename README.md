@@ -83,6 +83,24 @@ Run program that uses the model
 mpremote run examples/xor_run.py
 ```
 
+## Benchmarks
+
+#### UCI handwriting digits
+
+UCI ML hand-written digits datasets dataset from
+[sklearn.datasets.load_digits](https://scikit-learn.org/stable/modules/generated/sklearn.datasets.load_digits.html).
+8x8 image, 64 features. Values are 4-bit integers (16 levels). 10 classes.
+
+Running with a very simple RandomForest, 7 trees.
+Reaches approx 86% accuracy.
+Tested on Raspberry PI Pico, with RP2040 microcontroller (ARM Cortex M0 @ 133 MHz).
+
+![Inferences per second](./benchmarks/digits_results.png)
+
+NOTE: over half of the time for emlearn case,
+is spent on converting the Python lists of integers into a float array.
+Removing that bottleneck would speed up things considerably.
+
 
 ## Developing locally
 
