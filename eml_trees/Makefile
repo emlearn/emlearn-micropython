@@ -36,7 +36,7 @@ DIST_FILE = $(DIST_DIR)/$(MOD)_$(ARCH).mpy
 $(DIST_DIR):
 	mkdir -p $<
 
-$(DIST_FILE): $(MOD).mpy
+$(DIST_FILE): $(DIST_DIR) $(MOD).mpy
 	cp $< $@
 
 # Include to get the rules for compiling and linking the module
