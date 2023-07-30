@@ -7,13 +7,14 @@ The goal is to enable applications to run ML inference on the microcontroller,
 without having to touch any C code.
 
 ## Status
-**Proof of Concept**
+**Minimally useful**
 
-- Can run RandomForest/DecisionTree
-- Pre-built modules are available for the most common
+- Can perform classification with [RandomForest](https://en.wikipedia.org/wiki/Random_forest)/DecisionTree models
+- Installable as a MicroPython native module. No rebuild/flashing needed
+- Models can be loaded at runtime from a .CSV file in disk/flash
+- Pre-built modules are available for the most common architectures/devices
 - Has been tested on `armv6m` (RP2040) and `x64` (Unix port)
 
-Or contribute yourself!
 
 ## Prerequisites
 
