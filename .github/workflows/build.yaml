@@ -9,6 +9,4 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - uses: BrianPugh/install-micropython@v1
-      with:
-        reference: v1.20.0
 
