@@ -20,12 +20,6 @@ jobs:
       run: source tools/ci.sh && ci_unix_32bit_setup && ci_unix_standard_build
     - name: Build module x64
       run: make -C eml_trees/ dist clean ARCH=x64 V=1 MPY_DIR=../micropython
-    - name: Archive production artifacts
-      uses: actions/upload-artifact@v3
-      with:
-        name: dist-without-markdown
-        path: |
-          dist
     - name: Setup MicroPython ARM
       working-directory: micropython
       run: source tools/ci.sh && ci_rp2_setup
@@ -33,4 +27,9 @@ jobs:
       run: make -C eml_trees/ dist clean ARCH=armv6m V=1 MPY_DIR=../micropython
     - name: Build module armv7m
       run: make -C eml_trees/ dist clean ARCH=armv7m V=1 MPY_DIR=../micropython
-
+    - name: Archive production artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: dist-without-markdown
+        path: |
+          dist
