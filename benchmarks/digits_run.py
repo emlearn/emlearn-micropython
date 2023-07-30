@@ -63,7 +63,6 @@ def emlearn_run(data):
     for idx, x in enumerate(data):
         f = array.array('f', x) # NOTE: this takes as long as predict
         out = emltrees.predict(model, f)
-        out = idx
         if (idx != out):
             errors += 1
     return errors
