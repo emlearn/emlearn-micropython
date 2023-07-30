@@ -8,5 +8,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
-    - uses: BrianPugh/install-micropython@v1
+    - uses: actions/checkout@v3
+    with:
+      repository: https://github.com/micropython/micropython
+      path: micropython
+      ref: v1.20.0
 
