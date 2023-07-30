@@ -22,3 +22,8 @@ jobs:
     - name: Setup MicroPython ESP32
       working-directory: micropython
       run: source tools/ci.sh && ci_esp32_idf44_setup
+    - name: Build module x64
+      working-directory: micropython
+      run: make -C eml_trees/ ARCH=x64 V=1
+
+
