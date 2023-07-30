@@ -51,28 +51,38 @@ clf = RandomForestClassifier()
 def everywhere_run(data):
     errors = 0
     for idx, x in enumerate(data):
+        #x = array.array('f', x)
         out = clf.predict(x)
         if (idx != out):
             errors += 1
     return errors
 
 model = emlearn_create()
-
 def emlearn_run(data):
     errors = 0
     for idx, x in enumerate(data):
-        f = array.array('f', x)
+        f = array.array('f', x) # NOTE: this takes as long as predict
         out = emltrees.predict(model, f)
+        out = idx
         if (idx != out):
             errors += 1
     return errors
 
-
 def m2c_run(data):
     errors = 0
     for idx, x in enumerate(data):
+        #x = array.array('f', x)
         scores = m2c_digits.score(x)
         out = argmax(scores)
+        if (idx != out):
+            errors += 1
+    return errors
+
+def none_run(data):
+    errors = 0
+    for idx, x in enumerate(data):
+        tmp = len(x)
+        out = idx
         if (idx != out):
             errors += 1
     return errors
@@ -82,6 +92,13 @@ def benchmark():
     data = digits
 
     print('model,errors,time_us')
+
+    before = time.ticks_us()
+    none_errors = none_run(data)
+    after = time.ticks_us()
+    none_duration = time.ticks_diff(after, before)
+    print('none,{},{}'.format(none_errors, none_duration))
+
     before = time.ticks_us()
     eml_errors = emlearn_run(data)
     after = time.ticks_us()
