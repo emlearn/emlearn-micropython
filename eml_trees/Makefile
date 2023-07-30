@@ -34,7 +34,7 @@ endif
 # Releases
 DIST_FILE = $(DIST_DIR)/$(MOD)_$(ARCH).mpy
 $(DIST_DIR):
-	mkdir -p $<
+	mkdir -p $@
 
 $(DIST_FILE): $(DIST_DIR) $(MOD).mpy
 	cp $< $@
