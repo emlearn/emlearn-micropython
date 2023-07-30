@@ -15,7 +15,7 @@ jobs:
         ref: v1.20.0
     - name: Setup MicroPython X86
       working-directory: micropython
-      run: source tools/ci.sh && ci_unix_standard_build
+      run: source tools/ci.sh && ci_unix_32bit_setup && ci_unix_standard_build
     - name: Build module x64
       run: make -C eml_trees/ ARCH=x64 V=1 MPY_DIR=../micropython
     - name: Copy module x64
