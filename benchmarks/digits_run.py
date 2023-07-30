@@ -1,5 +1,6 @@
 
 import time
+import array
 
 from digits_data import digits
 
@@ -36,27 +37,67 @@ def emlearn_create():
         load_model(model, f)
     return model
 
+def argmax(l):
+    max_value = l[0]
+    max_idx = 0
+    for i, v in enumerate(l):
+        if v > max_value:
+            max_value = v
+            max_idx = i
+    return max_idx
+
+
+clf = RandomForestClassifier()
 def everywhere_run(data):
-    clf = RandomForestClassifier()
+    errors = 0
     for idx, x in enumerate(data):
         out = clf.predict(x)
-        print('exptected %d, got %d' % (idx, out))
+        if (idx != out):
+            errors += 1
+    return errors
+
+model = emlearn_create()
 
 def emlearn_run(data):
-
-    model = emlearn_create()
+    errors = 0
     for idx, x in enumerate(data):
         f = array.array('f', x)
         out = emltrees.predict(model, f)
-        print('exptected %d, got %d' % (idx, out))    
+        if (idx != out):
+            errors += 1
+    return errors
+
 
 def m2c_run(data):
-
+    errors = 0
     for idx, x in enumerate(data):
-        out = m2c_digits.score(x)
-        print('exptected %d, got %d' % (idx, out))
+        scores = m2c_digits.score(x)
+        out = argmax(scores)
+        if (idx != out):
+            errors += 1
+    return errors
 
-data = digits
-emlearn_run(data)
-everywhere_run(data)
-m2c_run(data)
+def benchmark():
+
+    data = digits
+
+    print('model,errors,time_us')
+    before = time.ticks_us()
+    eml_errors = emlearn_run(data)
+    after = time.ticks_us()
+    eml_duration = time.ticks_diff(after, before)
+    print('emlearn,{},{}'.format(eml_errors, eml_duration))
+
+    before = time.ticks_us()
+    everywhere_errors = everywhere_run(data)
+    after = time.ticks_us()
+    everywhere_duration = time.ticks_diff(after, before)
+    print('everywhere,{},{}'.format(everywhere_errors, everywhere_duration))
+
+    before = time.ticks_us()
+    m2c_errors = m2c_run(data)
+    after = time.ticks_us()
+    m2c_duration = time.ticks_diff(after, before)
+    print('m2cgen,{},{}'.format(m2c_errors, m2c_duration))
+
+
