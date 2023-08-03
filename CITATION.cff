@@ -1,0 +1,12 @@
+cff-version: 1.2.0
+license: MIT
+message: "If you use this software, please cite it using these metadata."
+repository-code: "https://github.com/emlearn/emlearn-micropython"
+title: "emlearn-micropython: Efficient Machine Learning engine for MicroPython"
+identifiers:
+  - description: "Archived software version"
+    type: doi
+    value: 10.5281/zenodo.8212731
+authors:
+  - family-names: Nordby
+    given-names: Jon

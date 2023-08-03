@@ -132,3 +132,20 @@ mpremote cp emltrees/emltrees.mpy :emltrees.mpy
 
 `TODO: implement and document`
 
+
+
+## Citations
+
+If you use `emlearn-micropython` in an academic work, please reference it using:
+
+```tex
+@misc{emlearn_micropython,
+  author       = {Jon Nordby},
+  title        = {{emlearn-micropython: Efficient Machine Learning engine for MicroPython}},
+  month        = aug,
+  year         = 2023,
+  doi          = {10.5281/zenodo.8212731},
+  url          = {https://doi.org/10.5281/zenodo.8212731}
+}
+```
+
