@@ -1,3 +1,4 @@
+[![DOI](https://zenodo.org/badge/670384512.svg)](https://zenodo.org/badge/latestdoi/670384512)
 
 # emlearn-micropython
 
