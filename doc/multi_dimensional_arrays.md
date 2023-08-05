@@ -9,13 +9,14 @@ This includes applications such as Graphical User Interfaces, Image Processing /
 As of August 2020, each module tends to implements their own way of representing multi-dimensional data.
 This limits efficient interoperability between different modules.
 
-This is
 
 # Status
-**ONLY AN IDEA**
+**ONLY AN IDEA**.
 
-
-
+- **NOT EVEN SURE ITS A GOOD IDEA**
+- Requirements gathering incomplete
+- Several key questions unresolved
+- Design is only an initial sketch
 
 
 ## Requirements gathering
@@ -28,7 +29,7 @@ The following are common uses of multi-dimensional arrays.
 - Color image. 3d. (width, height, channels). Where channels=3 typ, for RGB/HSV/etc
 - Video. 4d (time, width, height, channels).
 - IMU time-series. 2d. (time, channels). Where channels=3,6,9 are common
-- Spectrograms. 2d (time, )
+- Spectrograms. 2d (time, bands).
 
 NOTE: RGB images is often stored with R,G,B(,A) 8-bit packed into 32 bits
 
@@ -59,10 +60,6 @@ In particular it must be possible to
 All these should be possible both in Python and in C,
 and also working in user modules and native modules.
 
-### MAYBE
-
-Read and write data at a particular index
-Iterate forward item-wise over an axis
 
 ## Design
 
@@ -154,14 +151,26 @@ For example:
 - Images: (width, height)
 - Spectrogram: (time, bands)
 
+### Built-in operations
+
+Fundamental
+
+- Create mdarray
+- Pass between functions
+- Access and modify the underlying `.array` with data/values 
+- Access and modify the `.shape`
+
+Maybe
+
+- Read and write data at a particular index
+- Iterate forward item-wise over specified axis
+
 ## Operations
 
 Functions are OK to support operate only working with on a particular sizes or data-types.
 Example: image functions that only work on 2d data
 Should check the length.
 that operate on 2d. Should throw when
-
-
 
 
 # Existing usages of multi-dimensional arrays
@@ -175,7 +184,8 @@ and what particularities are important in designing a base for interoperability.
 - How is the data buffer/array stored? Anyone using `array.array`?
 - How are the dimensions stored?
 - What order is the data stored in?
-- Would it be possible to
+- Would it be possible to operate on a `mdarray` without intrusive modifications?
+- How could an implementation strategy look like?
 
 
 ## Modules
