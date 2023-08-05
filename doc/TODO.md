@@ -18,6 +18,12 @@
 
 # TODO
 
+emtrees cleanup
+
+- Make the API be OOP. See `features4` example
+- Include load_model function in native module. See `features2` example
+- Add some basic automated testing
+
 On-device training demo
 
 - Implement time-between-event preprocessor. Try on PC, test on device
@@ -31,5 +37,6 @@ In-browser demo
 Benchmarks
 
 - Add FLASH and RAM usage
+- Test gzip compression of .csv model
 - Add a couple of different sized models to benchmark?
 - Add another application/dataset for benchmark
