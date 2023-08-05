@@ -16,6 +16,10 @@ in order to support on-device learning.
 #include <stdint.h>
 #include <string.h>
 
+#ifndef EML_NEIGHBORS_LOG_LEVEL
+#define EML_NEIGHBORS_LOG_LEVEL 0
+#endif
+
 int32_t eml_isqrt(int32_t x)
 {
     int32_t q = 1, r = 0;
@@ -74,8 +78,8 @@ eml_neighbors_sort_distances(EmlNeighborsDistanceItem *distances, size_t length)
     return EmlOk;
 }
 
-// TODO: rename to EmlNeighborsModel
-typedef struct _EmlNeighbors {
+
+typedef struct _EmlNeighborsModel {
 
     uint16_t n_features;
     int16_t n_items;
@@ -86,10 +90,10 @@ typedef struct _EmlNeighbors {
 
     int16_t k_neighbors;
 
-} EmlNeighbors;
+} EmlNeighborsModel;
 
 EmlError
-eml_neighbors_check(EmlNeighbors *self,
+eml_neighbors_check(EmlNeighborsModel *self,
         int16_t data_length, int16_t labels_length, int16_t distances_length)
 {
     const int32_t expect_data_length = self->max_items * self->n_features;
@@ -106,7 +110,7 @@ eml_neighbors_check(EmlNeighbors *self,
 }
 
 EmlError
-eml_neighbors_add_item(EmlNeighbors *self,
+eml_neighbors_add_item(EmlNeighborsModel *self,
         const int16_t *values, int16_t values_length,
         int16_t label)
 {
@@ -118,7 +122,7 @@ eml_neighbors_add_item(EmlNeighbors *self,
     memcpy(data, values, sizeof(int16_t)*values_length);
     self->labels[index] = label;    
 
-#if 0
+#if EML_NEIGHBORS_LOG_LEVEL > 2
     EML_LOG_BEGIN("eml_neighbors_add_item");
     EML_LOG_ADD_INTEGER("index", index);
     EML_LOG_ADD_INTEGER("label", label);
@@ -129,7 +133,7 @@ eml_neighbors_add_item(EmlNeighbors *self,
 }
 
 EmlError
-eml_neighbors_infer(EmlNeighbors *self,
+eml_neighbors_infer(EmlNeighborsModel *self,
             const int16_t *features, int features_length,
             EmlNeighborsDistanceItem *distances, int distances_length)
 {
@@ -144,10 +148,12 @@ eml_neighbors_infer(EmlNeighbors *self,
         distances[i].index = i;
         distances[i].distance = distance;
 
+#if EML_NEIGHBORS_LOG_LEVEL > 2
         EML_LOG_BEGIN("eml_neighbors_infer_iter");
         EML_LOG_ADD_INTEGER("index", i);
         EML_LOG_ADD_INTEGER("distance", distance);
         EML_LOG_END();
+#endif
 
     }
 
@@ -158,7 +164,7 @@ eml_neighbors_infer(EmlNeighbors *self,
 
 
 EmlError
-eml_neighbors_find_nearest(EmlNeighbors *self,
+eml_neighbors_find_nearest(EmlNeighborsModel *self,
         EmlNeighborsDistanceItem *distances, int distances_length,
         int k, int16_t *out)
 {
@@ -179,7 +185,7 @@ eml_neighbors_find_nearest(EmlNeighbors *self,
         }
         votes[label] += 1;
 
-#if 0
+#if EML_NEIGHBORS_LOG_LEVEL > 2
         EML_LOG_BEGIN("eml_neighbors_find_nearest_iter");
         EML_LOG_ADD_INTEGER("index", i);
         EML_LOG_ADD_INTEGER("distance", d.distance);
@@ -203,7 +209,7 @@ eml_neighbors_find_nearest(EmlNeighbors *self,
 }
 
 EmlError
-eml_neighbors_predict(EmlNeighbors *self,
+eml_neighbors_predict(EmlNeighborsModel *self,
         const int16_t *features, int features_length,
         EmlNeighborsDistanceItem *distances, int distances_length,
         int16_t *out)
