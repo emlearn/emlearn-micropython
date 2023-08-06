@@ -47,8 +47,7 @@ class TimeBetweenEvents:
 
 
 
-import pynput
-import pynput.keyboard
+
 
 def test_timeouts():
     processor = TimeBetweenEvents(max_time=100, min_time=10)
@@ -90,52 +89,71 @@ def test_time_between_events():
     assert processor.push(330, False) == 330-290
 
 
+import pynput
+import pynput.keyboard
+from pynput.keyboard import Key
+import queue
+import time
+
 class KeyboardInput():
 
-    def __init__(self):
-        self.start_time = time.time()
+    def __init__(self, key=Key.space):
+        self.key = key
+
+        # pynput listener callbacks are on separate thread
+        # use a queue to process the events from there
+        self.queue = queue.Queue()
 
         def on_press(key):
-            try:
-                print('alphanumeric key {0} pressed'.format(
-                    key.char))
-            except AttributeError:
-                print('special key {0} pressed'.format(
-                    key))
+            if key != self.key:
+                return
+            self.queue.put((time.time(), True))
 
         def on_release(key):
-            print('{0} released'.format(
-                key))
-            if key == keyboard.Key.esc:
-                # Stop listener
-                return False
+            if key != self.key:
+                return
+            self.queue.put((time.time(), False))
 
         self.listener = pynput.keyboard.Listener(on_press=on_press, on_release=on_release)
         self.listener.start()
 
-    def check(self, timeout=0.01):
+        self.state = False
 
-        with pynput.keyboard.Events() as events:
+    def check(self):
 
-            t = time.time() - self.start_time
-            time_micro = t * 1e6
-            event = events.get(timeout=timeout)
-            state = event is not None and isinstance(event, pynput.keyboard.Events.Press) 
-            print(event, time_micro, state)
-            return time_micro, state
+        # check if anything has changed
+        any_presses = False
+        while not self.queue.empty():
+            event = self.queue.get_nowait()
+            t, state = event
+            if state:
+                any_presses = True
+            self.state = state
+            #print('queue-message', t, state, any_presses)
+
+        return any_presses
 
     def close():
+        self.listener.close()
 
 def main():
+    max_time = 2e6
 
-    processor = TimeBetweenEvents()
+    processor = TimeBetweenEvents(max_time=max_time)
     keyboard = KeyboardInput()
     
-    while True:
-        t, s = keyboard.poll()
-        e = processor.push(t, s)
-        print(t, s, e)
+    start_time = time.time()
 
+    while True:
+        t = (time.time() - start_time) * 1e6
+        s = keyboard.check()
+        e = processor.push(t, s)
+
+        if e and e < max_time:
+            bar = ''.join(['*'] * int(50 * (e / max_time)))
+            print('event', round(t/1000.0, 0), round(e/1000.0, 0), bar)
+        time.sleep(0.001)
+    
 
 if __name__ == '__main__':
     main()
