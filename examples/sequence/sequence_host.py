@@ -144,15 +144,26 @@ def main():
     
     start_time = time.time()
 
-    while True:
-        t = (time.time() - start_time) * 1e6
-        s = keyboard.check()
-        e = processor.push(t, s)
+    import sys
+    path = sys.argv[1]
 
-        if e and e < max_time:
-            bar = ''.join(['*'] * int(50 * (e / max_time)))
-            print('event', round(t/1000.0, 0), round(e/1000.0, 0), bar)
-        time.sleep(0.001)
+    with open(path, 'w') as f:
+
+        f.write('event,time,delta\n')
+
+        while True:
+            t = (time.time() - start_time) * 1e6
+            s = keyboard.check()
+            e = processor.push(t, s)
+
+            if e and e < max_time:
+                bar = ''.join(['*'] * int(50 * (e / max_time)))
+                print('event', round(t/1000.0, 0), round(e/1000.0, 0), bar)
+
+                f.write(f'event,{round(t/1000.0, 3)},{round(e/1000.0, 3)}\n')
+
+
+            time.sleep(0.001)
     
 
 if __name__ == '__main__':
