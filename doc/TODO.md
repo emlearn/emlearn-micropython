@@ -24,11 +24,17 @@ emtrees cleanup
 - Include load_model function in native module. See `features2` example
 - Add some basic automated testing
 
-On-device training demo
+sequence. On-device training demo
 
-- Implement time-between-event preprocessor. Try on PC, test on device
-- Implement kNN in emlearn. int16_t first
+- Add logic for entering training mode. Long-press. Use a fixed number of samples. 5?
+- Update dataset. Sanity check performance
+- Implement the prediction mode on host
+- Test it out on host
+- Move kNN to emlearn
+- Add MicroPython bindings for kNN
 - Test it out on device
+- Make demo video
+- Add some documentation / README
 
 In-browser demo
 
