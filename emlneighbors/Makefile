@@ -31,8 +31,17 @@ ifeq ($(SOFTFP_ENABLE), 1)
 	CLEAN_EXTRA += $(SOFTFP_O)
 endif
 
+# for qsort
+LIBC_O := msort.o
+SRC_O += $(LIBC_O)
+# XXX: does not work. Needs memcpy, and maybe other things also
+# perhaps use https://github.com/svpv/qsort instead?
+
 # Include to get the rules for compiling and linking the module
 include $(MPY_DIR)/py/dynruntime.mk
+
+# for qsort
+SRC_O += $(LIBC_O)
 
 # Releases
 DIST_FILE = $(DIST_DIR)/$(MOD)_$(ARCH).mpy
@@ -46,8 +55,15 @@ $(DIST_FILE): $(MOD).mpy $(DIST_DIR)
 LIBGCC_FILENAME = $(shell $(CROSS)gcc $(CFLAGS) -print-libgcc-file-name)
 $(info $(LIBGCC_FILENAME))
 
+LIBC_FILENAME = $(shell $(CROSS)gcc $(CFLAGS) -print-file-name=libc.a)
+$(info $(LIBC_FILENAME))
+
 _arm_cmpsf2.o:
 	$(CROSS)ar -x $(LIBGCC_FILENAME) $(SOFTFP_O)
+
+# msort contains qsort
+msort.o: 
+	$(CROSS)ar -x $(LIBC_FILENAME) $(LIBC_O)
 
 CFLAGS += -I$(EMLEARN_DIR)
 
