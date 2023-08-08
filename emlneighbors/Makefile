@@ -1,0 +1,54 @@
+# Location of top-level MicroPython directory
+MPY_DIR = ../../micropython
+
+# Architecture to build for (x86, x64, armv6m, armv7m, xtensa, xtensawin)
+ARCH = x64
+
+# Location of emlearn library
+EMLEARN_DIR := $(shell python3 -c "import emlearn; print(emlearn.includedir)")
+
+DIST_DIR := ../dist
+
+# Name of module
+# NOTE: cannot contain _ - functions do not register on the module then?
+MOD = emlneighbors
+
+# Source files (.c or .py)
+SRC = neighbors.c
+
+# Stuff to make soft-float work
+SOFTFP_O := _arm_cmpsf2.o lesf2.o _arm_fixsfsi.o fixsfsi.o eqsf2.o gesf2.o
+SOFTFP_ENABLE := 0
+ifeq ($(ARCH), armv6m)
+	SOFTFP_ENABLE=1
+endif
+ifeq ($(ARCH), armv7m)
+	SOFTFP_ENABLE=1
+endif
+
+ifeq ($(SOFTFP_ENABLE), 1)
+	SRC_O += $(SOFTFP_O)
+	CLEAN_EXTRA += $(SOFTFP_O)
+endif
+
+# Include to get the rules for compiling and linking the module
+include $(MPY_DIR)/py/dynruntime.mk
+
+# Releases
+DIST_FILE = $(DIST_DIR)/$(MOD)_$(ARCH).mpy
+$(DIST_DIR):
+	mkdir -p $@
+
+$(DIST_FILE): $(MOD).mpy $(DIST_DIR)
+	cp $< $@
+
+# CROSS is defined by the included
+LIBGCC_FILENAME = $(shell $(CROSS)gcc $(CFLAGS) -print-libgcc-file-name)
+$(info $(LIBGCC_FILENAME))
+
+_arm_cmpsf2.o:
+	$(CROSS)ar -x $(LIBGCC_FILENAME) $(SOFTFP_O)
+
+CFLAGS += -I$(EMLEARN_DIR)
+
+dist: $(DIST_FILE)
