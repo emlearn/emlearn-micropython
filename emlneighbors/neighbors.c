@@ -1,6 +1,8 @@
 // Include the header file to get access to the MicroPython API
 #include "py/dynruntime.h"
 
+#define EML_LOG_ENABLE 0
+#define EML_NEIGHBORS_LOG_LEVEL 3
 #include <eml_neighbors.h>
 
 #include <string.h>
@@ -14,6 +16,8 @@ void *memset(void *s, int c, size_t n) {
     return mp_fun_table.memset_(s, c, n);
 }
 #endif
+
+
 
 
 // MicroPython type for EmlNeighborsModel
@@ -43,11 +47,10 @@ STATIC mp_obj_t neighbors_model_new(mp_obj_t items_obj, mp_obj_t features_obj, m
     self->n_features = n_features;
     self->n_items = 0;
     self->max_items = max_items;
-    // FIXME: space for data/labels
-    //self->data = 
-    //self->labels = 
+    self->data = (int16_t *)m_malloc(sizeof(int16_t)*n_features*max_items);
+    self->labels = (int16_t *)m_malloc(sizeof(int16_t)*max_items);
     self->k_neighbors = k_neighbors;
-
+    o->distances = (EmlNeighborsDistanceItem *)m_malloc(sizeof(EmlNeighborsDistanceItem)*max_items);
 
     return MP_OBJ_FROM_PTR(o);
 
@@ -77,6 +80,7 @@ STATIC mp_obj_t neighbors_model_additem(size_t n_args, const mp_obj_t *args) {
 
     const int16_t label = mp_obj_get_int(args[2]);
 
+    mp_printf(&mp_plat_print, "neighbors-model-additem features=%d label=%d\n", n_features, label);
     EmlError err = eml_neighbors_add_item(self, features, n_features, label);
     if (err != EmlOk) {
         mp_raise_ValueError(MP_ERROR_TEXT("additem failed"));
@@ -107,13 +111,15 @@ STATIC mp_obj_t neighbors_predict(mp_obj_fun_bc_t *self_obj,
     const int16_t *features = bufinfo.buf;
     const int n_features = bufinfo.len / sizeof(*features);
 
+    mp_printf(&mp_plat_print, "neighbors-model-additem features=%d items=%d\n",
+        n_features, self->n_items);
     // call model
     int16_t out = -1;
     const EmlError err = eml_neighbors_predict(self,
             features, n_features,
             o->distances, self->max_items,
             &out);
-    if (err) {
+    if (err != EmlOk) {
         mp_raise_ValueError(MP_ERROR_TEXT("EmlError"));
     }
 
