@@ -21,8 +21,16 @@
 emtrees cleanup
 
 - Make the API be OOP. See `features4` example
-- Include load_model function in native module. See `features2` example
+- Implement a teardown/destroy
+- Include load_model function with native module. See `features2` example
 - Add some basic automated testing
+
+emlneighbors cleanup
+
+- Make API be OOP
+- Implement teardown/destroy
+- Add automated test
+- Ada a `load_model` function to module
 
 sequence. On-device training demo
 
@@ -30,15 +38,10 @@ sequence. On-device training demo
 - Update dataset. Sanity check performance
 - Implement the prediction mode on host
 - Test it out on host
-- Move kNN to emlearn
-- Add MicroPython bindings for kNN
 - Test it out on device
 - Make demo video
 - Add some documentation / README
 
-In-browser demo
-
-- Test MicroPython build for WASM/browser
 
 Benchmarks
 
@@ -46,3 +49,7 @@ Benchmarks
 - Test gzip compression of .csv model
 - Add a couple of different sized models to benchmark?
 - Add another application/dataset for benchmark
+
+In-browser demo
+
+- Test MicroPython build for WASM/browser
