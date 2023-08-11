@@ -54,24 +54,32 @@ STATIC mp_obj_t builder_new(mp_obj_t trees_obj, mp_obj_t nodes_obj) {
     EmlTreesNode *nodes = (EmlTreesNode *)m_malloc(sizeof(EmlTreesNode)*max_nodes);
     int32_t *roots = (int32_t *)m_malloc(sizeof(int32_t)*max_trees);
 
-    mp_printf(&mp_plat_print, "nodes=%p roots=%p builder=%p\n", nodes, roots, self);
+    mp_printf(&mp_plat_print, "emltrees nodes=%p roots=%p builder=%p\n", nodes, roots, self);
 
     self->trees.n_nodes = 0;
     self->trees.nodes = nodes;
     self->trees.n_trees = 0;
     self->trees.tree_roots = roots;
 
-    //mp_printf(&mp_plat_print, "fin \n");
-
     return MP_OBJ_FROM_PTR(o);
-
-
 }
-// Define a Python reference to the function above
 STATIC MP_DEFINE_CONST_FUN_OBJ_2(builder_new_obj, builder_new);
 
+// Delete a tree builder
+STATIC mp_obj_t builder_del(mp_obj_t trees_obj) {
 
-// FIXME: function for freeing a builder
+    mp_obj_trees_builder_t *o = MP_OBJ_TO_PTR(trees_obj);
+    EmlTreesBuilder *self = &o->builder;
+
+    // free allocated data
+    m_free(self->trees.nodes);
+    m_free(self->trees.tree_roots);
+
+    mp_printf(&mp_plat_print, "emltrees del \n");
+
+    return mp_const_none;
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(builder_del_obj, builder_del);
 
 
 // Add a node to the tree
@@ -144,7 +152,7 @@ STATIC mp_obj_t predict(mp_obj_fun_bc_t *self_obj, size_t n_args, size_t n_kw, m
 }
 
 
-mp_map_elem_t trees_locals_dict_table[3];
+mp_map_elem_t trees_locals_dict_table[4];
 STATIC MP_DEFINE_CONST_DICT(trees_locals_dict, trees_locals_dict_table);
 
 // This is the entry point and is called when the module is imported
@@ -152,7 +160,7 @@ mp_obj_t mpy_init(mp_obj_fun_bc_t *self, size_t n_args, size_t n_kw, mp_obj_t *a
     // This must be first, it sets up the globals dict and other things
     MP_DYNRUNTIME_INIT_ENTRY
 
-    mp_store_global(MP_QSTR_open, MP_OBJ_FROM_PTR(&builder_new_obj));
+    mp_store_global(MP_QSTR_new, MP_OBJ_FROM_PTR(&builder_new_obj));
 
     trees_builder_type.base.type = (void*)&mp_fun_table.type_type;
     trees_builder_type.flags = MP_TYPE_FLAG_ITER_IS_CUSTOM;
@@ -161,8 +169,9 @@ mp_obj_t mpy_init(mp_obj_fun_bc_t *self, size_t n_args, size_t n_kw, mp_obj_t *a
     trees_locals_dict_table[0] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR_predict), MP_DYNRUNTIME_MAKE_FUNCTION(predict) };
     trees_locals_dict_table[1] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR_addnode), MP_OBJ_FROM_PTR(&builder_addnode_obj) };
     trees_locals_dict_table[2] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR_addroot), MP_OBJ_FROM_PTR(&builder_addroot_obj) };
-    MP_OBJ_TYPE_SET_SLOT(&trees_builder_type, locals_dict, (void*)&trees_locals_dict, 3);
+    trees_locals_dict_table[3] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR___del__), MP_OBJ_FROM_PTR(&builder_del_obj) };
 
+    MP_OBJ_TYPE_SET_SLOT(&trees_builder_type, locals_dict, (void*)&trees_locals_dict, 4);
 
     // This must be last, it restores the globals dict
     MP_DYNRUNTIME_INIT_EXIT

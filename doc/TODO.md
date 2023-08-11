@@ -20,7 +20,6 @@
 
 emtrees cleanup
 
-- Implement a teardown/destroy. `__del__`
 - Add some basic automated testing
 
 emlneighbors cleanup
