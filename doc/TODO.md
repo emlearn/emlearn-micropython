@@ -20,17 +20,17 @@
 
 emtrees cleanup
 
-- Make the API be OOP. See `features4` example
-- Implement a teardown/destroy
-- Include load_model function with native module. See `features2` example
+- Implement a teardown/destroy. `__del__`
 - Add some basic automated testing
 
 emlneighbors cleanup
 
+- Add a release step.
 - Make API be OOP
 - Implement teardown/destroy
 - Add automated test
-- Ada a `load_model` function to module
+- MAYBE. Add a `load_model` function to module
+
 
 sequence. On-device training demo
 

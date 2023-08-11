@@ -4,11 +4,11 @@ import emltrees
 import array
 
 # create
-builder = emltrees.open(5, 30)
+model = emltrees.open(5, 30)
 
 # Load a CSV file with the model
 with open('xor_model.csv', 'r') as f:
-    emltrees.load_model(builder, f)
+    emltrees.load_model(model, f)
 
 # run it
 examples = [
@@ -19,6 +19,6 @@ examples = [
 ]
 
 for ex in examples: 
-    result = emltrees.predict(builder, ex)
+    result = model.predict(ex)
     print(ex, result)
 

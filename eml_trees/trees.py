@@ -9,13 +9,13 @@ def load_model(builder, f):
         kind = tok[0]
         if kind == 'r':
             root = int(tok[1])
-            addroot(builder, root)
+            builder.addroot(root)
         elif kind == 'n':
             feature = int(tok[1])
             value = float(tok[2])
             left = int(tok[3])
             right = int(tok[4])
-            addnode(builder, left, right, feature, value)
+            builder.addnode(left, right, feature, value)
         else:        
             # unknown value
             pass

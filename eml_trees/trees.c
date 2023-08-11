@@ -30,7 +30,7 @@ typedef struct _mp_obj_trees_builder_t {
     EmlTreesBuilder builder;
 } mp_obj_trees_builder_t;
 
-STATIC const mp_obj_type_t trees_builder_type;
+mp_obj_full_type_t trees_builder_type;
 
 // Create a new tree builder
 STATIC mp_obj_t builder_new(mp_obj_t trees_obj, mp_obj_t nodes_obj) {
@@ -118,18 +118,6 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(builder_addroot_obj, 2, 2, builder_ad
 
 
 
-STATIC mp_obj_t factorial_func(mp_obj_t x_obj) {
-    // Extract the integer from the MicroPython input object
-    mp_int_t x = mp_obj_get_int(x_obj);
- 
-    const int result = x + 1;
-    return mp_obj_new_int(result);
- }
-STATIC MP_DEFINE_CONST_FUN_OBJ_1(factorial_obj, factorial_func);
-
-
-// FIXME: function for creating a model instance
-// FIXME: function for adding decision nodes
 
 // Takes a float array
 STATIC mp_obj_t predict(mp_obj_fun_bc_t *self_obj, size_t n_args, size_t n_kw, mp_obj_t *args) {
@@ -156,19 +144,25 @@ STATIC mp_obj_t predict(mp_obj_fun_bc_t *self_obj, size_t n_args, size_t n_kw, m
 }
 
 
+mp_map_elem_t trees_locals_dict_table[3];
+STATIC MP_DEFINE_CONST_DICT(trees_locals_dict, trees_locals_dict_table);
+
 // This is the entry point and is called when the module is imported
 mp_obj_t mpy_init(mp_obj_fun_bc_t *self, size_t n_args, size_t n_kw, mp_obj_t *args) {
     // This must be first, it sets up the globals dict and other things
     MP_DYNRUNTIME_INIT_ENTRY
 
-
-    mp_store_global(MP_QSTR_factorial, MP_OBJ_FROM_PTR(&factorial_obj));
-
-    mp_store_global(MP_QSTR_predict, MP_DYNRUNTIME_MAKE_FUNCTION(predict));
-    mp_store_global(MP_QSTR_addnode, MP_OBJ_FROM_PTR(&builder_addnode_obj));
-    mp_store_global(MP_QSTR_addroot, MP_OBJ_FROM_PTR(&builder_addroot_obj));
-
     mp_store_global(MP_QSTR_open, MP_OBJ_FROM_PTR(&builder_new_obj));
+
+    trees_builder_type.base.type = (void*)&mp_fun_table.type_type;
+    trees_builder_type.flags = MP_TYPE_FLAG_ITER_IS_CUSTOM;
+    trees_builder_type.name = MP_QSTR_emltrees;
+    // methods
+    trees_locals_dict_table[0] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR_predict), MP_DYNRUNTIME_MAKE_FUNCTION(predict) };
+    trees_locals_dict_table[1] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR_addnode), MP_OBJ_FROM_PTR(&builder_addnode_obj) };
+    trees_locals_dict_table[2] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR_addroot), MP_OBJ_FROM_PTR(&builder_addroot_obj) };
+    MP_OBJ_TYPE_SET_SLOT(&trees_builder_type, locals_dict, (void*)&trees_locals_dict, 3);
+
 
     // This must be last, it restores the globals dict
     MP_DYNRUNTIME_INIT_EXIT
