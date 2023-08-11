@@ -18,10 +18,6 @@
 
 # TODO
 
-emtrees cleanup
-
-- Add some basic automated testing
-
 emlneighbors cleanup
 
 - Add a release step.
