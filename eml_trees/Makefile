@@ -4,17 +4,21 @@ MPY_DIR = ../../micropython
 # Architecture to build for (x86, x64, armv6m, armv7m, xtensa, xtensawin)
 ARCH = x64
 
+# The ABI version for .mpy files
+MPY_ABI_VERSION := 6.1
+
 # Location of emlearn library
 EMLEARN_DIR := $(shell python3 -c "import emlearn; print(emlearn.includedir)")
 
-DIST_DIR := ../dist
+
+DIST_DIR := ../dist/$(ARCH)_$(MPY_ABI_VERSION)
 
 # Name of module
 # NOTE: cannot contain _ - functions do not register on the module then?
 MOD = emltrees
 
 # Source files (.c or .py)
-SRC = trees.c
+SRC = trees.c trees.py
 
 # Stuff to make soft-float work
 SOFTFP_O := _arm_cmpsf2.o lesf2.o _arm_fixsfsi.o fixsfsi.o eqsf2.o gesf2.o
@@ -32,7 +36,7 @@ ifeq ($(SOFTFP_ENABLE), 1)
 endif
 
 # Releases
-DIST_FILE = $(DIST_DIR)/$(MOD)_$(ARCH).mpy
+DIST_FILE = $(DIST_DIR)/$(MOD).mpy
 $(DIST_DIR):
 	mkdir -p $@
 
