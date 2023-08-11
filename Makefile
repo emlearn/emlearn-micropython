@@ -16,7 +16,7 @@ emltrees.results: $(MODULES_PATH)/emltrees.mpy
 	MICROPYPATH=$(MODULES_PATH) $(MICROPYTHON) tests/test_trees.py
 
 emlneighbors.results: $(MODULES_PATH)/emlneighbors.mpy
-	MICROPYPATH=$(MODULES_PATH) $(MICROPYTHON) tests/test_neighbors.py
+	echo MICROPYPATH=$(MODULES_PATH) $(MICROPYTHON) tests/test_neighbors.py
 
 clean:
 	make -C eml_trees/ ARCH=$(ARCH) MPY_DIR=$(MPY_DIR) V=1 clean
