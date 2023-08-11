@@ -20,12 +20,10 @@
 
 emlneighbors cleanup
 
-- Add a release step.
 - Make API be OOP
 - Implement teardown/destroy
 - Add automated test
-- MAYBE. Add a `load_model` function to module
-
+- Fix artifact not present for x64
 
 sequence. On-device training demo
 
