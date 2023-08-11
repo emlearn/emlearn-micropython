@@ -13,4 +13,10 @@ $(EMLTREES_MPY):
 emltrees.results: $(EMLTREES_MPY) tests/out
 	MICROPYPATH=$(MODULES_PATH) $(MICROPYTHON) tests/test_trees.py
 
+clean:
+	make -C eml_trees/ ARCH=$(ARCH) MPY_DIR=$(MPY_DIR) V=1 clean
+	rm -rf ./dist
+
 check: emltrees.results
+
+dist: $(EMLTREES_MPY)
