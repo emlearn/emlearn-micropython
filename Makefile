@@ -34,7 +34,7 @@ RELEASE_NAME = emlearn-micropython-$(VERSION)
 release:
 	mkdir $(RELEASE_NAME)
 	cp -r dist/* $(RELEASE_NAME) 
-	zip $(RELEASE_NAME).zip $(RELEASE_NAME)
+	zip -r $(RELEASE_NAME).zip $(RELEASE_NAME)
 	#cp $(RELEASE_NAME).zip emlearn-micropython-latest.zip
 
 check: emltrees.results emlneighbors.results
