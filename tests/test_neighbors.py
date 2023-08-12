@@ -1,6 +1,29 @@
 
-import array
 import emlneighbors
+
+import array
+import gc
+
+
+def test_neighbors_del():
+    """
+    Deleting the model should free all the memory
+    """
+    gc.enable()
+    gc.collect()
+    before_new = gc.mem_alloc()
+
+    model = emlneighbors.new(30, 5, 1)
+    after_new = gc.mem_alloc()
+    added = after_new - before_new
+
+    assert added > 100, added
+    assert added < 1000, added
+    del model
+    gc.collect()
+    after_del = gc.mem_alloc()
+    diff = after_del - before_new
+    assert diff == 0, diff
 
 def test_neighbors_trivial():
 
@@ -26,3 +49,4 @@ def test_neighbors_trivial():
 
 
 test_neighbors_trivial()
+test_neighbors_del()
