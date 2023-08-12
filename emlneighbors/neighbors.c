@@ -2,7 +2,9 @@
 #include "py/dynruntime.h"
 
 #define EML_LOG_ENABLE 0
+#if EML_LOG_ENABLE
 #define EML_LOG_PRINTF(...) mp_printf(&mp_plat_print, __VA_ARGS__)
+#endif
 #define EML_NEIGHBORS_LOG_LEVEL 3
 
 #include <eml_neighbors.h>
