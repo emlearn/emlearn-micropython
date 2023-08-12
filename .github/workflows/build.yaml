@@ -24,7 +24,7 @@ jobs:
       working-directory: micropython
       run: source tools/ci.sh && ci_rp2_setup
     - name: Build module armv6m
-      run: make dist clean ARCH=armv6m V=1 MPY_DIR=./micropython
+      run: make dist ARCH=armv6m V=1 MPY_DIR=./micropython
     - name: Build module armv7m
       run: make dist ARCH=armv7m V=1 MPY_DIR=./micropython
     - name: Build module armv6m
