@@ -10,7 +10,7 @@ MPY_ABI_VERSION := 6.1
 # Location of emlearn library
 EMLEARN_DIR := $(shell python3 -c "import emlearn; print(emlearn.includedir)")
 
-DIST_DIR := ../dist/$(ARCH)_$(MPY_ABI_VERSION)
+DIST_DIR := ../../dist/$(ARCH)_$(MPY_ABI_VERSION)
 
 # Name of module
 # NOTE: cannot contain _ - functions do not register on the module then?

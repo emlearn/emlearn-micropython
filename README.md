@@ -19,6 +19,7 @@ without having to touch any C code.
 - Classification and on-device learning with [K-Nearest Neighbors (KNN)](https://en.wikipedia.org/wiki/K-nearest_neighbors_algorithm)
 - Installable as a MicroPython native module. No rebuild/flashing needed
 - Models can be loaded at runtime from a .CSV file in disk/flash
+- Highly efficient. Inference times down to 100 microseconds, RAM usage <2 kB, FLASH usage <2 kB
 
 ## Prerequisites
 
