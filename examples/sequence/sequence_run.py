@@ -1,6 +1,8 @@
 
 import time
+import array
 from machine import Pin
+
 
 
 class Button():
@@ -15,7 +17,7 @@ class Button():
         
     def read(self):
        
-        t = time.time()
+        t = time.ticks_ms()
         pressed = self.pin.value() == 0 # active low
         
         if self.start_press is None and pressed:
@@ -32,24 +34,31 @@ class Button():
     
         return None
 
-button = Button(pin=Pin(24, Pin.IN, Pin.PULL_UP))
+
+# Configuration
+SEQUENCE_LENGTH = 6
+TRAINING_SEQUENCES = 3
+
 
 PREDICT_MODE = 11
 TRAIN_MODE = 12
-
 mode = PREDICT_MODE
+
 last_press = None
 times = []
-SEQUENCE_LENGTH = 6
-FEATURES_LENGTH = SEQUENCE_LENGTH-1 # n-1 distances between events in sequence
-TRAINING_SEQUENCES = 3
+button = Button(pin=Pin(24, Pin.IN, Pin.PULL_UP))
+model = None
 
-def make_model():
-    m = emlneighbors.new(FEATURES_LENGTH, TRAINING_SEQUENCES)
-    return m
+FEATURES_LENGTH = SEQUENCE_LENGTH-1 # n-1 distances between events in sequence
 
 import emlneighbors
-model = make_model()
+def reset_model():
+    global model
+    global training_items
+    model = emlneighbors.new(TRAINING_SEQUENCES, FEATURES_LENGTH, 3)
+    training_items = 0
+
+reset_model()
 
 
 while True:
@@ -61,7 +70,7 @@ while True:
         # switch mode
         if mode == PREDICT_MODE:
             mode = TRAIN_MODE
-            model = make_model() # forget old
+            reset_model() # forget old
         else:
             mode = PREDICT_MODE
         print('switch-mode-to', t, mode) 
@@ -72,7 +81,7 @@ while True:
             last_press = t
         else:
             duration = (t - last_press)
-            print('distance', t, button_event)
+            print('distance', t, mode, button_event, len(times))
             
  
                 
@@ -88,16 +97,24 @@ while True:
                     f = array.array('h', times)
                     out = model.predict(f)
                     # FIXME: compute distances instead
-                    print('ttt', times)
+                    print('predict', t, out, times)
                     
             else: # TRAIN_MODE
                 
                 times.append(duration)
-                if len(times) == FEATURES_LENGTH:
+                if len(times) == SEQUENCE_LENGTH:
                     # add this example
+                    times = times[1:]
+                    print('train-add-item', t, training_items, times)                
                     f = array.array('h', times)
-                    model.add_item()
+                    model.additem(f, 0)
+                    training_items += 1
                     times = []
+                    
+                    # TODO: check that variance is not too high
+                    if training_items == TRAINING_SEQUENCES:
+                        mode = PREDICT_MODE
+                        print('training-done', t) 
                 else:
                     # wait for sequence to complete
                     pass

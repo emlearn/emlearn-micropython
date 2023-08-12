@@ -20,14 +20,12 @@
 
 sequence. On-device training demo
 
-- Add logic for entering training mode. Long-press. Use a fixed number of samples. 5?
-- Update dataset. Sanity check performance
-- Implement the prediction mode on host
-- Test it out on host
+- Add methods to get distances/labels
 - Test it out on device
 - Make demo video
 - Add some documentation / README
 
+Examples. Add a novelty detection example?
 
 Benchmarks
 
