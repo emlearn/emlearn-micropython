@@ -18,12 +18,6 @@
 
 # TODO
 
-emlneighbors cleanup
-
-- Make API be OOP
-- Implement teardown/destroy
-- Fix artifact not present for x64
-
 sequence. On-device training demo
 
 - Add logic for entering training mode. Long-press. Use a fixed number of samples. 5?

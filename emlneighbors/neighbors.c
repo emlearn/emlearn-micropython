@@ -31,7 +31,7 @@ typedef struct _mp_obj_neighbors_model_t {
     EmlNeighborsDistanceItem *distances;
 } mp_obj_neighbors_model_t;
 
-STATIC const mp_obj_type_t neighbors_model_type;
+mp_obj_full_type_t neighbors_model_type;
 
 // Create a new instace
 STATIC mp_obj_t neighbors_model_new(mp_obj_t items_obj, mp_obj_t features_obj, mp_obj_t neighbors_obj) {
@@ -64,7 +64,21 @@ STATIC mp_obj_t neighbors_model_new(mp_obj_t items_obj, mp_obj_t features_obj, m
 STATIC MP_DEFINE_CONST_FUN_OBJ_3(neighbors_model_new_obj, neighbors_model_new);
 
 
-// FIXME: function for freeing a builder
+// Delete an instance
+STATIC mp_obj_t neighbors_model_del(mp_obj_t self_obj) {
+
+    mp_obj_neighbors_model_t *o = MP_OBJ_TO_PTR(self_obj);
+    EmlNeighborsModel *self = &o->model;   
+
+    // free allocated memory
+    m_free(self->data);
+    m_free(self->labels);
+    m_free(o->distances);
+
+    return mp_const_none;
+}
+// Define a Python reference to the function above
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(neighbors_model_del_obj, neighbors_model_del);
 
 
 // Add data to the model
@@ -97,7 +111,7 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(neighbors_model_additem_obj, 3, 3, ne
 
 
 // Takes a integer array
-STATIC mp_obj_t neighbors_predict(mp_obj_fun_bc_t *self_obj,
+STATIC mp_obj_t neighbors_model_predict(mp_obj_fun_bc_t *self_obj,
         size_t n_args, size_t n_kw, mp_obj_t *args) {
     // Check number of arguments is valid
     mp_arg_check_num(n_args, n_kw, 2, 2, false);
@@ -130,16 +144,25 @@ STATIC mp_obj_t neighbors_predict(mp_obj_fun_bc_t *self_obj,
     return mp_obj_new_int(out);
 }
 
+mp_map_elem_t neighbors_model_locals_dict_table[3];
+STATIC MP_DEFINE_CONST_DICT(neighbors_model_locals_dict, neighbors_model_locals_dict_table);
 
 // This is the entry point and is called when the module is imported
 mp_obj_t mpy_init(mp_obj_fun_bc_t *self, size_t n_args, size_t n_kw, mp_obj_t *args) {
     // This must be first, it sets up the globals dict and other things
     MP_DYNRUNTIME_INIT_ENTRY
 
-    mp_store_global(MP_QSTR_open, MP_OBJ_FROM_PTR(&neighbors_model_new_obj));
-    mp_store_global(MP_QSTR_predict, MP_DYNRUNTIME_MAKE_FUNCTION(neighbors_predict));
-    mp_store_global(MP_QSTR_additem, MP_OBJ_FROM_PTR(&neighbors_model_additem_obj));
+    mp_store_global(MP_QSTR_new, MP_OBJ_FROM_PTR(&neighbors_model_new_obj));
 
+    neighbors_model_type.base.type = (void*)&mp_fun_table.type_type;
+    neighbors_model_type.flags = MP_TYPE_FLAG_ITER_IS_CUSTOM;
+    neighbors_model_type.name = MP_QSTR_emlneighbors;
+    // methods
+    neighbors_model_locals_dict_table[0] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR_predict), MP_DYNRUNTIME_MAKE_FUNCTION(neighbors_model_predict) };
+    neighbors_model_locals_dict_table[1] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR_additem), MP_OBJ_FROM_PTR(&neighbors_model_additem_obj) };
+    neighbors_model_locals_dict_table[2] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR___del__), MP_OBJ_FROM_PTR(&neighbors_model_del_obj) };
+
+    MP_OBJ_TYPE_SET_SLOT(&neighbors_model_type, locals_dict, (void*)&neighbors_model_locals_dict, 3);
 
     // This must be last, it restores the globals dict
     MP_DYNRUNTIME_INIT_EXIT
