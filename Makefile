@@ -22,7 +22,7 @@ emltrees.results: $(MODULES_PATH)/emltrees.mpy
 emlneighbors.results: $(MODULES_PATH)/emlneighbors.mpy
 	MICROPYPATH=$(MODULES_PATH) $(MICROPYTHON) tests/test_neighbors.py
 
-.PHONY: dist clean
+.PHONY: clean
 
 clean:
 	make -C eml_trees/ ARCH=$(ARCH) MPY_DIR=$(MPY_DIR_ABS) V=1 clean
@@ -30,8 +30,10 @@ clean:
 	rm -rf ./dist
 
 RELEASE_NAME = emlearn-micropython-$(VERSION)
-release: dist
-	cp -r dist $(RELEASE_NAME) 
+# NOTE: does not depend on dist.
+release:
+	mkdir $(RELEASE_NAME)
+	cp -r dist/* $(RELEASE_NAME) 
 	zip $(RELEASE_NAME).zip $(RELEASE_NAME)
 	#cp $(RELEASE_NAME).zip emlearn-micropython-latest.zip
 
