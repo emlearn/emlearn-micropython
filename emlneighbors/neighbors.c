@@ -2,7 +2,9 @@
 #include "py/dynruntime.h"
 
 #define EML_LOG_ENABLE 0
+#define EML_LOG_PRINTF(...) mp_printf(&mp_plat_print, __VA_ARGS__)
 #define EML_NEIGHBORS_LOG_LEVEL 3
+
 #include <eml_neighbors.h>
 
 #include <string.h>
@@ -111,7 +113,7 @@ STATIC mp_obj_t neighbors_predict(mp_obj_fun_bc_t *self_obj,
     const int16_t *features = bufinfo.buf;
     const int n_features = bufinfo.len / sizeof(*features);
 
-    mp_printf(&mp_plat_print, "neighbors-model-additem features=%d items=%d\n",
+    mp_printf(&mp_plat_print, "neighbors-model-predict features=%d items=%d\n",
         n_features, self->n_items);
     // call model
     int16_t out = -1;
