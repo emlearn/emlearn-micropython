@@ -35,8 +35,11 @@ jobs:
     - name: Build module xtensawin
       run: source micropython/esp-idf/export.sh && pip install emlearn && make dist ARCH=xtensawin V=1 MPY_DIR=./micropython
     - name: Archive production artifacts
+      run: make release
+    - name: Archive production artifacts
       uses: actions/upload-artifact@v3
       with:
         name: modules
         path: |
-          dist
+          emlearn-micropython-*.zip
+
