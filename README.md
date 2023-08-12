@@ -4,8 +4,14 @@
 
 [Micropython](https://micropython.org) integration for the [emlearn](https://emlearn.org) Machine Learning library for microcontrollers.
 
-The goal is to enable applications to run ML inference on the microcontroller,
+It enables MicroPython applications to run efficient Machine Learning models on microcontroller,
 without having to touch any C code.
+
+> scikit-learn for Microcontrollers
+
+This is a [TinyML](https://www.tinyml.org/) library,
+particularly well suited for low-compexity and low-power classification tasks.
+It can be combined with feature preprocessing, including neural networks to address more complex tasks.
 
 ## Status
 **Minimally useful**
