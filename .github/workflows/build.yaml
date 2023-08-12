@@ -27,8 +27,6 @@ jobs:
       run: make dist ARCH=armv6m V=1 MPY_DIR=./micropython
     - name: Build module armv7m
       run: make dist ARCH=armv7m V=1 MPY_DIR=./micropython
-    - name: Build module armv6m
-      run: make distARCH=armv6m V=1 MPY_DIR=./micropython
     - name: Build module armv7emsp
       run: make dist ARCH=armv7emsp V=1 MPY_DIR=./micropython
     - name: Setup MicroPython ESP32
