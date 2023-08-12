@@ -22,7 +22,6 @@ emlneighbors cleanup
 
 - Make API be OOP
 - Implement teardown/destroy
-- Add automated test
 - Fix artifact not present for x64
 
 sequence. On-device training demo
