@@ -47,6 +47,31 @@ def test_neighbors_trivial():
     out = model.predict(data[0][0])
     assert out == 0, out
 
+def test_neighbors_get_results():
+
+    model = emlneighbors.new(100, 3, 1)
+
+    data = [
+        (array.array('h', [-100, -100, -2]), 0),
+        (array.array('h', [-100, -100, -2]), 0),
+        (array.array('h', [100, 100, 2]), 1),
+        (array.array('h', [100, 100, 2]), 1),
+    ]
+    for x, y in data:
+        model.additem(x, y)
+
+    f = data[1][0]
+    out = model.predict(f)
+    assert out == 0, out
+
+    for i in range(0, 4):
+        data_item, distance, label = model.getresult(i)
+        assert distance in (0, 282)
+        assert label in (0, 1)
+
+    assert model.getresult(0)[2] == 0
+    assert model.getresult(3)[2] == 1
 
 test_neighbors_trivial()
 test_neighbors_del()
+test_neighbors_get_results()

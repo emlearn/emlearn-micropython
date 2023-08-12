@@ -140,10 +140,37 @@ STATIC mp_obj_t neighbors_model_predict(mp_obj_fun_bc_t *self_obj,
     return mp_obj_new_int(out);
 }
 
-mp_map_elem_t neighbors_model_locals_dict_table[3];
+// Delete an instance
+STATIC mp_obj_t neighbors_model_get_result(mp_obj_t self_obj, mp_obj_t index_obj) {
+
+    mp_obj_neighbors_model_t *o = MP_OBJ_TO_PTR(self_obj);
+    EmlNeighborsModel *self = &o->model;
+
+    const mp_int_t index = mp_obj_get_int(index_obj);
+    if (index < 0 || index >= self->n_items) {
+        mp_raise_ValueError(MP_ERROR_TEXT("Index out of bounds"));
+    }
+
+    const EmlNeighborsDistanceItem *item = &o->distances[index];
+
+    mp_obj_tuple_t *tuple = MP_OBJ_TO_PTR(mp_obj_new_tuple(3, NULL));
+    tuple->items[0] = mp_obj_new_int(item->index);
+    tuple->items[1] = mp_obj_new_int(item->distance);
+    tuple->items[2] = mp_obj_new_int(self->labels[item->index]);
+
+    return tuple;
+}
+// Define a Python reference to the function above
+STATIC MP_DEFINE_CONST_FUN_OBJ_2(neighbors_model_get_result_obj, neighbors_model_get_result);
+
+
+
+
+// Module setup
+mp_map_elem_t neighbors_model_locals_dict_table[4];
 STATIC MP_DEFINE_CONST_DICT(neighbors_model_locals_dict, neighbors_model_locals_dict_table);
 
-// This is the entry point and is called when the module is imported
+// Module setup entrypoint
 mp_obj_t mpy_init(mp_obj_fun_bc_t *self, size_t n_args, size_t n_kw, mp_obj_t *args) {
     // This must be first, it sets up the globals dict and other things
     MP_DYNRUNTIME_INIT_ENTRY
@@ -157,8 +184,9 @@ mp_obj_t mpy_init(mp_obj_fun_bc_t *self, size_t n_args, size_t n_kw, mp_obj_t *a
     neighbors_model_locals_dict_table[0] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR_predict), MP_DYNRUNTIME_MAKE_FUNCTION(neighbors_model_predict) };
     neighbors_model_locals_dict_table[1] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR_additem), MP_OBJ_FROM_PTR(&neighbors_model_additem_obj) };
     neighbors_model_locals_dict_table[2] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR___del__), MP_OBJ_FROM_PTR(&neighbors_model_del_obj) };
+    neighbors_model_locals_dict_table[3] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR_getresult), MP_OBJ_FROM_PTR(&neighbors_model_get_result_obj) };
 
-    MP_OBJ_TYPE_SET_SLOT(&neighbors_model_type, locals_dict, (void*)&neighbors_model_locals_dict, 3);
+    MP_OBJ_TYPE_SET_SLOT(&neighbors_model_type, locals_dict, (void*)&neighbors_model_locals_dict, 4);
 
     // This must be last, it restores the globals dict
     MP_DYNRUNTIME_INIT_EXIT
