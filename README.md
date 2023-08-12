@@ -10,19 +10,22 @@ without having to touch any C code.
 ## Status
 **Minimally useful**
 
-- Can perform classification with [RandomForest](https://en.wikipedia.org/wiki/Random_forest)/DecisionTree models
+- Has been tested on `armv6m` (RP2040) and `x64` (Unix port) 
+- Pre-built modules are available for the most common architectures/devices
+
+## Features
+
+- Classification with [RandomForest](https://en.wikipedia.org/wiki/Random_forest)/DecisionTree models
+- Classification and on-device learning with [K-Nearest Neighbors (KNN)](https://en.wikipedia.org/wiki/K-nearest_neighbors_algorithm)
 - Installable as a MicroPython native module. No rebuild/flashing needed
 - Models can be loaded at runtime from a .CSV file in disk/flash
-- Pre-built modules are available for the most common architectures/devices
-- Has been tested on `armv6m` (RP2040) and `x64` (Unix port)
-
 
 ## Prerequisites
 
 Minimally you will need
 
 - Python 3.10+ on host
-- MicroPython running onto your device
+- MicroPython 1.20+ running onto your device
 
 #### Download repository
 
@@ -57,7 +60,8 @@ Download from [releases](https://github.com/emlearn/emlearn-micropython/releases
 
 Copy the .mpy file for the correct `ARCH` to your device.
 ```
-mpremote cp emltrees-$ARCH.mpy :emltrees.mpy
+mpremote cp emltrees.mpy :emltrees.mpy
+mpremote cp emlneighbors.mpy :emlneighbors.mpy
 ```
 
 NOTE: If there is no ready-made build for your device/architecture,
@@ -65,7 +69,7 @@ then you will need to build the .mpy module yourself.
 
 ## Usage
 
-NOTE: Make sure to install the module first.
+NOTE: Make sure to install the module first (see above)
 
 Train a model with scikit-learn
 ```
@@ -115,24 +119,28 @@ See [MicroPython: Building native modules](https://docs.micropython.org/en/lates
 We assume that micropython is installed in the same place as this repository.
 If using another location, adjust `MPY_DIR` accordingly.
 
+NOTE: As of August 2023, an out-of-tree patch is needed for MicroPython.
+[micropython#12123: mpy_ld.py: Support complex RO sections](https://github.com/micropython/micropython/pull/12123).
+This will hopefully be fixed in the coming months.
 
 #### Build
 
 Build the .mpy native module
 ```
-make -C eml_trees/ ARCH=x64 MPY_DIR=../../micropython
+make dist ARCH=armv6m MPY_DIR=../micropython
 ```
 
 Install it on device
 ```
-mpremote cp emltrees/emltrees.mpy :emltrees.mpy
+mpremote cp dist/armv6m*/emltrees.mpy :emltrees.mpy
 ```
 
 #### Run tests
 
-`TODO: implement and document`
-
-
+To build and run tests on host
+```
+make check
+```
 
 ## Citations
 
