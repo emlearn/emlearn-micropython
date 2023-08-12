@@ -98,7 +98,6 @@ STATIC mp_obj_t neighbors_model_additem(size_t n_args, const mp_obj_t *args) {
 
     const int16_t label = mp_obj_get_int(args[2]);
 
-    mp_printf(&mp_plat_print, "neighbors-model-additem features=%d label=%d\n", n_features, label);
     EmlError err = eml_neighbors_add_item(self, features, n_features, label);
     if (err != EmlOk) {
         mp_raise_ValueError(MP_ERROR_TEXT("additem failed"));
@@ -125,12 +124,9 @@ STATIC mp_obj_t neighbors_model_predict(mp_obj_fun_bc_t *self_obj,
     if (bufinfo.typecode != 'h') {
         mp_raise_ValueError(MP_ERROR_TEXT("expecting int16 array"));
     }
-
     const int16_t *features = bufinfo.buf;
     const int n_features = bufinfo.len / sizeof(*features);
 
-    mp_printf(&mp_plat_print, "neighbors-model-predict features=%d items=%d\n",
-        n_features, self->n_items);
     // call model
     int16_t out = -1;
     const EmlError err = eml_neighbors_predict(self,
