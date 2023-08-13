@@ -21,9 +21,7 @@
 sequence. On-device training demo
 
 - Set a threshold after training
-- Check threshold, unlock if below
 - Set mode LED and lock output 
-- Return to checking state after unlock
 - Test with a piezo trigger
 - Make demo video
 - Make state diagram
