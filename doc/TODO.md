@@ -20,16 +20,14 @@
 
 sequence. On-device training demo
 
-- Make core logic into a class
-- Add some tests
-- Set LED 
 - Set a threshold after training
-- Check threshold
-- Set output 
+- Check threshold, unlock if below
+- Set mode LED and lock output 
 - Return to checking state after unlock
-- Set an out pin based on detection 
-- Test it out on device
+- Test with a piezo trigger
 - Make demo video
+- Make state diagram
+- Make timing diagram. Highlight distances/features
 - Add some documentation / README
 
 Examples. Add a novelty detection example?
