@@ -37,12 +37,13 @@ class Button():
 
 # Configuration
 SEQUENCE_LENGTH = 6
-TRAINING_SEQUENCES = 3
+TRAINING_SEQUENCES = 2
 
 
 PREDICT_MODE = 11
 TRAIN_MODE = 12
-mode = PREDICT_MODE
+mode = None
+mode_switch_time = time.ticks_ms()
 
 last_press = None
 times = []
@@ -55,36 +56,74 @@ import emlneighbors
 def reset_model():
     global model
     global training_items
-    model = emlneighbors.new(TRAINING_SEQUENCES, FEATURES_LENGTH, 3)
+    model = emlneighbors.new(TRAINING_SEQUENCES, FEATURES_LENGTH, TRAINING_SEQUENCES)
     training_items = 0
 
+def switch_mode(target):
+    global times
+    global mode_switch_time
+    global last_press
+    global mode
+    t = time.ticks_ms()
+    print('switch-mode-to', t, target)
+    mode_switch_time = t
+    times = []
+    #last_press = None
+    mode = target
+
 reset_model()
+switch_mode(PREDICT_MODE)
+
+def get_distances(features):
+    
+    # Run inference
+    _ = model.predict(features)
+    
+    # Get distances for all
+    distances = []
+    for i in range(TRAINING_SEQUENCES):
+        data_item, distance, label = model.getresult(i)
+        distances.append(distance)
+        
+    return distances
+
+
+
+def median(lst):
+    n = len(lst)
+    s = sorted(lst)
+    return (s[n//2-1]/2.0+s[n//2]/2.0, s[n//2])[n % 2] if n else None
 
 
 while True:
 
     button_event = button.read()
     t = time.ticks_ms()
-    
+ 
     if button_event == Button.LONG_PRESS:
         # switch mode
         if mode == PREDICT_MODE:
-            mode = TRAIN_MODE
+            switch_mode(TRAIN_MODE)
             reset_model() # forget old
+            
         else:
-            mode = PREDICT_MODE
-        print('switch-mode-to', t, mode) 
+            switch_mode(PREDICT_MODE)       
+        
+        if last_press is None:
+            last_press = t
         
     elif button_event == Button.SHORT_PRESS:
+        
+        if t - mode_switch_time < 400:
+            # ignore. Likely duplicate from transition
+            continue
         
         if last_press is None:
             last_press = t
         else:
             duration = (t - last_press)
             print('distance', t, mode, button_event, len(times))
-            
- 
-                
+                        
             if mode == PREDICT_MODE:
                 
                 # shift current input sequence one over
@@ -95,9 +134,8 @@ while True:
                 if len(times) == FEATURES_LENGTH:
                     # check it
                     f = array.array('h', times)
-                    out = model.predict(f)
-                    # FIXME: compute distances instead
-                    print('predict', t, out, times)
+                    distances = get_distances(f)
+                    print('predict', t, times, distances)
                     
             else: # TRAIN_MODE
                 
@@ -113,10 +151,11 @@ while True:
                     
                     # TODO: check that variance is not too high
                     if training_items == TRAINING_SEQUENCES:
-                        mode = PREDICT_MODE
-                        print('training-done', t) 
+                        switch_mode(PREDICT_MODE)
+                        train_distances = get_distances(f)
+                        print('training-done', t, train_distances)
                 else:
-                    # wait for sequence to complete
+                    # wait for input sequence to complete
                     pass
             
             last_press = t

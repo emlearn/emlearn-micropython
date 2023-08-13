@@ -20,7 +20,14 @@
 
 sequence. On-device training demo
 
-- Add methods to get distances/labels
+- Make core logic into a class
+- Add some tests
+- Set LED 
+- Set a threshold after training
+- Check threshold
+- Set output 
+- Return to checking state after unlock
+- Set an out pin based on detection 
 - Test it out on device
 - Make demo video
 - Add some documentation / README
