@@ -17,12 +17,17 @@ def file_exists(filename):
 
 class SequenceLock():
     
-    def __init__(self, sequence_length=6, model_path=None, ticks=-1):
+    def __init__(self,
+        sequence_length=6,
+        model_path='sequence_model.py',
+        unlock_time=3000,
+        ticks=-1):
 
         # config
         self.sequence_length = sequence_length
         self.training_examples = 2
-        self.model_path = model_path        
+        self.model_path = model_path
+        self.unlock_time = unlock_time
 
         # state
         self.state = None
@@ -91,14 +96,20 @@ class SequenceLock():
     def _run_training_state(self, t, event):
         if event == MODE_SWITCH_EVENT:
             self._set_state(LOCKED_STATE, t)
+            return
 
         if event == TRIGGER_EVENT:
             if self.last_press is None:
                 self.last_press = t
                 return # ?
 
+            if (t - self.state_switch_time) < 400:
+                # Likely duplicate event from state transition. Ignore
+                return
+
             duration = (t - self.last_press)
             self.times.append(duration)
+            print(t, 'training-trigger', len(self.times), duration)
             
             if len(self.times) == self.sequence_length:
                 # add this example
@@ -139,12 +150,8 @@ class SequenceLock():
                 self.last_press = t
                 return
 
-            if (t - self.state_switch_time) < 400:
-                # Likely duplicate event from state transition. Ignore
-                return
-
             duration = (t - self.last_press)
-            print(t, 'distance', len(self.times))
+            print(t, 'locked-trigger', len(self.times), duration)
             
             features_length = self.sequence_length - 1
             # shift current input sequence one over
@@ -165,7 +172,7 @@ class SequenceLock():
             self.last_press = t
             
     def _run_unlocked_state(self, t, event):
-        if (t - self.state_switch_time) > 1000:
+        if (t - self.state_switch_time) > self.unlock_time:
             self._set_state(LOCKED_STATE, t)
         
         # NOTE: I/O of actually triggering unlocking is handled outside

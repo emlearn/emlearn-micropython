@@ -4,7 +4,6 @@ import array
 from machine import Pin
 
 
-
 class Button():
     
     SHORT_PRESS = 1
@@ -40,15 +39,17 @@ class Button():
 
 
 
-from sequence_lock import SequenceLock, TRIGGER_EVENT, MODE_SWITCH_EVENT
+from sequence_lock import SequenceLock, \
+     TRIGGER_EVENT, MODE_SWITCH_EVENT, \
+     TRAINING_STATE, UNLOCKED_STATE
 
 def main():
     # App logic setup
-    lock = SequenceLock(sequence_length=6)
+    lock = SequenceLock(sequence_length=6, unlock_time=10000)
 
     # I/O setup
     button = Button(pin=Pin(24, Pin.IN, Pin.PULL_UP))
-    mode_pin = Pin(23, Pin.OUT)
+    mode_pin = Pin(25, Pin.OUT)
     out_pin = Pin(22, Pin.OUT)
 
     # main loop
@@ -74,4 +75,4 @@ def main():
         # wait for next iteration
         time.sleep_ms(10)
 
-            
+main()
