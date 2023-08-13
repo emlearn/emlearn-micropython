@@ -98,14 +98,49 @@ STATIC mp_obj_t neighbors_model_additem(size_t n_args, const mp_obj_t *args) {
 
     const int16_t label = mp_obj_get_int(args[2]);
 
+    const int item_idx = self->n_items;
     EmlError err = eml_neighbors_add_item(self, features, n_features, label);
     if (err != EmlOk) {
         mp_raise_ValueError(MP_ERROR_TEXT("additem failed"));
     }
 
-    return mp_const_none;
+    return mp_obj_new_int(item_idx);
  }
 STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(neighbors_model_additem_obj, 3, 3, neighbors_model_additem);
+
+
+// Access data of an item
+STATIC mp_obj_t neighbors_model_get_item(mp_obj_t self_obj, mp_obj_t index_obj, mp_obj_t out_obj) {
+
+    mp_obj_neighbors_model_t *o = MP_OBJ_TO_PTR(self_obj);
+    EmlNeighborsModel *self = &o->model;
+
+    const mp_int_t index = mp_obj_get_int(index_obj);
+    if (index < 0 || index >= self->n_items) {
+        mp_raise_ValueError(MP_ERROR_TEXT("Index out of bounds"));
+    }
+
+    // Extract buffer pointer and verify typecode
+    mp_buffer_info_t bufinfo;
+    mp_get_buffer_raise(out_obj, &bufinfo, MP_BUFFER_RW);
+    if (bufinfo.typecode != 'h') {
+        mp_raise_ValueError(MP_ERROR_TEXT("expecting int16 array"));
+    }
+    int16_t *features = bufinfo.buf;
+    const int n_features = bufinfo.len / sizeof(*features);
+
+    if (n_features != self->n_features) {
+        mp_raise_ValueError(MP_ERROR_TEXT("Buffer is wrong size"));
+    }
+
+    const int16_t *item = self->data + (index*n_features);
+    memcpy(features, item, sizeof(int16_t)*n_features);
+
+    return mp_const_none;
+}
+// Define a Python reference to the function above
+STATIC MP_DEFINE_CONST_FUN_OBJ_3(neighbors_model_get_item_obj, neighbors_model_get_item);
+
 
 
 
@@ -140,7 +175,7 @@ STATIC mp_obj_t neighbors_model_predict(mp_obj_fun_bc_t *self_obj,
     return mp_obj_new_int(out);
 }
 
-// Delete an instance
+// Access details about prediction result
 STATIC mp_obj_t neighbors_model_get_result(mp_obj_t self_obj, mp_obj_t index_obj) {
 
     mp_obj_neighbors_model_t *o = MP_OBJ_TO_PTR(self_obj);
@@ -167,7 +202,7 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_2(neighbors_model_get_result_obj, neighbors_model
 
 
 // Module setup
-mp_map_elem_t neighbors_model_locals_dict_table[4];
+mp_map_elem_t neighbors_model_locals_dict_table[5];
 STATIC MP_DEFINE_CONST_DICT(neighbors_model_locals_dict, neighbors_model_locals_dict_table);
 
 // Module setup entrypoint
@@ -185,8 +220,9 @@ mp_obj_t mpy_init(mp_obj_fun_bc_t *self, size_t n_args, size_t n_kw, mp_obj_t *a
     neighbors_model_locals_dict_table[1] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR_additem), MP_OBJ_FROM_PTR(&neighbors_model_additem_obj) };
     neighbors_model_locals_dict_table[2] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR___del__), MP_OBJ_FROM_PTR(&neighbors_model_del_obj) };
     neighbors_model_locals_dict_table[3] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR_getresult), MP_OBJ_FROM_PTR(&neighbors_model_get_result_obj) };
+    neighbors_model_locals_dict_table[4] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR_getitem), MP_OBJ_FROM_PTR(&neighbors_model_get_item_obj) };
 
-    MP_OBJ_TYPE_SET_SLOT(&neighbors_model_type, locals_dict, (void*)&neighbors_model_locals_dict, 4);
+    MP_OBJ_TYPE_SET_SLOT(&neighbors_model_type, locals_dict, (void*)&neighbors_model_locals_dict, 5);
 
     // This must be last, it restores the globals dict
     MP_DYNRUNTIME_INIT_EXIT

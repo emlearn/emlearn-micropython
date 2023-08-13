@@ -32,6 +32,8 @@ def test_neighbors_trivial():
     k_neighbors = 2
     model = emlneighbors.new(n_items, n_features, k_neighbors)
 
+    item = array.array('h', [0, 0, 0])
+
     data = [
         (array.array('h', [-100, -100, -2]), 0),
         (array.array('h', [-100, -100, -2]), 0),
@@ -39,7 +41,11 @@ def test_neighbors_trivial():
         (array.array('h', [100, 100, 2]), 1),
     ]
     for x, y in data:
-        model.additem(x, y)
+        i = model.additem(x, y)
+
+        # can read data back out again
+        model.getitem(i, item)
+        assert item == x
 
     out = model.predict(data[3][0])
     assert out == 1, out
@@ -64,6 +70,7 @@ def test_neighbors_get_results():
     out = model.predict(f)
     assert out == 0, out
 
+    # Can get details about the particular
     for i in range(0, 4):
         data_item, distance, label = model.getresult(i)
         assert distance in (0, 282)
