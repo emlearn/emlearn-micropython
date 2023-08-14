@@ -20,19 +20,31 @@
 
 sequence. On-device training demo
 
-Lennart
-204, 224, 1610, 224, 214
-235, 255, 1456, 214, 276
-
-- Set a threshold after training
-- Set mode LED and lock output 
-- Test with a piezo trigger
+- Record piezo data with ADC. 100 Hz?
+Typical taps. Slower pushes. Handling noises.
+- Setup event detection for piezo.
+In its own module.
+Threshold on delta and level?
+- Create emliir module, use for piezo detection
+- Maybe blink during unlocked state
+- Add a blink to each event. For user feedback
 - Make demo video
 - Make state diagram
 - Make timing diagram. Highlight distances/features
 - Add some documentation / README
 
-Examples. Add a novelty detection example?
+Learnings.
+
+- Putting piezo on small thin plate worked well.
+On table not working, no response.
+Hitting direct not so good either, rise of finger causes change. Double-trigger. Also tricky to hit in right place.
+- LEDs as protection diodes worked well. Both red and green can be used. Lights up on direct hits, if placed by piezo.
+- Analog RC filter is beneficial for piezo connections. Using 10k+100nF, has 160 Hz cutoff. Should maybe move it to 80Hz? Since only sampling at 100 Hz. 
+- Only direct hits can reach trigger levels on 3.3V I/O. Need ADC for other cases. But am seing some 100mV when placed on small plate
+
+Examples
+
+- Add a novelty detection example?
 
 Benchmarks
 

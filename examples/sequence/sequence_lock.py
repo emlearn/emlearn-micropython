@@ -19,7 +19,7 @@ class SequenceLock():
     
     def __init__(self,
         sequence_length=6,
-        model_path='sequence_model.py',
+        model_path='sequence_model.csv',
         unlock_time=3000,
         ticks=-1):
 

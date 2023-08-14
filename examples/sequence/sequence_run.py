@@ -1,8 +1,7 @@
 
 import time
 import array
-from machine import Pin
-
+from machine import Pin, ADC
 
 class Button():
     
@@ -34,23 +33,20 @@ class Button():
         return None
 
 
-
-
-
-
-
 from sequence_lock import SequenceLock, \
      TRIGGER_EVENT, MODE_SWITCH_EVENT, \
      TRAINING_STATE, UNLOCKED_STATE
 
 def main():
+            
     # App logic setup
     lock = SequenceLock(sequence_length=6, unlock_time=10000)
 
     # I/O setup
     button = Button(pin=Pin(24, Pin.IN, Pin.PULL_UP))
     mode_pin = Pin(25, Pin.OUT)
-    out_pin = Pin(22, Pin.OUT)
+    out_pin = Pin(17, Pin.OUT)
+    analog_input = ADC(Pin(29, pull=None))
 
     # main loop
     while True:
@@ -65,14 +61,19 @@ def main():
         if button_event == Button.SHORT_PRESS:
             event = TRIGGER_EVENT
         
+        val = analog_input.read_u16()
+        #print('val', t, val)
+        # FIXME: process analog values to become trigger events (separate class)
+      
         # run application logic
         lock.run(t, event)
-    
+
         # set outputs
         mode_pin.value(lock.state == TRAINING_STATE)
         out_pin.value(lock.state == UNLOCKED_STATE)
      
         # wait for next iteration
         time.sleep_ms(10)
+        #out_pin.value(not out_pin.value())
 
 main()
