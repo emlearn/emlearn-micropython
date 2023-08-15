@@ -13,7 +13,25 @@ void *memcpy(void *dst, const void *src, size_t n) {
 void *memset(void *s, int c, size_t n) {
     return mp_fun_table.memset_(s, c, n);
 }
+
+void NORETURN abort() {
+    while (1) {
+        ;
+    }
+}
+
+int
+__aeabi_idiv0(int return_value) {
+  return return_value;
+}
+
+long long
+__aeabi_ldiv0(long long return_value) {
+  return return_value;
+}
+
 #endif
+
 
 
 // MicroPython type for EmlIIR
@@ -67,9 +85,9 @@ STATIC mp_obj_t iir_filter_new(mp_obj_t array_obj) {
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(iir_filter_new_obj, iir_filter_new);
 
 // Delete the instance
-STATIC mp_obj_t iir_filter_del(mp_obj_t trees_obj) {
+STATIC mp_obj_t iir_filter_del(mp_obj_t self_obj) {
 
-    mp_obj_iir_filter_t *o = MP_OBJ_TO_PTR(trees_obj);
+    mp_obj_iir_filter_t *o = MP_OBJ_TO_PTR(self_obj);
     EmlIIR *self = &o->filter;
 
     // free allocated data
@@ -119,7 +137,7 @@ mp_obj_t mpy_init(mp_obj_fun_bc_t *self, size_t n_args, size_t n_kw, mp_obj_t *a
 
     iir_filter_type.base.type = (void*)&mp_fun_table.type_type;
     iir_filter_type.flags = MP_TYPE_FLAG_ITER_IS_CUSTOM;
-    iir_filter_type.name = MP_QSTR_emltrees;
+    iir_filter_type.name = MP_QSTR_emliir;
     // methods
     iir_locals_dict_table[0] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR_run), MP_OBJ_FROM_PTR(&iir_filter_run_obj) };
     iir_locals_dict_table[1] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR___del__), MP_OBJ_FROM_PTR(&iir_filter_del_obj) };
