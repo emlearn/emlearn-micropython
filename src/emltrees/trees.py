@@ -16,7 +16,7 @@ def load_model(builder, f):
             builder.addroot(root)
         elif kind == 'n':
             feature = int(tok[1])
-            value = float(tok[2])
+            value = int(float(tok[2]))
             left = int(tok[3])
             right = int(tok[4])
             builder.addnode(left, right, feature, value)

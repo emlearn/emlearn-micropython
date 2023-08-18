@@ -36,16 +36,17 @@ def test_trees_xor():
         emltrees.load_model(model, f)
 
     # run it
+    s = 32767 # max int16
     examples = [
         # input, expected output
-        ( [0.0, 0.0], 0 ),
-        ( [1.0, 1.0], 0 ),
-        ( [0.0, 1.0], 1 ),
-        ( [1.0, 0.0], 1 ),
+        ( [0, 0], 0 ),
+        ( [1*s, 1*s], 0 ),
+        ( [0, 1*s], 1 ),
+        ( [1*s, 0], 1 ),
     ]
 
     for (ex, expect) in examples:
-        f = array.array('f', ex)
+        f = array.array('h', ex)
         result = model.predict(f)
         assert result == expect, (ex, expect, result)
 

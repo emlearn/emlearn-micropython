@@ -125,8 +125,8 @@ static mp_obj_t builder_addnode(size_t n_args, const mp_obj_t *args) {
 
     const int16_t left = mp_obj_get_int(args[1]);
     const int16_t right = mp_obj_get_int(args[2]);
-    const mp_int_t feature = mp_obj_get_int(args[3]);
-    const float value = mp_obj_get_float_to_f(args[4]);
+    const int feature = mp_obj_get_int(args[3]);
+    const int16_t value = mp_obj_get_int(args[4]);
 
     if (feature > 127 || feature < -1) {
         mp_raise_ValueError(MP_ERROR_TEXT("feature out of bounds"));
@@ -191,7 +191,7 @@ static mp_obj_t builder_addleaf(mp_obj_t self_obj, mp_obj_t leaf_obj) {
 static MP_DEFINE_CONST_FUN_OBJ_2(builder_addleaf_obj, builder_addleaf);
 
 
-// Takes a float array
+// Takes a array of input data
 static mp_obj_t builder_predict(mp_obj_t self_obj, mp_obj_t features_obj) {
 
     mp_obj_trees_builder_t *o = MP_OBJ_TO_PTR(self_obj);
@@ -200,11 +200,11 @@ static mp_obj_t builder_predict(mp_obj_t self_obj, mp_obj_t features_obj) {
     // Extract buffer pointer and verify typecode
     mp_buffer_info_t bufinfo;
     mp_get_buffer_raise(features_obj, &bufinfo, MP_BUFFER_RW);
-    if (bufinfo.typecode != 'f') {
-        mp_raise_ValueError(MP_ERROR_TEXT("expecting float array"));
+    if (bufinfo.typecode != 'h') {
+        mp_raise_ValueError(MP_ERROR_TEXT("expecting int16 (h) array"));
     }
 
-    float *features = bufinfo.buf;
+    const int16_t *features = bufinfo.buf;
     const int n_features = bufinfo.len / sizeof(*features);
 
 #if EMLEARN_MICROPYTHON_DEBUG
