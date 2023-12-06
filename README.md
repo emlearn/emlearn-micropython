@@ -126,9 +126,8 @@ See [MicroPython: Building native modules](https://docs.micropython.org/en/lates
 We assume that micropython is installed in the same place as this repository.
 If using another location, adjust `MPY_DIR` accordingly.
 
-NOTE: As of August 2023, an out-of-tree patch is needed for MicroPython.
-[micropython#12123: mpy_ld.py: Support complex RO sections](https://github.com/micropython/micropython/pull/12123).
-This will hopefully be fixed in the coming months.
+You should be using the latest MicroPython 1.21 (or newer).
+For MicroPython 1.20, [this patch](https://github.com/micropython/micropython/pull/12123/files) is needed.
 
 #### Build
 
