@@ -14,7 +14,7 @@ jobs:
       with:
         repository: jonnor/micropython
         path: micropython
-        ref: emlearn-micropython
+        ref: emlearn-micropython-v1.22
     - name: Install Python dependencies
       run: pip install -r requirements.txt
     - name: Setup MicroPython X86
