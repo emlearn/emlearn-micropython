@@ -5,6 +5,8 @@ on: [push, pull_request]
 
 jobs:
   test:
+    permissions:
+      contents: write
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
@@ -48,3 +50,10 @@ jobs:
         name: release
         path: emlearn-micropython-*.zip
 
+    - name: Deploy to Github Pages
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ./dist
+        keep_files: true
+        destination_dir: builds/0.2/
