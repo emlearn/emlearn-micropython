@@ -2,7 +2,7 @@
 ARCH := x64
 MPY_ABI_VERSION := 6.2
 MPY_DIR := ../micropython
-MICROPYTHON := $(MPY_DIR)/ports/unix/build-standard/micropython
+MICROPYTHON := micropython
 
 VERSION := $(shell git describe --tags --always)
 
