@@ -3,7 +3,7 @@
 import emltrees
 import array
 
-model = emltrees.new(5, 30)
+model = emltrees.new(5, 30, 2)
 
 # Load a CSV file with the model
 with open('xor_model.csv', 'r') as f:
