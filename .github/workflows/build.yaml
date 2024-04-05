@@ -59,4 +59,4 @@ jobs:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         publish_dir: ./dist
         keep_files: true
-        destination_dir: builds/0.2/
+        destination_dir: builds/0.3.0/
