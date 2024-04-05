@@ -1,8 +1,8 @@
 
-ARCH := x64
-MPY_ABI_VERSION := 6.2
-MPY_DIR := ../micropython
-MICROPYTHON := micropython
+ARCH ?= x64
+MPY_ABI_VERSION ?= 6.2
+MPY_DIR ?= ../micropython
+MICROPYTHON_BIN ?= micropython
 
 VERSION := $(shell git describe --tags --always)
 
@@ -20,13 +20,13 @@ $(MODULES_PATH)/emliir.mpy:
 	make -C src/emliir/ ARCH=$(ARCH) MPY_DIR=$(MPY_DIR_ABS) V=1 clean dist
 
 emltrees.results: $(MODULES_PATH)/emltrees.mpy
-	MICROPYPATH=$(MODULES_PATH) $(MICROPYTHON) tests/test_trees.py
+	MICROPYPATH=$(MODULES_PATH) $(MICROPYTHON_BIN) tests/test_trees.py
 
 emlneighbors.results: $(MODULES_PATH)/emlneighbors.mpy
-	MICROPYPATH=$(MODULES_PATH) $(MICROPYTHON) tests/test_neighbors.py
+	MICROPYPATH=$(MODULES_PATH) $(MICROPYTHON_BIN) tests/test_neighbors.py
 
 emliir.results: $(MODULES_PATH)/emliir.mpy
-	MICROPYPATH=$(MODULES_PATH) $(MICROPYTHON) tests/test_iir.py
+	MICROPYPATH=$(MODULES_PATH) $(MICROPYTHON_BIN) tests/test_iir.py
 
 .PHONY: clean
 
