@@ -21,7 +21,7 @@ MOD = emltrees
 SRC = trees.c trees.py
 
 # Stuff to make soft-float work
-SOFTFP_O := _arm_cmpsf2.o lesf2.o _arm_fixsfsi.o fixsfsi.o eqsf2.o gesf2.o
+SOFTFP_O := _arm_cmpsf2.o lesf2.o _arm_fixsfsi.o fixsfsi.o eqsf2.o gesf2.o _arm_addsubsf3.o _arm_muldivsf3.o
 SOFTFP_ENABLE := 0
 ifeq ($(ARCH), armv6m)
 	SOFTFP_ENABLE=1
