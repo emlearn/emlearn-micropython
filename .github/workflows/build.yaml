@@ -36,7 +36,7 @@ jobs:
       run: make dist ARCH=armv7emsp V=1
     - name: Setup MicroPython ESP32
       working-directory: micropython
-      run: source tools/ci.sh && ci_esp32_idf50_setup
+      run: source tools/ci.sh && ci_esp32_idf_setup
     - name: Build module xtensawin
       run: source micropython/esp-idf/export.sh && pip install emlearn && make dist ARCH=xtensawin V=1
     - name: Archive dist artifacts
