@@ -54,10 +54,10 @@ include $(MPY_DIR)/py/dynruntime.mk
 LIBGCC_FILENAME = $(shell $(CROSS)gcc $(CFLAGS) -print-libgcc-file-name)
 $(info $(LIBGCC_FILENAME))
 
-libgcc:
+_arm_cmpsf2.o:
 	mkdir -p $@
 	$(CROSS)ar -x $(LIBGCC_FILENAME)
 
 CFLAGS += -I$(EMLEARN_DIR)
 
-dist: libgcc $(DIST_FILE)
+dist: $(DIST_FILE)
