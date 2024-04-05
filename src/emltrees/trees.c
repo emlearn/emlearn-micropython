@@ -6,6 +6,8 @@
 
 #include <string.h>
 
+#define EMLEARN_MICROPYTHON_DEBUG 0
+
 // memset is used by some standard C constructs
 #if !defined(__linux__)
 void *memcpy(void *dst, const void *src, size_t n) {
@@ -40,7 +42,9 @@ STATIC mp_obj_t builder_new(mp_obj_t trees_obj, mp_obj_t nodes_obj, mp_obj_t lea
     mp_int_t max_trees = mp_obj_get_int(trees_obj);
     mp_int_t max_leaves = mp_obj_get_int(leaves_obj);
 
-    //mp_printf(&mp_plat_print, "builder-new nodes=%d trees=%d\n", max_nodes, max_trees);
+#if EMLEARN_MICROPYTHON_DEBUG
+    mp_printf(&mp_plat_print, "builder-new nodes=%d trees=%d\n", max_nodes, max_trees);
+#endif
 
     // create builder
     mp_obj_trees_builder_t *o = mp_obj_malloc(mp_obj_trees_builder_t, (mp_obj_type_t *)&trees_builder_type);
@@ -58,7 +62,9 @@ STATIC mp_obj_t builder_new(mp_obj_t trees_obj, mp_obj_t nodes_obj, mp_obj_t lea
     int32_t *roots = (int32_t *)m_malloc(sizeof(int32_t)*max_trees);
     uint8_t *leaves = (uint8_t *)m_malloc(sizeof(uint8_t)*max_leaves);
 
+#if EMLEARN_MICROPYTHON_DEBUG
     mp_printf(&mp_plat_print, "emltrees nodes=%p roots=%p builder=%p\n", nodes, roots, self);
+#endif
 
     self->trees.n_nodes = 0;
     self->trees.nodes = nodes;
@@ -88,7 +94,9 @@ STATIC mp_obj_t builder_del(mp_obj_t trees_obj) {
     m_free(self->trees.nodes);
     m_free(self->trees.tree_roots);
 
+#if EMLEARN_MICROPYTHON_DEBUG
     mp_printf(&mp_plat_print, "emltrees del \n");
+#endif
 
     return mp_const_none;
 }
@@ -125,6 +133,13 @@ STATIC mp_obj_t builder_addnode(size_t n_args, const mp_obj_t *args) {
 
     const int node_index = self->trees.n_nodes++;
     self->trees.nodes[node_index] = (EmlTreesNode){ feature, value, left, right };
+
+#if EMLEARN_MICROPYTHON_DEBUG
+    mp_printf(&mp_plat_print,
+        "emltrees-addnode feature=%d threshold=%f left=%d right=%d \n",
+        feature, value, left, right
+    );
+#endif
 
     return mp_const_none;
  }
@@ -185,7 +200,14 @@ STATIC mp_obj_t predict(mp_obj_fun_bc_t *self_obj, size_t n_args, size_t n_kw, m
     float *features = bufinfo.buf;
     const int n_features = bufinfo.len / sizeof(*features);
 
-    mp_printf(&mp_plat_print, "emltrees-predict features=%d\n", n_features);
+#if EMLEARN_MICROPYTHON_DEBUG
+    mp_printf(&mp_plat_print,
+        "emltrees-predict n_features=%d n_classes=%d leaves=%d nodes=%d trees=%d length=%d \n",
+        self->trees.n_features, self->trees.n_classes,
+        self->trees.n_leaves, self->trees.n_nodes, self->trees.n_trees,
+        n_features
+    );
+#endif
 
     // call model
     const int result = eml_trees_predict(&self->trees, features, n_features);
