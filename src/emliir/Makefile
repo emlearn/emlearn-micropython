@@ -55,8 +55,7 @@ LIBGCC_FILENAME = $(shell $(CROSS)gcc $(CFLAGS) -print-libgcc-file-name)
 $(info $(LIBGCC_FILENAME))
 
 _arm_cmpsf2.o:
-	mkdir -p $@
-	$(CROSS)ar -x $(LIBGCC_FILENAME)
+	$(CROSS)ar -x $(LIBGCC_FILENAME) $(SOFTFP_O)
 
 CFLAGS += -I$(EMLEARN_DIR)
 
