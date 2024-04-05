@@ -70,6 +70,10 @@ STATIC mp_obj_t builder_new(mp_obj_t trees_obj, mp_obj_t nodes_obj, mp_obj_t lea
     self->trees.n_leaves = 0;
     self->trees.leaves = leaves;
 
+    // NOTE: these are set later, in setdata()
+    self->trees.n_classes = 0;
+    self->trees.n_features = 0;
+
     return MP_OBJ_FROM_PTR(o);
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_3(builder_new_obj, builder_new);
@@ -89,6 +93,19 @@ STATIC mp_obj_t builder_del(mp_obj_t trees_obj) {
     return mp_const_none;
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(builder_del_obj, builder_del);
+
+// set number of features and classes
+STATIC mp_obj_t builder_setdata(mp_obj_t self_obj, mp_obj_t features_obj, mp_obj_t classes_obj) {
+
+    mp_obj_trees_builder_t *o = MP_OBJ_TO_PTR(self_obj);
+    EmlTreesBuilder *self = &o->builder;    
+
+    self->trees.n_features = mp_obj_get_int(features_obj);
+    self->trees.n_classes = mp_obj_get_int(classes_obj);
+
+    return MP_OBJ_FROM_PTR(o);
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_3(builder_setdata_obj, builder_setdata);
 
 
 // Add a node to the tree
@@ -168,14 +185,19 @@ STATIC mp_obj_t predict(mp_obj_fun_bc_t *self_obj, size_t n_args, size_t n_kw, m
     float *features = bufinfo.buf;
     const int n_features = bufinfo.len / sizeof(*features);
 
+    mp_printf(&mp_plat_print, "emltrees-predict features=%d\n", n_features);
+
     // call model
     const int result = eml_trees_predict(&self->trees, features, n_features);
+    if (result < 0) {
+        mp_raise_msg(&mp_type_RuntimeError, MP_ERROR_TEXT("eml_trees_predict error"));
+    }
 
     return mp_obj_new_int(result);
 }
 
 
-mp_map_elem_t trees_locals_dict_table[5];
+mp_map_elem_t trees_locals_dict_table[6];
 STATIC MP_DEFINE_CONST_DICT(trees_locals_dict, trees_locals_dict_table);
 
 // This is the entry point and is called when the module is imported
@@ -194,8 +216,9 @@ mp_obj_t mpy_init(mp_obj_fun_bc_t *self, size_t n_args, size_t n_kw, mp_obj_t *a
     trees_locals_dict_table[2] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR_addroot), MP_OBJ_FROM_PTR(&builder_addroot_obj) };
     trees_locals_dict_table[3] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR_addleaf), MP_OBJ_FROM_PTR(&builder_addleaf_obj) };
     trees_locals_dict_table[4] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR___del__), MP_OBJ_FROM_PTR(&builder_del_obj) };
+    trees_locals_dict_table[5] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR_setdata), MP_OBJ_FROM_PTR(&builder_setdata_obj) };
 
-    MP_OBJ_TYPE_SET_SLOT(&trees_builder_type, locals_dict, (void*)&trees_locals_dict, 5);
+    MP_OBJ_TYPE_SET_SLOT(&trees_builder_type, locals_dict, (void*)&trees_locals_dict, 6);
 
     // This must be last, it restores the globals dict
     MP_DYNRUNTIME_INIT_EXIT

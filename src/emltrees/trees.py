@@ -3,6 +3,8 @@
 def load_model(builder, f):
 
     leaves_found = 0
+    n_classes = None
+    n_features = None
 
     for line in f:
         line = line.rstrip('\r')
@@ -22,8 +24,14 @@ def load_model(builder, f):
             leaf = int(tok[1])
             builder.addleaf(leaf)
             leaves_found += 1
+        elif kind == 'f':
+            n_features = int(tok[1])
+        elif kind == 'c':
+            n_classes = int(tok[1])
         else:        
             # unknown value
             pass
+
+    builder.setdata(n_features, n_classes)
 
     #print('load-model', leaves_found)
