@@ -8,6 +8,9 @@ jobs:
     permissions:
       contents: write
     runs-on: ubuntu-latest
+    env:
+      MPY_DIR: ./micropython
+      MICROPYTHON: ./micropython/ports/unix/build-standard/micropython
     steps:
     - uses: actions/checkout@v3
     - uses: actions/checkout@v3
@@ -21,21 +24,21 @@ jobs:
       working-directory: micropython
       run: source tools/ci.sh && ci_unix_32bit_setup && ci_unix_standard_build
     - name: Run test and build module x64
-      run: make check ARCH=x64 V=1 MPY_DIR=./micropython
+      run: make check ARCH=x64 V=1
     - name: Setup MicroPython ARM
       working-directory: micropython
       run: source tools/ci.sh && ci_rp2_setup
     - name: Build module armv6m
-      run: make dist ARCH=armv6m V=1 MPY_DIR=./micropython
+      run: make dist ARCH=armv6m V=1
     - name: Build module armv7m
-      run: make dist ARCH=armv7m V=1 MPY_DIR=./micropython
+      run: make dist ARCH=armv7m V=1
     - name: Build module armv7emsp
-      run: make dist ARCH=armv7emsp V=1 MPY_DIR=./micropython
+      run: make dist ARCH=armv7emsp V=1
     - name: Setup MicroPython ESP32
       working-directory: micropython
       run: source tools/ci.sh && ci_esp32_idf50_setup
     - name: Build module xtensawin
-      run: source micropython/esp-idf/export.sh && pip install emlearn && make dist ARCH=xtensawin V=1 MPY_DIR=./micropython
+      run: source micropython/esp-idf/export.sh && pip install emlearn && make dist ARCH=xtensawin V=1
     - name: Archive dist artifacts
       uses: actions/upload-artifact@v3
       with:
