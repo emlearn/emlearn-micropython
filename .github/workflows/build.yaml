@@ -9,8 +9,8 @@ jobs:
       contents: write
     runs-on: ubuntu-latest
     env:
-      MPY_DIR: ./emlearn-micropython/micropython
-      MICROPYTHON: ./micropython/ports/unix/build-standard/micropython
+      MPY_DIR: ./micropython
+      MICROPYTHON_BIN: ./micropython/ports/unix/build-standard/micropython
     steps:
     - uses: actions/checkout@v3
     - uses: actions/checkout@v3
