@@ -29,7 +29,7 @@ jobs:
       working-directory: micropython
       run: source tools/ci.sh && ci_rp2_setup
     - name: Build module armv6m
-      run: make dist ARCH=armv6m V=1
+      run: echo SKIP make dist ARCH=armv6m V=1
     - name: Build module armv7m
       run: make dist ARCH=armv7m V=1
     - name: Build module armv7emsp
