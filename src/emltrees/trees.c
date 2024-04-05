@@ -93,6 +93,7 @@ STATIC mp_obj_t builder_del(mp_obj_t trees_obj) {
     // free allocated data
     m_free(self->trees.nodes);
     m_free(self->trees.tree_roots);
+    m_free(self->trees.leaves);
 
 #if EMLEARN_MICROPYTHON_DEBUG
     mp_printf(&mp_plat_print, "emltrees del \n");
