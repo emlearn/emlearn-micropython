@@ -125,15 +125,19 @@ STATIC mp_obj_t builder_addnode(size_t n_args, const mp_obj_t *args) {
 
     const int16_t left = mp_obj_get_int(args[1]);
     const int16_t right = mp_obj_get_int(args[2]);
-    const int8_t feature = mp_obj_get_int(args[3]);
+    const mp_int_t feature = mp_obj_get_int(args[3]);
     const float value = mp_obj_get_float_to_f(args[4]);
+
+    if (feature > 127 || feature < -1) {
+        mp_raise_ValueError(MP_ERROR_TEXT("feature out of bounds"));
+    }
 
     if (self->trees.n_nodes >= self->max_nodes) {
         mp_raise_ValueError(MP_ERROR_TEXT("max nodes"));
     }
 
     const int node_index = self->trees.n_nodes++;
-    self->trees.nodes[node_index] = (EmlTreesNode){ feature, value, left, right };
+    self->trees.nodes[node_index] = (EmlTreesNode){ (int8_t)feature, value, left, right };
 
 #if EMLEARN_MICROPYTHON_DEBUG
     mp_printf(&mp_plat_print,
