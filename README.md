@@ -16,7 +16,7 @@ It can be combined with feature preprocessing, including neural networks to addr
 ## Status
 **Minimally useful**
 
-- Has been tested on `armv6m` (RP2040) and `x64` (Unix port) 
+- Has been tested on `armv6m` (RP2040), `xtensawin` (ESP32) and `x64` (Unix port)
 - Pre-built modules are available for the most common architectures/devices
 
 ## Features
