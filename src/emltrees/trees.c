@@ -179,6 +179,10 @@ STATIC mp_obj_t builder_addleaf(mp_obj_t self_obj, mp_obj_t leaf_obj) {
 
     mp_int_t leaf_value = mp_obj_get_int(leaf_obj);
 
+    if (self->trees.n_leaves >= self->max_leaves) {
+        mp_raise_ValueError(MP_ERROR_TEXT("max leaves"));
+    }
+
     const int leaf_index = self->trees.n_leaves++;
     self->trees.leaves[leaf_index] = (uint8_t)leaf_value;
 
