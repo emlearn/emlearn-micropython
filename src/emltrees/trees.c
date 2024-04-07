@@ -188,20 +188,18 @@ STATIC mp_obj_t builder_addleaf(mp_obj_t self_obj, mp_obj_t leaf_obj) {
 
     return mp_const_none;
  }
-STATIC MP_DEFINE_CONST_FUN_OBJ_2(builder_addleaf_obj,  builder_addleaf);
+STATIC MP_DEFINE_CONST_FUN_OBJ_2(builder_addleaf_obj, builder_addleaf);
 
 
 // Takes a float array
-STATIC mp_obj_t predict(mp_obj_fun_bc_t *self_obj, size_t n_args, size_t n_kw, mp_obj_t *args) {
-    // Check number of arguments is valid
-    mp_arg_check_num(n_args, n_kw, 2, 2, false);
+STATIC mp_obj_t builder_predict(mp_obj_t self_obj, mp_obj_t features_obj) {
 
-    mp_obj_trees_builder_t *o = MP_OBJ_TO_PTR(args[0]);
+    mp_obj_trees_builder_t *o = MP_OBJ_TO_PTR(self_obj);
     EmlTreesBuilder *self = &o->builder;    
 
     // Extract buffer pointer and verify typecode
     mp_buffer_info_t bufinfo;
-    mp_get_buffer_raise(args[1], &bufinfo, MP_BUFFER_RW);
+    mp_get_buffer_raise(features_obj, &bufinfo, MP_BUFFER_RW);
     if (bufinfo.typecode != 'f') {
         mp_raise_ValueError(MP_ERROR_TEXT("expecting float array"));
     }
@@ -226,6 +224,7 @@ STATIC mp_obj_t predict(mp_obj_fun_bc_t *self_obj, size_t n_args, size_t n_kw, m
 
     return mp_obj_new_int(result);
 }
+STATIC MP_DEFINE_CONST_FUN_OBJ_2(builder_predict_obj, builder_predict);
 
 
 mp_map_elem_t trees_locals_dict_table[6];
@@ -242,7 +241,7 @@ mp_obj_t mpy_init(mp_obj_fun_bc_t *self, size_t n_args, size_t n_kw, mp_obj_t *a
     trees_builder_type.flags = MP_TYPE_FLAG_ITER_IS_CUSTOM;
     trees_builder_type.name = MP_QSTR_emltrees;
     // methods
-    trees_locals_dict_table[0] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR_predict), MP_DYNRUNTIME_MAKE_FUNCTION(predict) };
+    trees_locals_dict_table[0] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR_predict), MP_OBJ_FROM_PTR(&builder_predict_obj) };
     trees_locals_dict_table[1] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR_addnode), MP_OBJ_FROM_PTR(&builder_addnode_obj) };
     trees_locals_dict_table[2] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR_addroot), MP_OBJ_FROM_PTR(&builder_addroot_obj) };
     trees_locals_dict_table[3] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR_addleaf), MP_OBJ_FROM_PTR(&builder_addleaf_obj) };
