@@ -12,6 +12,7 @@ Copyright: Jon Nordby
 import subprocess
 import glob
 import re
+import os.path
 
 import pandas
 
@@ -105,13 +106,29 @@ def find_symbols(archive : str, symbols : list[str], nm_bin='arm-none-eabi-nm') 
     return found    
 
 
+def parse(args=None):
+    import argparse
+    parser = argparse.ArgumentParser(description='Find missing symbols')
+    a = parser.add_argument
+
+    a('--archive', type=str, metavar='FILE', default=None,
+      help='Number of mel bands')
+    a('--symbols', type=str, default=None,
+      help='Symbols to look for')
+    a('--nm-bin', type=str, default='nm',
+      help='Which "nm" to use')
+
+    parsed = parser.parse_args(args)
+    parsed.symbols = parsed.symbols.split(',')
+    return parsed
+
 def main():
-    # TODO: unhardcode inputs, allows as command-line options
+    args = parse()
 
-    libgcc = '/usr/lib/gcc/arm-none-eabi/13.2.0/thumb/v7-m/nofp/libgcc.a'
-    symbols = ['__aeabi_fmul', '__aeabi_fadd']
+    archive_path = args.archive
+    assert os.path.exists(archive_path), archive_path
 
-    found = find_symbols(libgcc, symbols)
+    found = find_symbols(archive_path, args.symbols, nm_bin=args.nm_bin)
     print(found)
 
 
