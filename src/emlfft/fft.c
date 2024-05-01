@@ -4,6 +4,7 @@
 #include <eml_fft.h>
 
 #include <string.h>
+#include <errno.h> // used by sincosf
 
 // memset is used by some standard C constructs
 #if !defined(__linux__)
@@ -21,6 +22,42 @@ void NORETURN abort() {
 }
 #endif
 
+#if 0
+int errno;
+
+//void __sincosf_sse2(float x, float *sin, float *cos);
+//void __sincosf_ifunc(float x, float *sin, float *cos);
+void __sincosf_fma(float x, float *sin, float *cos);
+
+void sincosf(float x, float *sin, float *cos) {
+    //__sincosf_sse2(x, sin, cos);
+    __sincosf_fma(x, sin, cos);
+}
+
+// math_errf.c
+#define with_errnof(x, e) (x)
+float __math_invalidf (float x)
+{
+  float y = (x - x) / (x - x);
+  return isnan (x) ? y : with_errnof (y, EDOM);
+}
+
+//     glibc/sysdeps/ieee754/flt-32/s_sincosf_data.c
+
+
+/* Table with 4/PI to 192 bit precision.  To avoid unaligned accesses
+   only 8 new bits are added per entry, making the table 4 times larger.  */
+const uint32_t __inv_pio4[24] =
+{
+  0xa2,       0xa2f9,	  0xa2f983,   0xa2f9836e,
+  0xf9836e4e, 0x836e4e44, 0x6e4e4415, 0x4e441529,
+  0x441529fc, 0x1529fc27, 0x29fc2757, 0xfc2757d1,
+  0x2757d1f5, 0x57d1f534, 0xd1f534dd, 0xf534ddc0,
+  0x34ddc0db, 0xddc0db62, 0xc0db6295, 0xdb629599,
+  0x6295993c, 0x95993c43, 0x993c4390, 0x3c439041
+};
+
+#endif
 
 // MicroPython type for EmlFFT
 typedef struct _mp_obj_fft_t {

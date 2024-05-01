@@ -19,6 +19,11 @@ MOD = emlfft
 # Source files (.c or .py)
 SRC = fft.c
 
+LIBM_O := s_sincosf-fma.o
+# math_err.o math_errf.o  
+# s_sincosf.o
+#SRC_O += $(LIBM_O)
+
 # Stuff to make soft-float work
 # If symbols are undefined, use tools/find_symbols.py to locate object files to add
 SOFTFP_O := _arm_cmpsf2.o lesf2.o _arm_fixsfsi.o fixsfsi.o eqsf2.o gesf2.o addsf3.o mulsf3.o subsf3.o _clzsi2.o divdf3.o
@@ -50,6 +55,11 @@ include $(MPY_DIR)/py/dynruntime.mk
 # CROSS is defined by the included
 LIBGCC_FILENAME = $(shell $(CROSS)gcc $(CFLAGS) -print-libgcc-file-name)
 $(info $(LIBGCC_FILENAME))
+
+LIBM_FILENAME = /usr/lib/libm-2.39.a
+
+#s_sincosf-fma.o:
+#	$(CROSS)ar -x $(LIBM_FILENAME) $(LIBM_O)
 
 _arm_cmpsf2.o:
 	$(CROSS)ar -x $(LIBGCC_FILENAME) $(SOFTFP_O)

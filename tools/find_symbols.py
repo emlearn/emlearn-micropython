@@ -113,6 +113,16 @@ def find_symbols(archive : str, symbols : list[str], nm_bin='arm-none-eabi-nm') 
 
     # lookup the symbols of interest
     found = [ defined_symbols_file.get(s) for s in symbols ]
+
+    # try fuzzy match
+    for want, f in zip(symbols, found):
+        if f:
+            continue
+        for c, f in defined_symbols_file.items():
+            if want in c:
+                print('c', want, c, f)
+
+
     assert len(found) == len(symbols)
     return found    
 
