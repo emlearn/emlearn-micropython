@@ -34,11 +34,19 @@ def nm_find_symbol(s : str):
 
     00000000 T _Unwind_GetTextRelBase
              U _Unwind_VRS_Pop
+    0000000000000050 r .LC12
+                     U _GLOBAL_OFFSET_TABLE_
     """
     
-    s = s[9:] # drop address
+    # drop address
+    tok = s.strip().split(' ')
+    if len(tok) == 3:
+        c = ' '.join(tok[1:])
+    else:
+        c = ' '.join(tok[0:])
+
     regex = r"(\w) (.+)"
-    match = re.match(regex, s)
+    match = re.match(regex, c)
     if match is None:
         return None
 
@@ -72,9 +80,12 @@ def nm_parse_output(s : str):
             # section end
             object_file = None
         else:
+            #print('unknown', line)
             assert False, ('unknown line', line)
 
     return out
+
+    
 
 def find_symbols(archive : str, symbols : list[str], nm_bin='arm-none-eabi-nm') -> list[str]:
 
