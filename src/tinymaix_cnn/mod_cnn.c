@@ -47,7 +47,7 @@ static tm_err_t layer_cb(tm_mdl_t* mdl, tml_head_t* lh)
 #endif
 }
 
-
+#define DEBUG (1)
 
 // MicroPython type
 typedef struct _mp_obj_mod_cnn_t {
@@ -69,7 +69,12 @@ STATIC mp_obj_t mod_cnn_new(mp_obj_t model_data_obj) {
     // Check model data
     mp_buffer_info_t bufinfo;
     mp_get_buffer_raise(model_data_obj, &bufinfo, MP_BUFFER_RW);
-    if (bufinfo.typecode != 'B') {
+
+#if DEBUG
+    mp_printf(&mp_plat_print, "cnn-new data.typecode=%c \n", bufinfo.typecode);
+#endif
+
+    if (bufinfo.typecode != 'b') {
         mp_raise_ValueError(MP_ERROR_TEXT("model should be bytes"));
     }
     uint8_t *model_data_buffer = bufinfo.buf;
