@@ -8,7 +8,7 @@
 
 #include "tm_layers.c"
 #include "tm_model.c"
-#include "tm_stat.c"
+//#include "tm_stat.c"
 
 #include <string.h>
 
@@ -46,6 +46,7 @@ static tm_err_t layer_cb(tm_mdl_t* mdl, tml_head_t* lh)
     return TM_OK;
 #endif
 }
+
 
 
 // MicroPython type
