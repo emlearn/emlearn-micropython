@@ -8,7 +8,8 @@ ARCH = x64
 MPY_ABI_VERSION := 6.2
 
 # Location of emlearn library
-TINYMAIX_DIR := ../TinyMaix
+# FIXME: unhardcore
+TINYMAIX_DIR := /home/jon/projects/emlearn-micropython/TinyMaix
 
 DIST_DIR := ../../dist/$(ARCH)_$(MPY_ABI_VERSION)
 
@@ -52,6 +53,7 @@ $(info $(LIBGCC_FILENAME))
 _arm_cmpsf2.o:
 	$(CROSS)ar -x $(LIBGCC_FILENAME) $(SOFTFP_O)
 
-CFLAGS += -I$(EMLEARN_DIR)
+# FIXME: unhardcode config dir
+CFLAGS += -I/home/jon/projects/emlearn-micropython/src/tinymaix_cnn/ -I$(TINYMAIX_DIR)/include -I$(TINYMAIX_DIR)/src -Wno-error=unused-variable -Wno-error=multichar
 
 dist: $(DIST_FILE)

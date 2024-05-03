@@ -22,6 +22,9 @@ $(MODULES_PATH)/emliir.mpy:
 $(MODULES_PATH)/emlfft.mpy:
 	make -C src/emlfft/ ARCH=$(ARCH) MPY_DIR=$(MPY_DIR_ABS) V=1 clean dist
 
+$(MODULES_PATH)/tinymaix_cnn.mpy:
+	make -C src/tinymaix_cnn/ ARCH=$(ARCH) MPY_DIR=$(MPY_DIR_ABS) V=1 clean dist
+
 emltrees.results: $(MODULES_PATH)/emltrees.mpy
 	MICROPYPATH=$(MODULES_PATH) $(MICROPYTHON_BIN) tests/test_trees.py
 
@@ -33,6 +36,9 @@ emliir.results: $(MODULES_PATH)/emliir.mpy
 
 emlfft.results: $(MODULES_PATH)/emlfft.mpy
 	MICROPYPATH=$(MODULES_PATH) $(MICROPYTHON_BIN) tests/test_fft.py
+
+tinymaix_cnn.results: $(MODULES_PATH)/tinymaix_cnn.mpy
+	MICROPYPATH=$(MODULES_PATH) $(MICROPYTHON_BIN) tests/test_cnn.py
 
 .PHONY: clean
 

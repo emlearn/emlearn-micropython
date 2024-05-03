@@ -27,3 +27,4 @@ def test_cnn_mnist():
 
 
 test_cnn_create()
+test_cnn_mnist()

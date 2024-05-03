@@ -31,9 +31,9 @@ limitations under the License.
 #define TM_ENABLE_STAT  (0)         //enable mdl stat functions
 #define TM_MAX_KSIZE    (5*5)       //max kernel_size
 
-#define tm_malloc(x)   malloc(x)
-#define tm_free(x)     free(x)
-
+// Use MicroPython for dynamic allocation
+#define tm_malloc(x)   m_malloc(x)
+#define tm_free(x)     m_free(x)
 
 // FIXME: set theese to use MicroPython primitives
 
@@ -42,14 +42,11 @@ limitations under the License.
 #define TM_DBGL()      //Serial.println(__LINE__);
 
 
-#define  TM_GET_US()       ((uint32_t)(micros()))
-
-#define TM_DBGT_INIT()     uint32_t _start,_finish;uint32_t _time;_start=TM_GET_US();
-#define TM_DBGT_START()    _start=TM_GET_US();
-#define TM_DBGT(x)         {_finish=TM_GET_US();\
-                            _time = (_finish-_start);\
-                            ;;\
-                            _start=TM_GET_US();}
+// FIXME: enable profiling
+#define TM_GET_US()       (0)
+#define TM_DBGT_INIT()     ;
+#define TM_DBGT_START()    ;
+#define TM_DBGT(x)         ;
 
 /******************************* OPS CONFIG  ************************************/
 

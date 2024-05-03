@@ -1,10 +1,10 @@
 // Include the header file to get access to the MicroPython API
 #include "py/dynruntime.h"
 
-#include <tinymaix.h>
+// TinyMaix config
 #include "./tm_port.h"
 
-//#include <tinymaix.h>
+#include <tinymaix.h>
 
 #include "tm_layers.c"
 #include "tm_model.c"
@@ -47,20 +47,6 @@ static tm_err_t layer_cb(tm_mdl_t* mdl, tml_head_t* lh)
 #endif
 }
 
-float mnist_test(void)
-{  
-
-#if (TM_ENABLE_STAT)
-    tm_stat((tm_mdlbin_t*)mdl_data); 
-#endif
-
-    // Static buffer for model
-    [MDL_BUF_LEN];
-
-    return out_time;
-}
-
-
 
 // MicroPython type
 typedef struct _mp_obj_mod_cnn_t {
@@ -89,12 +75,12 @@ STATIC mp_obj_t mod_cnn_new(mp_obj_t model_data_obj) {
     const int model_data_length = bufinfo.len / sizeof(*model_data_buffer);
 
     // Construct object
-    mp_obj_iir_filter_t *o = mp_obj_malloc(mp_obj_mod_cnn_t, (mp_obj_type_t *)&mod_cnn_type);
+    mp_obj_mod_cnn_t *o = mp_obj_malloc(mp_obj_mod_cnn_t, (mp_obj_type_t *)&mod_cnn_type);
     tm_mdl_t *model = &o->model;
 
     // Copy the model data
     o->model_buffer = m_malloc(model_data_length);
-    memcopy(o->model_buffer, model_data_buffer, model_data_length);
+    memcpy(o->model_buffer, model_data_buffer, model_data_length);
 
     // Allocate temporary buffer
     // TODO: this can possibly be smaller? Might want to use TinyMaix internal alloc
@@ -102,10 +88,9 @@ STATIC mp_obj_t mod_cnn_new(mp_obj_t model_data_obj) {
 
     // loading model
     // will set the dimensions of the input matrix
-    res = tm_load(model, o->model_buffer, o->data_buffer, layer_cb, &o->input);
-    if(res != TM_OK) {
-        TM_PRINTF("tm model load err %d\n", res);
-        return -1;
+    tm_err_t load_err = tm_load(model, o->model_buffer, o->data_buffer, layer_cb, &o->input);
+    if (load_err != TM_OK) {
+        mp_raise_msg(&mp_type_RuntimeError, MP_ERROR_TEXT("eml_fft_forward error"));
     }
 
     return MP_OBJ_FROM_PTR(o);
@@ -117,7 +102,6 @@ STATIC mp_obj_t mod_cnn_del(mp_obj_t self_obj) {
 
     mp_obj_mod_cnn_t *o = MP_OBJ_TO_PTR(self_obj);
     tm_mdl_t *model = &o->model;
-
 
     m_free(o->model_buffer);
     m_free(o->data_buffer);
@@ -133,14 +117,14 @@ STATIC mp_obj_t mod_cnn_run(mp_obj_t self_obj, mp_obj_t input_obj) {
 
     mp_obj_mod_cnn_t *o = MP_OBJ_TO_PTR(self_obj);
 
-    // Extract buffer pointer and verify type
+    // Extract input
     mp_buffer_info_t bufinfo;
-    mp_get_buffer_raise(array_obj, &bufinfo, MP_BUFFER_RW);
+    mp_get_buffer_raise(input_obj, &bufinfo, MP_BUFFER_RW);
     if (bufinfo.typecode != 'B') {
         mp_raise_ValueError(MP_ERROR_TEXT("expecting float array"));
     }
     uint8_t *input_buffer = bufinfo.buf;
-    const int input_length = bufinfo.len / sizeof(*values);
+    const int input_length = bufinfo.len / sizeof(*input_buffer);
 
     // check buffer size wrt input
     const int expect_length = o->input.h * o->input.w * o->input.c;
@@ -153,9 +137,9 @@ STATIC mp_obj_t mod_cnn_run(mp_obj_t self_obj, mp_obj_t input_obj) {
     in_uint8.data = (mtype_t*)input_buffer;
 
 #if (TM_MDL_TYPE == TM_MDL_INT8) || (TM_MDL_TYPE == TM_MDL_INT16) 
-    const tm_err_t preprocess_err = tm_preprocess(&mdl, TMPP_UINT2INT, &in_uint8, &in); 
+    const tm_err_t preprocess_err = tm_preprocess(&o->model, TMPP_UINT2INT, &in_uint8, &o->input); 
 #else
-    const tm_err_t preprocess_err = tm_preprocess(&mdl, TMPP_UINT2FP01, &in_uint8, &in); 
+    const tm_err_t preprocess_err = tm_preprocess(&o->model, TMPP_UINT2FP01, &in_uint8, &o->input); 
 #endif
     if (preprocess_err != TM_OK) {
         mp_raise_ValueError(MP_ERROR_TEXT("preprocess error"));
@@ -163,18 +147,19 @@ STATIC mp_obj_t mod_cnn_run(mp_obj_t self_obj, mp_obj_t input_obj) {
 
     // Run the CNN
     tm_mat_t outs[1];
-    tm_err_t run_err = tm_run(&mdl, &in, outs);
+    tm_err_t run_err = tm_run(&o->model, &o->input, outs);
 
     if (run_err != TM_OK) {
         mp_raise_ValueError(MP_ERROR_TEXT("run error"));
     }
 
-
-    // FIXME: unhardcode output handling
     tm_mat_t out = outs[0];
     float* data  = out.dataf;
     float maxp = 0;
     int maxi = -1;
+
+    // TODO: pass the entire output vector out to Python
+    // FIXME: unhardcode output handling
     for(int i=0; i<10; i++){
         //printf("%d: %.3f\n", i, data[i]);
         if (data[i] > maxp) {
@@ -182,18 +167,14 @@ STATIC mp_obj_t mod_cnn_run(mp_obj_t self_obj, mp_obj_t input_obj) {
             maxp = data[i];
         }
     }
-#if 0
-    TM_PRINTF("### Predict output is: Number %d, prob %.3f\n", maxi, maxp);
-#endif
 
-
-    return mp_const_none;
+    return mp_obj_new_int(maxi);
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_2(mod_cnn_run_obj, mod_cnn_run);
 
 
-mp_map_elem_t iir_locals_dict_table[2];
-STATIC MP_DEFINE_CONST_DICT(iir_locals_dict, iir_locals_dict_table);
+mp_map_elem_t mod_locals_dict_table[2];
+STATIC MP_DEFINE_CONST_DICT(mod_locals_dict, mod_locals_dict_table);
 
 // This is the entry point and is called when the module is imported
 mp_obj_t mpy_init(mp_obj_fun_bc_t *self, size_t n_args, size_t n_kw, mp_obj_t *args) {
@@ -204,12 +185,12 @@ mp_obj_t mpy_init(mp_obj_fun_bc_t *self, size_t n_args, size_t n_kw, mp_obj_t *a
 
     mod_cnn_type.base.type = (void*)&mp_fun_table.type_type;
     mod_cnn_type.flags = MP_TYPE_FLAG_ITER_IS_CUSTOM;
-    mod_cnn_type.name = MP_QSTR_emliir;
+    mod_cnn_type.name = MP_QSTR_tinymaixcnn;
     // methods
-    iir_locals_dict_table[0] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR_run), MP_OBJ_FROM_PTR(&mod_cnn_run_obj) };
-    iir_locals_dict_table[1] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR___del__), MP_OBJ_FROM_PTR(&mod_cnn_del_obj) };
+    mod_locals_dict_table[0] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR_run), MP_OBJ_FROM_PTR(&mod_cnn_run_obj) };
+    mod_locals_dict_table[1] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR___del__), MP_OBJ_FROM_PTR(&mod_cnn_del_obj) };
 
-    MP_OBJ_TYPE_SET_SLOT(&mod_cnn_type, locals_dict, (void*)&iir_locals_dict, 2);
+    MP_OBJ_TYPE_SET_SLOT(&mod_cnn_type, locals_dict, (void*)&mod_locals_dict, 2);
 
     // This must be last, it restores the globals dict
     MP_DYNRUNTIME_INIT_EXIT
