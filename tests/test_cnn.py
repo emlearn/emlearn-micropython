@@ -2,7 +2,8 @@
 import array
 import tinymaix_cnn
 
-MNIST_MODEL = 'mnist_arduino_custom.tmdl'
+MNIST_MODEL = 'examples/mnist_cnn/mnist_cnn.tmdl'
+MNIST_DATA_DIR = 'examples/mnist_cnn/data/'
 
 def test_cnn_create():
 
@@ -41,17 +42,22 @@ def test_cnn_mnist():
         model_data = array.array('B', f.read())
         model = tinymaix_cnn.new(model_data)
 
+    correct = 0
     for class_no in range(0, 10):
-        data_path = 'test_data/mnist_example_{0:d}.bin'.format(class_no)
-        print('open', data_path)
+        data_path = MNIST_DATA_DIR + 'mnist_example_{0:d}.bin'.format(class_no)
+        #print('open', data_path)
         with open(data_path, 'rb') as f:
             img = array.array('B', f.read())
 
-            print_2d_buffer(img, 28)
+            #print_2d_buffer(img, 28)
 
             out = model.run(img)
             # TODO replace with assert
-            print(class_no, out, class_no == out)
+            print('mnist-example-check', class_no, out, class_no == out)
+            if out == class_no:
+                correct += 1            
+
+    assert correct >= 6, correct
 
 
 test_cnn_create()

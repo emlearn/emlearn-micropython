@@ -9,24 +9,34 @@ import tensorflow as tf
 from keras.datasets import mnist
 import keras
 
-#mnist_arduino
-def init_model(dim0):
+# Make a simple CNN. Originally based on "mnist_arduino" TinyMaix example
+def init_model(start=8, growth=1.5, classes=10):
     from tensorflow.keras.models import Sequential
-    from tensorflow.keras.layers import Input,Conv2D, Dense, MaxPooling2D, Softmax, Activation, BatchNormalization, Flatten, Dropout, DepthwiseConv2D
-    from tensorflow.keras.layers import MaxPool2D, AvgPool2D, AveragePooling2D, GlobalAveragePooling2D,ZeroPadding2D,Input,Embedding,PReLU,Reshape
+    from tensorflow.keras.layers import Input, Conv2D, Dense, MaxPooling2D, Softmax, Activation, BatchNormalization, Dropout, DepthwiseConv2D
+    from tensorflow.keras.layers import GlobalAveragePooling2D
 
     model = Sequential()
-    model.add(Conv2D(dim0, (3,3), padding = 'valid',strides = (2, 2), input_shape = (28, 28, 1), name='ftr0'));model.add(BatchNormalization(name="bn0"));model.add(Activation('relu', name="relu0")); 
-    model.add(Conv2D(dim0*3, (3,3), padding = 'valid',strides = (2, 2), name='ftr1'));model.add(BatchNormalization(name="bn1"));model.add(Activation('relu',name="relu1")); 
-    model.add(Conv2D(dim0*6, (3,3), padding = 'valid',strides = (2, 2), name='ftr2'));model.add(BatchNormalization());model.add(Activation('relu')); 
+    g = growth
+
+    model.add(Conv2D(start, (3,3), padding = 'valid',strides = (2, 2), input_shape = (28, 28, 1), name='ftr0'))
+    model.add(BatchNormalization(name="bn0"))
+    model.add(Activation('relu', name="relu0"))
+
+    model.add(Conv2D(int(start*g), (3,3), padding = 'valid',strides = (2, 2), name='ftr1'))
+    model.add(BatchNormalization(name="bn1"));
+    model.add(Activation('relu',name="relu1"));
+
+    model.add(Conv2D(int(start*g*g), (3,3), padding = 'valid',strides = (2, 2), name='ftr2'))
+    model.add(BatchNormalization());
+    model.add(Activation('relu')); 
     
     model.add(GlobalAveragePooling2D(name='GAP'))
-    model.add(Dense(10, name="fc1"))
+    model.add(Dense(classes, name="fc1"))
     model.add(Activation('softmax', name="sm"))
     return model
 
 
-def train_mnist(h5_file):
+def train_mnist(h5_file, epochs=10):
     (x_orig_train, y_orig_train), (x_orig_test, y_orig_test) = mnist.load_data() 
     num_classes = 10
 
@@ -40,12 +50,11 @@ def train_mnist(h5_file):
     y_train = keras.utils.to_categorical(y_orig_train, num_classes)
     y_test = keras.utils.to_categorical(y_orig_test, num_classes)
 
-    model = init_model(dim0=1)  
+    model = init_model(start=8)  
     model.summary()
 
-    EPOCHS = 20
     model.compile(optimizer='adam', loss = "categorical_crossentropy", metrics = ["categorical_accuracy"]) 
-    H = model.fit(x_train, y_train, batch_size=128, epochs=EPOCHS,  verbose= 1, validation_data = (x_test, y_test), shuffle=True) 
+    H = model.fit(x_train, y_train, batch_size=128, epochs=EPOCHS, verbose=1, validation_data = (x_test, y_test), shuffle=True)
 
     model.save(h5_file)
 
@@ -140,7 +149,9 @@ def generate_tinymaix_model(h5_file,
 
 def main():
 
-    h5_file = "mnist_arduino_custom.h5"
+    h5_file = "mnist_cnn.h5"
+    tinymaix_tools_dir = './TinyMaix/tools'
+
     train_mnist(h5_file)
 
     #data = x_test[1]
@@ -150,7 +161,7 @@ def main():
     precision = 'int8' if quantize_data else 'fp32'
 
     # Export the model using TinyMaix
-    tinymaix_tools_dir = './TinyMaix/tools'
+
     generate_tinymaix_model(h5_file,
         input_shape=(28,28,1),
         output_shape=(1,),
