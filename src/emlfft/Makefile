@@ -19,18 +19,25 @@ MOD = emlfft
 # Source files (.c or .py)
 SRC = fft.c
 
-LIBM_O := lib_a-sf_cos.o lib_a-sf_sin.o lib_a-ef_rem_pio2.o lib_a-kf_cos.o lib_a-kf_sin.o lib_a-sf_fabs.o lib_a-kf_rem_pio2.o lib_a-sf_scalbn.o lib_a-sf_floor.o
-# math_err.o math_errf.o  
-# s_sincosf.o
-#SRC_O += $(LIBM_O)
+ifeq ($(ARCH), xtensawin)
+    LIBM_O := lib_a-sf_cos.o lib_a-sf_sin.o lib_a-ef_rem_pio2.o lib_a-kf_cos.o lib_a-kf_sin.o lib_a-sf_fabs.o lib_a-kf_rem_pio2.o lib_a-sf_scalbn.o lib_a-sf_floor.o
+endif
+
+ifeq ($(ARCH), armv7emsp)
+    LIBM_O := libm_a-sf_cos.o libm_a-sf_sin.o libm_a-ef_rem_pio2.o libm_a-kf_cos.o libm_a-kf_sin.o libm_a-sf_fabs.o libm_a-kf_rem_pio2.o libm_a-sf_scalbn.o libm_a-sf_floor.o
+endif
+
 
 # Stuff to make soft-float work
 # If symbols are undefined, use tools/find_symbols.py to locate object files to add
+ifeq ($(ARCH), armv7emsp)
+	SOFTFP_O := _arm_addsubdf3.o _arm_muldivdf3.o _arm_muldivdf3.o _arm_truncdfsf2.o
+endif
 
-SOFTFP_O := _floatsidf.o _muldf3.o _divdf3.o _truncdfsf2.o 
 
-#SOFTFP_O := _arm_cmpsf2.o lesf2.o _arm_fixsfsi.o fixsfsi.o eqsf2.o gesf2.o addsf3.o mulsf3.o subsf3.o _clzsi2.o divdf3.o
-#SOFTFP_O += _dvmd_tls.o _aeabi_uldivmod.o _aeabi_ldivmod.o _divsi3.o _udivsi3.o _modsi3.o _umodsi3.o _thumb1_case_uhi.o  _udivmoddi4.o bpabi.o _clzdi2.o _ashldi3.o _lshrdi3.o _muldi3.o _divdi3.o _arm_muldivsf3.o _arm_addsubsf3.o
+ifeq ($(ARCH), xtensawin)
+	SOFTFP_O := _floatsidf.o _muldf3.o _divdf3.o _truncdfsf2.o
+endif
 
 SOFTFP_ENABLE := 0
 ifeq ($(ARCH), armv6m)
@@ -41,6 +48,9 @@ ifeq ($(ARCH), armv7m)
 endif
 
 ifeq ($(ARCH), xtensawin)
+	SOFTFP_ENABLE=1
+endif
+ifeq ($(ARCH), armv7emsp)
 	SOFTFP_ENABLE=1
 endif
 
@@ -65,15 +75,27 @@ include $(MPY_DIR)/py/dynruntime.mk
 LIBGCC_FILENAME = $(shell $(CROSS)gcc $(CFLAGS) -print-libgcc-file-name)
 $(info $(LIBGCC_FILENAME))
 
-GCC_SYSROOT = /home/jon/.espressif/tools/xtensa-esp32-elf/esp-2022r1-11.2.0/xtensa-esp32-elf/
+# FIXME: unhardcode these libm
+ifeq ($(ARCH), xtensawin)
 LIBM_FILENAME = /home/jon/.espressif/tools/xtensa-esp32-elf/esp-2022r1-11.2.0/xtensa-esp32-elf/xtensa-esp32-elf/lib/esp32-psram/no-rtti/libm.a
+endif
 
+ifeq ($(ARCH), armv7emsp)
+	LIBM_FILENAME = /usr/arm-none-eabi/lib/thumb/v7e-m+fp/hard/libm.a
+endif
 
-lib_a-sf_floor.o:
+libm_a-sf_cos.o:
 	$(CROSS)ar -x $(LIBM_FILENAME) $(LIBM_O)
 
-_floatsidf.o:
+lib_a-sf_cos.o:
+	$(CROSS)ar -x $(LIBM_FILENAME) $(LIBM_O)
+
+_arm_truncdfsf2.o:
 	$(CROSS)ar -x $(LIBGCC_FILENAME) $(SOFTFP_O)
+
+_truncdfsf2.o:
+	$(CROSS)ar -x $(LIBGCC_FILENAME) $(SOFTFP_O)
+
 
 CFLAGS += -I$(EMLEARN_DIR)
 
