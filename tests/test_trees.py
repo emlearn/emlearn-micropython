@@ -32,7 +32,7 @@ def test_trees_xor():
     model = emltrees.new(5, 30, 4)
 
     # Load a CSV file with the model
-    with open('examples/xor_model.csv', 'r') as f:
+    with open('examples/xor_trees/xor_model.csv', 'r') as f:
         emltrees.load_model(model, f)
 
     # run it
