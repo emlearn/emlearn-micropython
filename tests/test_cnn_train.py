@@ -2,7 +2,9 @@
 import os
 import subprocess
 
-import numpy as np
+import numpy
+import pandas
+
 import tensorflow as tf
 from keras.datasets import mnist
 import keras
@@ -25,31 +27,52 @@ def init_model(dim0):
 
 
 def train_mnist(h5_file):
-    (x_train,y_train), (x_test,y_test) = mnist.load_data() 
+    (x_orig_train, y_orig_train), (x_orig_test, y_orig_test) = mnist.load_data() 
     num_classes = 10
 
+    generate_test_files('test_data', x_orig_test, y_orig_test)
+
+    x_train = x_orig_train
+    x_test = x_orig_test
     x_train = x_train.reshape(x_train.shape[0],x_train.shape[1],x_train.shape[2],1)/255
     x_test = x_test.reshape(x_test.shape[0],x_test.shape[1],x_test.shape[2],1)/255
 
-    y_train = keras.utils.to_categorical(y_train, num_classes)
-    y_test = keras.utils.to_categorical(y_test, num_classes)
-
+    y_train = keras.utils.to_categorical(y_orig_train, num_classes)
+    y_test = keras.utils.to_categorical(y_orig_test, num_classes)
 
     model = init_model(dim0=1)  
     model.summary()
 
     EPOCHS = 20
     model.compile(optimizer='adam', loss = "categorical_crossentropy", metrics = ["categorical_accuracy"]) 
-    H = model.fit(x_train, y_train, batch_size=64, epochs= EPOCHS,  verbose= 1, validation_data = (x_test, y_test), shuffle=True) 
+    H = model.fit(x_train, y_train, batch_size=128, epochs=EPOCHS,  verbose= 1, validation_data = (x_test, y_test), shuffle=True) 
 
     model.save(h5_file)
 
-def generate_test_file(data):
+def generate_test_files(out_dir, x, y):
 
-    for y in range(28):
-        for x in range(28):
-            print("%3d,"%(int(data[y,x,0]*255)), end="")
-        print("")
+    expect_bytes = 28*28*1
+    classes = numpy.unique(y)
+    X_series = pandas.Series([s for s in x])
+    Y_classes = y #numpy.argmax(y, axis=1)
+
+    # select one per class
+    for class_no in classes:
+        matches = (Y_classes == class_no)
+        print('mm', matches.shape)
+        x_matches = X_series[matches]
+
+        selected = x_matches.sample(n=1, random_state=1)
+        for s in selected:
+            print('ss', s.shape, s.dtype)
+            print(s)
+            out = os.path.join(out_dir, f'mnist_example_{class_no}.bin')
+            data = s.tobytes(order='C')
+
+            assert len(data) == expect_bytes, (len(data), expect_bytes)
+            with open(out, 'wb') as f:
+                f.write(data)
+
 
 def generate_tinymaix_model(h5_file,
         input_shape : tuple[int],

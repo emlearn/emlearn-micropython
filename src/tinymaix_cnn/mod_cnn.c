@@ -74,7 +74,7 @@ STATIC mp_obj_t mod_cnn_new(mp_obj_t model_data_obj) {
     mp_printf(&mp_plat_print, "cnn-new data.typecode=%c \n", bufinfo.typecode);
 #endif
 
-    if (bufinfo.typecode != 'b') {
+    if (bufinfo.typecode != 'B') {
         mp_raise_ValueError(MP_ERROR_TEXT("model should be bytes"));
     }
     uint8_t *model_data_buffer = bufinfo.buf;
