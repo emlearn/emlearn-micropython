@@ -20,12 +20,15 @@ SRC = mod_cnn.c
 
 # Stuff to make soft-float work
 # If symbols are undefined, use tools/find_symbols.py to locate object files to add
-SOFTFP_O := 
+SOFTFP_O := _truncdfsf2.o _addsubdf3.o _extendsfdf2.o _divsf3.o
 SOFTFP_ENABLE := 0
 ifeq ($(ARCH), armv6m)
 	SOFTFP_ENABLE=1
 endif
 ifeq ($(ARCH), armv7m)
+	SOFTFP_ENABLE=1
+endif
+ifeq ($(ARCH), xtensawin)
 	SOFTFP_ENABLE=1
 endif
 
@@ -49,7 +52,7 @@ include $(MPY_DIR)/py/dynruntime.mk
 LIBGCC_FILENAME = $(shell $(CROSS)gcc $(CFLAGS) -print-libgcc-file-name)
 $(info $(LIBGCC_FILENAME))
 
-_arm_cmpsf2.o:
+_addsubdf3.o:
 	$(CROSS)ar -x $(LIBGCC_FILENAME) $(SOFTFP_O)
 
 CFLAGS += -I$(TINYMAIX_DIR)/include -I$(TINYMAIX_DIR)/src -Wno-error=unused-variable -Wno-error=multichar
