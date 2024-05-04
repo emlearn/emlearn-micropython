@@ -19,15 +19,19 @@ MOD = emlfft
 # Source files (.c or .py)
 SRC = fft.c
 
-LIBM_O := s_sincosf-fma.o
+LIBM_O := lib_a-sf_cos.o lib_a-sf_sin.o lib_a-ef_rem_pio2.o lib_a-kf_cos.o lib_a-kf_sin.o lib_a-sf_fabs.o lib_a-kf_rem_pio2.o lib_a-sf_scalbn.o lib_a-sf_floor.o
 # math_err.o math_errf.o  
 # s_sincosf.o
 #SRC_O += $(LIBM_O)
 
 # Stuff to make soft-float work
 # If symbols are undefined, use tools/find_symbols.py to locate object files to add
-SOFTFP_O := _arm_cmpsf2.o lesf2.o _arm_fixsfsi.o fixsfsi.o eqsf2.o gesf2.o addsf3.o mulsf3.o subsf3.o _clzsi2.o divdf3.o
-SOFTFP_O += _dvmd_tls.o _aeabi_uldivmod.o _aeabi_ldivmod.o _divsi3.o _udivsi3.o _modsi3.o _umodsi3.o _thumb1_case_uhi.o  _udivmoddi4.o bpabi.o _clzdi2.o _ashldi3.o _lshrdi3.o _muldi3.o _divdi3.o _arm_muldivsf3.o _arm_addsubsf3.o
+
+SOFTFP_O := _floatsidf.o _muldf3.o _divdf3.o _truncdfsf2.o 
+
+#SOFTFP_O := _arm_cmpsf2.o lesf2.o _arm_fixsfsi.o fixsfsi.o eqsf2.o gesf2.o addsf3.o mulsf3.o subsf3.o _clzsi2.o divdf3.o
+#SOFTFP_O += _dvmd_tls.o _aeabi_uldivmod.o _aeabi_ldivmod.o _divsi3.o _udivsi3.o _modsi3.o _umodsi3.o _thumb1_case_uhi.o  _udivmoddi4.o bpabi.o _clzdi2.o _ashldi3.o _lshrdi3.o _muldi3.o _divdi3.o _arm_muldivsf3.o _arm_addsubsf3.o
+
 SOFTFP_ENABLE := 0
 ifeq ($(ARCH), armv6m)
 	SOFTFP_ENABLE=1
@@ -36,8 +40,13 @@ ifeq ($(ARCH), armv7m)
 	SOFTFP_ENABLE=1
 endif
 
+ifeq ($(ARCH), xtensawin)
+	SOFTFP_ENABLE=1
+endif
+
 ifeq ($(SOFTFP_ENABLE), 1)
 	SRC_O += $(SOFTFP_O)
+	SRC_O += $(LIBM_O)
 	#CLEAN_EXTRA += $(SOFTFP_O)
 endif
 
@@ -56,12 +65,14 @@ include $(MPY_DIR)/py/dynruntime.mk
 LIBGCC_FILENAME = $(shell $(CROSS)gcc $(CFLAGS) -print-libgcc-file-name)
 $(info $(LIBGCC_FILENAME))
 
-LIBM_FILENAME = /usr/lib/libm-2.39.a
+GCC_SYSROOT = /home/jon/.espressif/tools/xtensa-esp32-elf/esp-2022r1-11.2.0/xtensa-esp32-elf/
+LIBM_FILENAME = /home/jon/.espressif/tools/xtensa-esp32-elf/esp-2022r1-11.2.0/xtensa-esp32-elf/xtensa-esp32-elf/lib/esp32-psram/no-rtti/libm.a
 
-#s_sincosf-fma.o:
-#	$(CROSS)ar -x $(LIBM_FILENAME) $(LIBM_O)
 
-_arm_cmpsf2.o:
+lib_a-sf_floor.o:
+	$(CROSS)ar -x $(LIBM_FILENAME) $(LIBM_O)
+
+_floatsidf.o:
 	$(CROSS)ar -x $(LIBGCC_FILENAME) $(SOFTFP_O)
 
 CFLAGS += -I$(EMLEARN_DIR)
