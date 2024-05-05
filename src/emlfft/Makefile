@@ -17,15 +17,7 @@ DIST_DIR := ../../dist/$(ARCH)_$(MPY_ABI_VERSION)
 MOD = emlfft
 
 # Source files (.c or .py)
-SRC = fft.c
-
-ifeq ($(ARCH), xtensawin)
-    LIBM_O := lib_a-sf_cos.o lib_a-sf_sin.o lib_a-ef_rem_pio2.o lib_a-kf_cos.o lib_a-kf_sin.o lib_a-sf_fabs.o lib_a-kf_rem_pio2.o lib_a-sf_scalbn.o lib_a-sf_floor.o
-endif
-
-ifeq ($(ARCH), armv7emsp)
-    LIBM_O := libm_a-sf_cos.o libm_a-sf_sin.o libm_a-ef_rem_pio2.o libm_a-kf_cos.o libm_a-kf_sin.o libm_a-sf_fabs.o libm_a-kf_rem_pio2.o libm_a-sf_scalbn.o libm_a-sf_floor.o
-endif
+SRC = fft.c fft.py
 
 
 # Stuff to make soft-float work
