@@ -13,6 +13,9 @@ NOTE: still very slow compared to ulab or emlearn FFT.
 Potentially 100-1000x for 512+ lengths.
 """
 
+import array
+import math
+
 def reverse_bits(index, length):
 
     # Compute levels = floor(log2(n))

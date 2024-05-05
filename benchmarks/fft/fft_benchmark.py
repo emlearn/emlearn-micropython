@@ -16,6 +16,7 @@ import math
 import cmath
 import time
 import array
+import gc
 
 # Import the different implementations
 from fft_python import FFTPreInplace
@@ -31,7 +32,7 @@ except ImportError as e:
 emlfft = None
 try:
     import emlfft
-except ImportError 
+except ImportError as e:
     print(e)
 
 
@@ -44,54 +45,64 @@ def make_two_sines(f1 = 2.0, f2 = 20.0, sr = 100, dur = 1.0):
     return t, sig
 
 
-def run_one(data, imag, n, repeat=100):
+def run_one(data, imag, n, repeat=10):
 
+    assert len(data) == n
+
+    ulab = False
+    emlearn = True
+    pyfft = False
+    
     re = array.array('f', data)
     im = array.array('f', imag)
 
     # Python
     fft = FFTPreInplace(n)
 
-    start = time.time()
-    for i in range(repeat):
-        fft.compute(re, im)
-        #out = fft_optimized(data, seq)
-    d = ((time.time() - start) / repeat) * 1000.0 # ms
-    print('python', d)
+    if pyfft:
+        start = time.ticks_us()
+        for i in range(repeat):
+            fft.compute(re, im)
+            #out = fft_optimized(data, seq)
+        d = ((time.ticks_diff(time.ticks_us(), start)) / repeat) / 1000.0 # ms
+        print('python', d)
 
     # ulab
-    start = time.time()
-    for i in range(repeat):
-        real, _ = numpy.fft.fft(a)
-    d = ((time.time() - start) / repeat) * 1000.0 # ms
-    print('ulab', d)
+    if ulab:    
+        start = time.ticks_us()
+        for i in range(repeat):
+            out, _ = numpy.fft.fft(data)
+        d = ((time.ticks_diff(time.ticks_us(), start)) / repeat) / 1000.0 # ms
+        print('ulab', d)
 
     # emlearn
-    fft = emlfft.new(n)
-    emlfft.fill(fft, n)
+    if emlearn:
+        fft = emlfft.new(n)
+        emlfft.fill(fft, n)
 
-    start = time.time()
-    for n in range(repeat):
-        out = fft.run(re, im)
-    d = ((time.time() - start) / repeat) * 1000.0 # ms
-    print('emlearn', d)
+        start = time.ticks_us()
+        for n in range(repeat):
+            out = fft.run(re, im)
+        d = ((time.ticks_diff(time.ticks_us(), start)) / repeat) / 1000.0 # ms
+        print('emlearn', d)
 
 def run_all():
 
     lengths = [
-        128,
-        256,
-        512,
-        1024,
+        32,
+        #128,
+        #256,
+        #512,
+        #1024,
     ]
 
-    sines = make_two_sines(dur=100.0)
-    data = sines[0][0:n]
-    imag = numpy.zeros(data.shape, dtype=data.dtype)
-    assert len(data) == n
+    sines = make_two_sines(dur=20.0)
 
-    for l in lengths:
-        run_one(data, l)
+    for n in lengths:
+        data = sines[0][0:n]
+        imag = numpy.zeros(data.shape, dtype=data.dtype)
+        run_one(data, imag, n)
+        gc.collect()
 
 
 if __name__ == '__main__':
