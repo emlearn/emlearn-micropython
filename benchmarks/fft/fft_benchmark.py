@@ -10,62 +10,66 @@ from fft_python import FFTPreInplace
 
 ulab = None
 try:
-    import ulab
-    from ulab import numpy
+#    import ulab
+#    from ulab import numpy
+    pass
+except ImportError as e:
+    print(e)
+
+emlfft = None
+try:
+    import emlfft
     pass
 except ImportError as e:
     print(e)
 
 
-
-
 def make_two_sines(f1 = 2.0, f2 = 20.0, sr = 100, dur = 1.0):
-    np = numpy
 
-    t = np.linspace(0, 1, num=int(dur*sr))
-    sig = np.sin(2*np.pi*f1*t) + np.sin(2*np.pi*f2*t)
+    n = int(dur * sr)
+    PI2 = 2 * math.pi
 
-    return t, sig
+    a = array.array('f', ( math.sin(PI2*f1*t) + math.sin(PI2*f2*t) for t in range(n)) )
+    return a
 
 
-def run_one(data, imag, n, repeat=10):
+def run_one(real, imag, n, repeat=10):
 
-    emlfft = None
-    try:
-        import emlfft
-        pass
-    except ImportError as e:
-        print(e)
 
-    assert len(data) == n
+    assert len(real) == n
 
-    ulab = True
+    global ulab
+    #ulab = True
     emlearn = True
     pyfft = True
     
-    re = array.array('f', data)
-    im = array.array('f', imag)
-
     # Python
+    """
     fft1 = FFTPreInplace(n)
 
     if pyfft:
         start = time.ticks_us()
         for i in range(repeat):
-            fft1.compute(re, im)
+            fft1.compute(real, imag)
             #out = fft_optimized(data, seq)
         d = ((time.ticks_diff(time.ticks_us(), start)) / repeat) / 1000.0 # ms
         print('python', d)
 
+    gc.collect()
+
     # ulab
-    if ulab:    
+    if ulab:
+        arr = numpy.array(real)
         start = time.ticks_us()
         for i in range(repeat):
             out, _ = numpy.fft.fft(data)
         d = ((time.ticks_diff(time.ticks_us(), start)) / repeat) / 1000.0 # ms
         print('ulab', d)
 
-    gc.collect()
+    """
+
+    # FIXME: this causes MicroPython to crash inside emlfft
+    #gc.collect()
 
     # emlearn
     if emlearn:
@@ -79,7 +83,7 @@ def run_one(data, imag, n, repeat=10):
         print("before fill")
         time.sleep_ms(100)
 
-        return
+        #return
         
         emlfft.fill(fft2, n)
 
@@ -88,14 +92,16 @@ def run_one(data, imag, n, repeat=10):
 
         start = time.ticks_us()
         for n in range(repeat):
-            out = fft2.run(re, im)
+            out = fft2.run(real, imag)
         d = ((time.ticks_diff(time.ticks_us(), start)) / repeat) / 1000.0 # ms
         print('emlearn', d)
+
+    gc.collect()
 
 def run_all():
 
     lengths = [
-        16,
+        128,
         #128,
         #256,
         #512,
@@ -103,11 +109,11 @@ def run_all():
     ]
 
     sines = make_two_sines(dur=1.5)
-    print("fft-run-all", lengths)
+    print("fft-run-all22", lengths)
 
     for n in lengths:
-        data = sines[0][0:n]
-        imag = numpy.zeros(data.shape, dtype=data.dtype)
+        data = sines[0:n]
+        imag = array.array('f', (0.0 for _ in range(n)))
         run_one(data, imag, n)
         gc.collect()
 
