@@ -4,9 +4,8 @@
 #include <eml_common.h>
 
 #include <string.h>
-#include <errno.h> // used by sincosf
 
-#define DEBUG (0)
+#define DEBUG (1)
 
 // memset is used by some standard C constructs
 #if !defined(__linux__)
@@ -107,19 +106,37 @@ typedef struct _mp_obj_fft_t {
 mp_obj_full_type_t fft_type;
 
 // Create a new instance
-static mp_obj_t fft_new(mp_obj_t length_obj) {
+static mp_obj_t fft_new(const mp_obj_type_t *type, size_t n_args, size_t n_kw, const mp_obj_t *args_in) {
 
-    const int fft_length = mp_obj_get_int(length_obj);
+    mp_arg_check_num(n_args, n_kw, 1, 1, false);
+
+#if DEBUG
+    mp_printf(&mp_plat_print, "fft-new-start length=%d\n",
+        0);
+#endif
+
+    const int fft_length = mp_obj_get_int(args_in[0]);
 
     // Construct object
     mp_obj_fft_t *o = mp_obj_malloc(mp_obj_fft_t, (mp_obj_type_t *)&fft_type);
+#if 0
     EmlFFT *self = &o->fft;
     o->filled = false;
 
     const int table_length = fft_length / 2;
-    self->cos = (float *)m_malloc(sizeof(float)*table_length);
-    self->sin = (float *)m_malloc(sizeof(float)*table_length);
+    self->cos = m_new(float, table_length);
+    self->sin = m_new(float, table_length);
     self->length = table_length;
+
+    if (self->cos == NULL || self->sin == NULL) {
+        mp_raise_msg(&mp_type_RuntimeError, MP_ERROR_TEXT("allocation failed"));
+    }
+#endif
+
+#if DEBUG
+    mp_printf(&mp_plat_print, "fft-new length=%d\n",
+        fft_length);
+#endif
 
 #if 0
     // Using sinf/cosf does not work with mpy_ld.py
@@ -135,17 +152,27 @@ static mp_obj_t fft_new(mp_obj_t length_obj) {
 
     return MP_OBJ_FROM_PTR(o);
 }
-static MP_DEFINE_CONST_FUN_OBJ_1(fft_new_obj, fft_new);
 
 // Delete the instance
 static mp_obj_t fft_del(mp_obj_t self_obj) {
 
+#if DEBUG
+    mp_printf(&mp_plat_print, "fft-del-start \n");
+#endif
+
+#if 0
     mp_obj_fft_t *o = MP_OBJ_TO_PTR(self_obj);
+
     EmlFFT *self = &o->fft;
 
     // free allocated data
     m_free(self->cos);
     m_free(self->sin);
+#endif
+
+#if DEBUG
+    mp_printf(&mp_plat_print, "fft-del \n");
+#endif
 
     return mp_const_none;
 }
@@ -229,17 +256,29 @@ mp_obj_t mpy_init(mp_obj_fun_bc_t *self, size_t n_args, size_t n_kw, mp_obj_t *a
     // This must be first, it sets up the globals dict and other things
     MP_DYNRUNTIME_INIT_ENTRY
 
-    mp_store_global(MP_QSTR_new, MP_OBJ_FROM_PTR(&fft_new_obj));
+#if 1
+#if DEBUG
+    mp_printf(&mp_plat_print, "fft-mpy-init\n");
+#endif
 
-    fft_type.base.type = (void*)&mp_fun_table.type_type;
-    fft_type.flags = MP_TYPE_FLAG_ITER_IS_CUSTOM;
-    fft_type.name = MP_QSTR_emlfft;
+#if DEBUG
+    mp_printf(&mp_plat_print, "fft-mpy-init2\n");
+#endif
+#endif
+
+    fft_type.base.type = (void*)&mp_type_type;
+    fft_type.flags = MP_TYPE_FLAG_NONE;
+    fft_type.name = MP_QSTR_FFT;
+    MP_OBJ_TYPE_SET_SLOT(&fft_type, make_new, fft_new, 0);
+
     // methods
     mod_locals_dit_table[0] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR_run), MP_OBJ_FROM_PTR(&fft_run_obj) };
     mod_locals_dit_table[1] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR___del__), MP_OBJ_FROM_PTR(&fft_del_obj) };
     mod_locals_dit_table[2] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR_fill), MP_OBJ_FROM_PTR(&fft_fill_obj) };
+    MP_OBJ_TYPE_SET_SLOT(&fft_type, locals_dict, (void*)&mod_locals_dit, 3);
 
-    MP_OBJ_TYPE_SET_SLOT(&fft_type, locals_dict, (void*)&mod_locals_dit, 2);
+    // Make the Factorial type available on the module.
+    mp_store_global(MP_QSTR_FFT, MP_OBJ_FROM_PTR(&fft_type));
 
     // This must be last, it restores the globals dict
     MP_DYNRUNTIME_INIT_EXIT
