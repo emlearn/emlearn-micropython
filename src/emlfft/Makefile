@@ -31,6 +31,11 @@ ifeq ($(ARCH), xtensawin)
 	SOFTFP_O := _floatsidf.o _muldf3.o _divdf3.o _truncdfsf2.o
 endif
 
+ifeq ($(ARCH), armv6m)
+	SOFTFP_O := mulsf3.o addsf3.o subsf3.o _clzsi2.o _udivsi3.o
+endif
+
+
 SOFTFP_ENABLE := 0
 ifeq ($(ARCH), armv6m)
 	SOFTFP_ENABLE=1
@@ -88,6 +93,8 @@ _arm_truncdfsf2.o:
 _truncdfsf2.o:
 	$(CROSS)ar -x $(LIBGCC_FILENAME) $(SOFTFP_O)
 
+_divsi3.o:
+	$(CROSS)ar -x $(LIBGCC_FILENAME) $(SOFTFP_O)
 
 CFLAGS += -I$(EMLEARN_DIR)
 
