@@ -1,6 +1,8 @@
 
 import math
+import array
 import gc
+
 
 def fill(fft, n):
     # pre-compute the trigonometrics needed for FFT computation
@@ -8,7 +10,7 @@ def fill(fft, n):
     coeffs = n // 2
 
     # pre-compute the constant part of expression
-    PI2_N = (math.pi * 2.0) / N
+    PI2_N = (math.pi * 2.0) / n
 
     # compute coeffeicients
     sin = array.array('f', (math.sin(PI2_N * i) for i in range(coeffs)) )
@@ -18,4 +20,4 @@ def fill(fft, n):
     fft.fill(sin, cos)
 
     # make sure temporary arrays get freed
-    gc.free()
+    gc.collect()

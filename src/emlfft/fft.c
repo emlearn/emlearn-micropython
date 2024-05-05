@@ -6,6 +6,8 @@
 #include <string.h>
 #include <errno.h> // used by sincosf
 
+#define DEBUG (0)
+
 // memset is used by some standard C constructs
 #if !defined(__linux__)
 void *memcpy(void *dst, const void *src, size_t n) {
@@ -94,6 +96,7 @@ eml_fft_forward(EmlFFT table, float real[], float imag[], size_t n) {
 typedef struct _mp_obj_fft_t {
     mp_obj_base_t base;
     EmlFFT fft;
+    bool filled;
 } mp_obj_fft_t;
 
 mp_obj_full_type_t fft_type;
@@ -106,10 +109,12 @@ static mp_obj_t fft_new(mp_obj_t length_obj) {
     // Construct object
     mp_obj_fft_t *o = mp_obj_malloc(mp_obj_fft_t, (mp_obj_type_t *)&fft_type);
     EmlFFT *self = &o->fft;
+    o->filled = false;
 
     const int table_length = fft_length / 2;
     self->cos = (float *)m_malloc(sizeof(float)*table_length);
     self->sin = (float *)m_malloc(sizeof(float)*table_length);
+    self->length = table_length;
 
 #if 0
     // Using sinf/cosf does not work with mpy_ld.py
@@ -155,6 +160,11 @@ check_extract_array(mp_obj_t obj, int length) {
     float *values = bufinfo.buf;
     const int array_length = bufinfo.len / sizeof(*values);
 
+#if DEBUG
+    mp_printf(&mp_plat_print, "check-array expect=%d got=%d\n",
+        length, array_length);
+#endif
+
     if (array_length != length) {
         mp_raise_ValueError(MP_ERROR_TEXT("wrong array length"));
         return NULL;
@@ -170,11 +180,13 @@ static mp_obj_t fft_fill(mp_obj_t self_obj, mp_obj_t sin_obj, mp_obj_t cos_obj) 
     EmlFFT *self = &o->fft;
     const int length = self->length;
 
+
     float *sin_values = check_extract_array(sin_obj, length);
     float *cos_values = check_extract_array(cos_obj, length);
 
     memcpy(self->sin, sin_values, sizeof(float)*length);
     memcpy(self->cos, cos_values, sizeof(float)*length);
+    o->filled = true;
 
     return mp_const_none;
  }
@@ -186,6 +198,10 @@ static mp_obj_t fft_run(mp_obj_t self_obj, mp_obj_t real_obj, mp_obj_t imag_obj)
     mp_obj_fft_t *o = MP_OBJ_TO_PTR(self_obj);
     EmlFFT *self = &o->fft;
     const int fft_length = self->length*2;
+
+    if (!o->filled) {
+        mp_raise_ValueError(MP_ERROR_TEXT("fill() not called first"));
+    }
 
     float *real_values = check_extract_array(real_obj, fft_length);
     float *imag_values = check_extract_array(imag_obj, fft_length);
