@@ -81,7 +81,7 @@ NOTE: Make sure to install the module first (see above)
 Train a model with scikit-learn
 ```
 pip install emlearn scikit-learn
-python examples/xor_train.py
+python examples/xor_trees/xor_train.py
 ```
 
 Copy model file to device
