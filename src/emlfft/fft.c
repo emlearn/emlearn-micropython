@@ -5,7 +5,7 @@
 
 #include <string.h>
 
-#define DEBUG (1)
+#define DEBUG (0)
 
 // memset is used by some standard C constructs
 #if !defined(__linux__)
@@ -38,19 +38,8 @@ static size_t reverse_bits(size_t x, int n) {
 	return result;
 }
 
-/** @typedef EmlFFT
-*
-* FFT algorithm state
-*/
-typedef struct _EmlFFT {
-    int length; // (n/2)
-    float *sin;
-    float *cos;
-} EmlFFT;
-
-
 EmlError
-eml_fft_forward(EmlFFT table, float real[], float imag[], size_t n) {
+fft_forward(float *table_sin, float *table_cos, float real[], float imag[], size_t n) {
 
     // Compute levels = floor(log2(n))
 	int levels = 0;
@@ -58,7 +47,6 @@ eml_fft_forward(EmlFFT table, float real[], float imag[], size_t n) {
 		levels++;
 
     EML_PRECONDITION(((size_t)(1U << levels)) == n, EmlSizeMismatch);
-    EML_PRECONDITION((size_t)table.length == n/2, EmlSizeMismatch);
 
 	// Bit-reversed addressing permutation
 	for (size_t i = 0; i < n; i++) {
@@ -80,8 +68,8 @@ eml_fft_forward(EmlFFT table, float real[], float imag[], size_t n) {
 		for (size_t i = 0; i < n; i += size) {
 			for (size_t j = i, k = 0; j < i + halfsize; j++, k += tablestep) {
 				size_t l = j + halfsize;
-				float tpre =  real[l] * table.cos[k] + imag[l] * table.sin[k];
-				float tpim = -real[l] * table.sin[k] + imag[l] * table.cos[k];
+				float tpre =  real[l] * table_cos[k] + imag[l] * table_sin[k];
+				float tpim = -real[l] * table_sin[k] + imag[l] * table_cos[k];
 				real[l] = real[j] - tpre;
 				imag[l] = imag[j] - tpim;
 				real[j] += tpre;
@@ -101,7 +89,10 @@ mp_obj_full_type_t mp_fft_type;
 
 typedef struct _mp_obj_fft_t {
     mp_obj_base_t base;
-    EmlFFT fft;
+
+    int length; // (n/2)
+    float *sin;
+    float *cos;
     bool filled;
 } mp_obj_fft_t;
 
@@ -120,15 +111,15 @@ static mp_obj_t fft_new(const mp_obj_type_t *type, size_t n_args, size_t n_kw, c
     // Construct object
     mp_obj_fft_t *o = mp_obj_malloc(mp_obj_fft_t, type);
 #if 1
-    EmlFFT *self = &o->fft;
+    //EmlFFT *self = &o->fft;
     o->filled = false;
 
     const int table_length = fft_length / 2;
-    self->cos = m_new(float, table_length);
-    self->sin = m_new(float, table_length);
-    self->length = table_length;
+    o->cos = m_new(float, table_length);
+    o->sin = m_new(float, table_length);
+    o->length = table_length;
 
-    if (self->cos == NULL || self->sin == NULL) {
+    if (o->cos == NULL || o->sin == NULL) {
         mp_raise_msg(&mp_type_RuntimeError, MP_ERROR_TEXT("allocation failed"));
     }
 #endif
@@ -209,15 +200,15 @@ check_extract_array(mp_obj_t obj, int length) {
 static mp_obj_t fft_fill(mp_obj_t self_obj, mp_obj_t sin_obj, mp_obj_t cos_obj) {
 
     mp_obj_fft_t *o = MP_OBJ_TO_PTR(self_obj);
-    EmlFFT *self = &o->fft;
-    const int length = self->length;
+    //EmlFFT *self = &o->fft;
+    const int length = o->length;
 
 
     float *sin_values = check_extract_array(sin_obj, length);
     float *cos_values = check_extract_array(cos_obj, length);
 
-    memcpy(self->sin, sin_values, sizeof(float)*length);
-    memcpy(self->cos, cos_values, sizeof(float)*length);
+    memcpy(o->sin, sin_values, sizeof(float)*length);
+    memcpy(o->cos, cos_values, sizeof(float)*length);
     o->filled = true;
 
     return mp_const_none;
@@ -228,8 +219,8 @@ static MP_DEFINE_CONST_FUN_OBJ_3(fft_fill_obj, fft_fill);
 static mp_obj_t fft_run(mp_obj_t self_obj, mp_obj_t real_obj, mp_obj_t imag_obj) {
 
     mp_obj_fft_t *o = MP_OBJ_TO_PTR(self_obj);
-    EmlFFT *self = &o->fft;
-    const int fft_length = self->length*2;
+    //EmlFFT *self = &o->fft;
+    const int fft_length = o->length*2;
 
     if (!o->filled) {
         mp_raise_ValueError(MP_ERROR_TEXT("fill() not called first"));
@@ -238,7 +229,7 @@ static mp_obj_t fft_run(mp_obj_t self_obj, mp_obj_t real_obj, mp_obj_t imag_obj)
     float *real_values = check_extract_array(real_obj, fft_length);
     float *imag_values = check_extract_array(imag_obj, fft_length);
 
-    const EmlError err = eml_fft_forward(*self, real_values, imag_values, fft_length);
+    const EmlError err = fft_forward(o->sin, o->cos, real_values, imag_values, fft_length);
     if (err != EmlOk) {
         mp_raise_msg(&mp_type_RuntimeError, MP_ERROR_TEXT("eml_fft_forward error"));
     }
@@ -256,14 +247,8 @@ mp_obj_t mpy_init(mp_obj_fun_bc_t *self, size_t n_args, size_t n_kw, mp_obj_t *a
     // This must be first, it sets up the globals dict and other things
     MP_DYNRUNTIME_INIT_ENTRY
 
-#if 1
 #if DEBUG
     mp_printf(&mp_plat_print, "fft-mpy-init\n");
-#endif
-
-#if DEBUG
-    mp_printf(&mp_plat_print, "fft-mpy-init2\n");
-#endif
 #endif
 
     mp_fft_type.base.type = (void*)&mp_type_type;
