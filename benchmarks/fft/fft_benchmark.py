@@ -36,7 +36,7 @@ def make_two_sines(f1 = 2.0, f2 = 20.0, sr = 100, dur = 1.0):
 def run_one(real, imag, n, repeat=10):
 
 
-    assert len(real) == n
+    assert len(real) == n, (len(real), n)
 
     global ulab
     #ulab = True
@@ -44,7 +44,6 @@ def run_one(real, imag, n, repeat=10):
     pyfft = True
     
     # Python
-    """
     fft1 = FFTPreInplace(n)
 
     if pyfft:
@@ -53,7 +52,7 @@ def run_one(real, imag, n, repeat=10):
             fft1.compute(real, imag)
             #out = fft_optimized(data, seq)
         d = ((time.ticks_diff(time.ticks_us(), start)) / repeat) / 1000.0 # ms
-        print('python', d)
+        print('python', n, d)
 
     gc.collect()
 
@@ -64,37 +63,22 @@ def run_one(real, imag, n, repeat=10):
         for i in range(repeat):
             out, _ = numpy.fft.fft(data)
         d = ((time.ticks_diff(time.ticks_us(), start)) / repeat) / 1000.0 # ms
-        print('ulab', d)
+        print('ulab', n, d)
 
-    """
-
-    # FIXME: this causes MicroPython to crash inside emlfft
+    # FIXME: this causes MicroPython to crash inside emlfft on ESP32
     #gc.collect()
 
     # emlearn
-    if emlearn:
-        print(dir(emlfft))
-        
-        print("before new", gc.mem_free())
-        time.sleep_ms(100)
-
+    if emlearn:        
         fft2 = emlfft.FFT(n)
-
-        print("before fill")
-        time.sleep_ms(100)
-
-        #return
-        
         emlfft.fill(fft2, n)
-
-        print("filled")
-        time.sleep_ms(100)
+        gc.collect()
 
         start = time.ticks_us()
-        for n in range(repeat):
+        for _ in range(repeat):
             out = fft2.run(real, imag)
         d = ((time.ticks_diff(time.ticks_us(), start)) / repeat) / 1000.0 # ms
-        print('emlearn', d)
+        print('emlearn', n, d)
 
     gc.collect()
 
@@ -102,14 +86,13 @@ def run_all():
 
     lengths = [
         128,
-        #128,
-        #256,
-        #512,
-        #1024,
+        256,
+        512,
+        1024,
     ]
 
-    sines = make_two_sines(dur=1.5)
-    print("fft-run-all22", lengths)
+    sines = make_two_sines(dur=20.0, sr=100)
+    print("fft-run-all", lengths)
 
     for n in lengths:
         data = sines[0:n]
