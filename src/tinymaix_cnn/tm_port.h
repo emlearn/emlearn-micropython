@@ -43,6 +43,9 @@ limitations under the License.
 #define TM_INLINE       __attribute__((always_inline)) static inline
 #define TM_WEAK         __attribute__((weak))
 
+// Disable "static" (non-const) globals, since they are not supported by MicroPython mpy_ld.py
+#define TM_STATIC       
+
 // Use MicroPython for dynamic allocation
 #define tm_malloc(x)   m_malloc(x)
 #define tm_free(x)     m_free(x)
