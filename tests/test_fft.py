@@ -14,7 +14,7 @@ def test_fft_del():
 
     fft_length = 256
 
-    model = emlfft.new(fft_length)
+    model = emlfft.FFT(fft_length)
     after_new = gc.mem_alloc()
     added = after_new - before_new
 
@@ -36,7 +36,7 @@ def test_fft_run():
     fft_length = 128
     in_real = array.array('f', (0.0 for _ in range(fft_length)))
     in_imag = array.array('f', (0.0 for _ in range(fft_length)))
-    model = emlfft.new(fft_length)
+    model = emlfft.FFT(fft_length)
 
     emlfft.fill(model, fft_length)
     model.run(in_real, in_imag)
