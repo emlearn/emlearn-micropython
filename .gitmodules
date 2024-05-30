@@ -1,0 +1,3 @@
+[submodule "dependencies/TinyMaix"]
+	path = dependencies/TinyMaix
+	url = https://github.com/jonnor/TinyMaix.git

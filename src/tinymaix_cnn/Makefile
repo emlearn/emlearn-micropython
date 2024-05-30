@@ -8,7 +8,7 @@ ARCH = x64
 MPY_ABI_VERSION := 6.2
 
 # Location of deps
-TINYMAIX_DIR := ../../TinyMaix
+TINYMAIX_DIR := ../../dependencies/TinyMaix
 
 DIST_DIR := ../../dist/$(ARCH)_$(MPY_ABI_VERSION)
 
