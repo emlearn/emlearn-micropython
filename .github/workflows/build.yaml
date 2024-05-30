@@ -13,6 +13,8 @@ jobs:
       MICROPYTHON_BIN: ./micropython/ports/unix/build-standard/micropython
     steps:
     - uses: actions/checkout@v4
+      with:
+        submodules: true
     - uses: actions/checkout@v4
       with:
         repository: jonnor/micropython
