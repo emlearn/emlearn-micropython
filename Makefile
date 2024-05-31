@@ -58,6 +58,6 @@ release:
 
 check: emltrees.results emlneighbors.results emliir.results tinymaix_cnn.results emlfft.results
 
-dist: $(MODULES_PATH)/emltrees.mpy $(MODULES_PATH)/emlneighbors.mpy $(MODULES_PATH)/emliir.mpy
+dist: $(MODULES_PATH)/emltrees.mpy $(MODULES_PATH)/emlneighbors.mpy $(MODULES_PATH)/emliir.mpy $(MODULES_PATH)/tinymaix_cnn.mpy $(MODULES_PATH)/emlfft.mpy
 
 
