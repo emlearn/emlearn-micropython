@@ -34,6 +34,9 @@ endif
 ifeq ($(ARCH), armv6m)
 	SOFTFP_O := mulsf3.o addsf3.o subsf3.o _clzsi2.o _udivsi3.o
 endif
+ifeq ($(ARCH), armv7m)
+	SOFTFP_O := mulsf3.o addsf3.o subsf3.o _clzsi2.o _udivsi3.o
+endif
 
 
 SOFTFP_ENABLE := 0
