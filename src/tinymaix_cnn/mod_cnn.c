@@ -81,7 +81,7 @@ mp_obj_full_type_t mod_cnn_type;
 // TODO: add function for getting the shape of expected input. As a tuple
 
 // Create a new instance
-STATIC mp_obj_t mod_cnn_new(mp_obj_t model_data_obj) {
+static mp_obj_t mod_cnn_new(mp_obj_t model_data_obj) {
 
     // Check model data
     mp_buffer_info_t bufinfo;
@@ -118,10 +118,10 @@ STATIC mp_obj_t mod_cnn_new(mp_obj_t model_data_obj) {
 
     return MP_OBJ_FROM_PTR(o);
 }
-STATIC MP_DEFINE_CONST_FUN_OBJ_1(mod_cnn_new_obj, mod_cnn_new);
+static MP_DEFINE_CONST_FUN_OBJ_1(mod_cnn_new_obj, mod_cnn_new);
 
 // Delete the instance
-STATIC mp_obj_t mod_cnn_del(mp_obj_t self_obj) {
+static mp_obj_t mod_cnn_del(mp_obj_t self_obj) {
 
     mp_obj_mod_cnn_t *o = MP_OBJ_TO_PTR(self_obj);
     tm_mdl_t *model = &o->model;
@@ -132,11 +132,11 @@ STATIC mp_obj_t mod_cnn_del(mp_obj_t self_obj) {
 
     return mp_const_none;
 }
-STATIC MP_DEFINE_CONST_FUN_OBJ_1(mod_cnn_del_obj, mod_cnn_del);
+static MP_DEFINE_CONST_FUN_OBJ_1(mod_cnn_del_obj, mod_cnn_del);
 
 
 // Add a node to the tree
-STATIC mp_obj_t mod_cnn_run(mp_obj_t self_obj, mp_obj_t input_obj) {
+static mp_obj_t mod_cnn_run(mp_obj_t self_obj, mp_obj_t input_obj) {
 
     mp_obj_mod_cnn_t *o = MP_OBJ_TO_PTR(self_obj);
 
@@ -193,11 +193,11 @@ STATIC mp_obj_t mod_cnn_run(mp_obj_t self_obj, mp_obj_t input_obj) {
 
     return mp_obj_new_int(maxi);
 }
-STATIC MP_DEFINE_CONST_FUN_OBJ_2(mod_cnn_run_obj, mod_cnn_run);
+static MP_DEFINE_CONST_FUN_OBJ_2(mod_cnn_run_obj, mod_cnn_run);
 
 
 mp_map_elem_t mod_locals_dict_table[2];
-STATIC MP_DEFINE_CONST_DICT(mod_locals_dict, mod_locals_dict_table);
+static MP_DEFINE_CONST_DICT(mod_locals_dict, mod_locals_dict_table);
 
 // This is the entry point and is called when the module is imported
 mp_obj_t mpy_init(mp_obj_fun_bc_t *self, size_t n_args, size_t n_kw, mp_obj_t *args) {

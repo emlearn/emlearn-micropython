@@ -34,7 +34,7 @@ typedef struct _mp_obj_neighbors_model_t {
 mp_obj_full_type_t neighbors_model_type;
 
 // Create a new instace
-STATIC mp_obj_t neighbors_model_new(mp_obj_t items_obj, mp_obj_t features_obj, mp_obj_t neighbors_obj) {
+static mp_obj_t neighbors_model_new(mp_obj_t items_obj, mp_obj_t features_obj, mp_obj_t neighbors_obj) {
 
     mp_int_t max_items = mp_obj_get_int(items_obj);
     mp_int_t n_features = mp_obj_get_int(features_obj);
@@ -61,11 +61,11 @@ STATIC mp_obj_t neighbors_model_new(mp_obj_t items_obj, mp_obj_t features_obj, m
 
 }
 // Define a Python reference to the function above
-STATIC MP_DEFINE_CONST_FUN_OBJ_3(neighbors_model_new_obj, neighbors_model_new);
+static MP_DEFINE_CONST_FUN_OBJ_3(neighbors_model_new_obj, neighbors_model_new);
 
 
 // Delete an instance
-STATIC mp_obj_t neighbors_model_del(mp_obj_t self_obj) {
+static mp_obj_t neighbors_model_del(mp_obj_t self_obj) {
 
     mp_obj_neighbors_model_t *o = MP_OBJ_TO_PTR(self_obj);
     EmlNeighborsModel *self = &o->model;   
@@ -78,11 +78,11 @@ STATIC mp_obj_t neighbors_model_del(mp_obj_t self_obj) {
     return mp_const_none;
 }
 // Define a Python reference to the function above
-STATIC MP_DEFINE_CONST_FUN_OBJ_1(neighbors_model_del_obj, neighbors_model_del);
+static MP_DEFINE_CONST_FUN_OBJ_1(neighbors_model_del_obj, neighbors_model_del);
 
 
 // Add data to the model
-STATIC mp_obj_t neighbors_model_additem(size_t n_args, const mp_obj_t *args) {
+static mp_obj_t neighbors_model_additem(size_t n_args, const mp_obj_t *args) {
 
     mp_obj_neighbors_model_t *o = MP_OBJ_TO_PTR(args[0]);
     EmlNeighborsModel *self = &o->model;    
@@ -106,11 +106,11 @@ STATIC mp_obj_t neighbors_model_additem(size_t n_args, const mp_obj_t *args) {
 
     return mp_obj_new_int(item_idx);
  }
-STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(neighbors_model_additem_obj, 3, 3, neighbors_model_additem);
+static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(neighbors_model_additem_obj, 3, 3, neighbors_model_additem);
 
 
 // Access data of an item
-STATIC mp_obj_t neighbors_model_get_item(mp_obj_t self_obj, mp_obj_t index_obj, mp_obj_t out_obj) {
+static mp_obj_t neighbors_model_get_item(mp_obj_t self_obj, mp_obj_t index_obj, mp_obj_t out_obj) {
 
     mp_obj_neighbors_model_t *o = MP_OBJ_TO_PTR(self_obj);
     EmlNeighborsModel *self = &o->model;
@@ -139,13 +139,13 @@ STATIC mp_obj_t neighbors_model_get_item(mp_obj_t self_obj, mp_obj_t index_obj, 
     return mp_const_none;
 }
 // Define a Python reference to the function above
-STATIC MP_DEFINE_CONST_FUN_OBJ_3(neighbors_model_get_item_obj, neighbors_model_get_item);
+static MP_DEFINE_CONST_FUN_OBJ_3(neighbors_model_get_item_obj, neighbors_model_get_item);
 
 
 
 
 // Takes a integer array
-STATIC mp_obj_t neighbors_model_predict(mp_obj_fun_bc_t *self_obj,
+static mp_obj_t neighbors_model_predict(mp_obj_fun_bc_t *self_obj,
         size_t n_args, size_t n_kw, mp_obj_t *args) {
     // Check number of arguments is valid
     mp_arg_check_num(n_args, n_kw, 2, 2, false);
@@ -176,7 +176,7 @@ STATIC mp_obj_t neighbors_model_predict(mp_obj_fun_bc_t *self_obj,
 }
 
 // Access details about prediction result
-STATIC mp_obj_t neighbors_model_get_result(mp_obj_t self_obj, mp_obj_t index_obj) {
+static mp_obj_t neighbors_model_get_result(mp_obj_t self_obj, mp_obj_t index_obj) {
 
     mp_obj_neighbors_model_t *o = MP_OBJ_TO_PTR(self_obj);
     EmlNeighborsModel *self = &o->model;
@@ -196,14 +196,14 @@ STATIC mp_obj_t neighbors_model_get_result(mp_obj_t self_obj, mp_obj_t index_obj
     return tuple;
 }
 // Define a Python reference to the function above
-STATIC MP_DEFINE_CONST_FUN_OBJ_2(neighbors_model_get_result_obj, neighbors_model_get_result);
+static MP_DEFINE_CONST_FUN_OBJ_2(neighbors_model_get_result_obj, neighbors_model_get_result);
 
 
 
 
 // Module setup
 mp_map_elem_t neighbors_model_locals_dict_table[5];
-STATIC MP_DEFINE_CONST_DICT(neighbors_model_locals_dict, neighbors_model_locals_dict_table);
+static MP_DEFINE_CONST_DICT(neighbors_model_locals_dict, neighbors_model_locals_dict_table);
 
 // Module setup entrypoint
 mp_obj_t mpy_init(mp_obj_fun_bc_t *self, size_t n_args, size_t n_kw, mp_obj_t *args) {

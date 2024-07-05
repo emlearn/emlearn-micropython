@@ -43,7 +43,7 @@ typedef struct _mp_obj_iir_filter_t {
 mp_obj_full_type_t iir_filter_type;
 
 // Create a new instance
-STATIC mp_obj_t iir_filter_new(mp_obj_t array_obj) {
+static mp_obj_t iir_filter_new(mp_obj_t array_obj) {
 
     // Extract buffer pointer and verify typecode
     mp_buffer_info_t bufinfo;
@@ -82,10 +82,10 @@ STATIC mp_obj_t iir_filter_new(mp_obj_t array_obj) {
 
     return MP_OBJ_FROM_PTR(o);
 }
-STATIC MP_DEFINE_CONST_FUN_OBJ_1(iir_filter_new_obj, iir_filter_new);
+static MP_DEFINE_CONST_FUN_OBJ_1(iir_filter_new_obj, iir_filter_new);
 
 // Delete the instance
-STATIC mp_obj_t iir_filter_del(mp_obj_t self_obj) {
+static mp_obj_t iir_filter_del(mp_obj_t self_obj) {
 
     mp_obj_iir_filter_t *o = MP_OBJ_TO_PTR(self_obj);
     EmlIIR *self = &o->filter;
@@ -97,11 +97,11 @@ STATIC mp_obj_t iir_filter_del(mp_obj_t self_obj) {
 
     return mp_const_none;
 }
-STATIC MP_DEFINE_CONST_FUN_OBJ_1(iir_filter_del_obj, iir_filter_del);
+static MP_DEFINE_CONST_FUN_OBJ_1(iir_filter_del_obj, iir_filter_del);
 
 
 // Add a node to the tree
-STATIC mp_obj_t iir_filter_run(mp_obj_t self_obj, mp_obj_t array_obj) {
+static mp_obj_t iir_filter_run(mp_obj_t self_obj, mp_obj_t array_obj) {
 
     mp_obj_iir_filter_t *o = MP_OBJ_TO_PTR(self_obj);
     EmlIIR *self = &o->filter;    
@@ -122,11 +122,11 @@ STATIC mp_obj_t iir_filter_run(mp_obj_t self_obj, mp_obj_t array_obj) {
 
     return mp_const_none;
  }
-STATIC MP_DEFINE_CONST_FUN_OBJ_2(iir_filter_run_obj, iir_filter_run);
+static MP_DEFINE_CONST_FUN_OBJ_2(iir_filter_run_obj, iir_filter_run);
 
 
 mp_map_elem_t iir_locals_dict_table[2];
-STATIC MP_DEFINE_CONST_DICT(iir_locals_dict, iir_locals_dict_table);
+static MP_DEFINE_CONST_DICT(iir_locals_dict, iir_locals_dict_table);
 
 // This is the entry point and is called when the module is imported
 mp_obj_t mpy_init(mp_obj_fun_bc_t *self, size_t n_args, size_t n_kw, mp_obj_t *args) {

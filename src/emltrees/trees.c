@@ -36,7 +36,7 @@ typedef struct _mp_obj_trees_builder_t {
 mp_obj_full_type_t trees_builder_type;
 
 // Create a new tree builder
-STATIC mp_obj_t builder_new(mp_obj_t trees_obj, mp_obj_t nodes_obj, mp_obj_t leaves_obj) {
+static mp_obj_t builder_new(mp_obj_t trees_obj, mp_obj_t nodes_obj, mp_obj_t leaves_obj) {
 
     mp_int_t max_nodes = mp_obj_get_int(nodes_obj);
     mp_int_t max_trees = mp_obj_get_int(trees_obj);
@@ -82,10 +82,10 @@ STATIC mp_obj_t builder_new(mp_obj_t trees_obj, mp_obj_t nodes_obj, mp_obj_t lea
 
     return MP_OBJ_FROM_PTR(o);
 }
-STATIC MP_DEFINE_CONST_FUN_OBJ_3(builder_new_obj, builder_new);
+static MP_DEFINE_CONST_FUN_OBJ_3(builder_new_obj, builder_new);
 
 // Delete a tree builder
-STATIC mp_obj_t builder_del(mp_obj_t trees_obj) {
+static mp_obj_t builder_del(mp_obj_t trees_obj) {
 
     mp_obj_trees_builder_t *o = MP_OBJ_TO_PTR(trees_obj);
     EmlTreesBuilder *self = &o->builder;
@@ -101,10 +101,10 @@ STATIC mp_obj_t builder_del(mp_obj_t trees_obj) {
 
     return mp_const_none;
 }
-STATIC MP_DEFINE_CONST_FUN_OBJ_1(builder_del_obj, builder_del);
+static MP_DEFINE_CONST_FUN_OBJ_1(builder_del_obj, builder_del);
 
 // set number of features and classes
-STATIC mp_obj_t builder_setdata(mp_obj_t self_obj, mp_obj_t features_obj, mp_obj_t classes_obj) {
+static mp_obj_t builder_setdata(mp_obj_t self_obj, mp_obj_t features_obj, mp_obj_t classes_obj) {
 
     mp_obj_trees_builder_t *o = MP_OBJ_TO_PTR(self_obj);
     EmlTreesBuilder *self = &o->builder;    
@@ -114,11 +114,11 @@ STATIC mp_obj_t builder_setdata(mp_obj_t self_obj, mp_obj_t features_obj, mp_obj
 
     return MP_OBJ_FROM_PTR(o);
 }
-STATIC MP_DEFINE_CONST_FUN_OBJ_3(builder_setdata_obj, builder_setdata);
+static MP_DEFINE_CONST_FUN_OBJ_3(builder_setdata_obj, builder_setdata);
 
 
 // Add a node to the tree
-STATIC mp_obj_t builder_addnode(size_t n_args, const mp_obj_t *args) {
+static mp_obj_t builder_addnode(size_t n_args, const mp_obj_t *args) {
 
     mp_obj_trees_builder_t *o = MP_OBJ_TO_PTR(args[0]);
     EmlTreesBuilder *self = &o->builder;    
@@ -148,11 +148,11 @@ STATIC mp_obj_t builder_addnode(size_t n_args, const mp_obj_t *args) {
 
     return mp_const_none;
  }
-STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(builder_addnode_obj, 5, 5, builder_addnode);
+static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(builder_addnode_obj, 5, 5, builder_addnode);
 
 
 // Add a node to the tree
-STATIC mp_obj_t builder_addroot(size_t n_args, const mp_obj_t *args) {
+static mp_obj_t builder_addroot(size_t n_args, const mp_obj_t *args) {
 
     mp_obj_trees_builder_t *o = MP_OBJ_TO_PTR(args[0]);
     EmlTreesBuilder *self = &o->builder;    
@@ -168,11 +168,11 @@ STATIC mp_obj_t builder_addroot(size_t n_args, const mp_obj_t *args) {
 
     return mp_const_none;
  }
-STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(builder_addroot_obj, 2, 2, builder_addroot);
+static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(builder_addroot_obj, 2, 2, builder_addroot);
 
 
 // Add a node to the tree
-STATIC mp_obj_t builder_addleaf(mp_obj_t self_obj, mp_obj_t leaf_obj) {
+static mp_obj_t builder_addleaf(mp_obj_t self_obj, mp_obj_t leaf_obj) {
 
     mp_obj_trees_builder_t *o = MP_OBJ_TO_PTR(self_obj);
     EmlTreesBuilder *self = &o->builder;    
@@ -188,11 +188,11 @@ STATIC mp_obj_t builder_addleaf(mp_obj_t self_obj, mp_obj_t leaf_obj) {
 
     return mp_const_none;
  }
-STATIC MP_DEFINE_CONST_FUN_OBJ_2(builder_addleaf_obj, builder_addleaf);
+static MP_DEFINE_CONST_FUN_OBJ_2(builder_addleaf_obj, builder_addleaf);
 
 
 // Takes a float array
-STATIC mp_obj_t builder_predict(mp_obj_t self_obj, mp_obj_t features_obj) {
+static mp_obj_t builder_predict(mp_obj_t self_obj, mp_obj_t features_obj) {
 
     mp_obj_trees_builder_t *o = MP_OBJ_TO_PTR(self_obj);
     EmlTreesBuilder *self = &o->builder;    
@@ -224,11 +224,11 @@ STATIC mp_obj_t builder_predict(mp_obj_t self_obj, mp_obj_t features_obj) {
 
     return mp_obj_new_int(result);
 }
-STATIC MP_DEFINE_CONST_FUN_OBJ_2(builder_predict_obj, builder_predict);
+static MP_DEFINE_CONST_FUN_OBJ_2(builder_predict_obj, builder_predict);
 
 
 mp_map_elem_t trees_locals_dict_table[6];
-STATIC MP_DEFINE_CONST_DICT(trees_locals_dict, trees_locals_dict_table);
+static MP_DEFINE_CONST_DICT(trees_locals_dict, trees_locals_dict_table);
 
 // This is the entry point and is called when the module is imported
 mp_obj_t mpy_init(mp_obj_fun_bc_t *self, size_t n_args, size_t n_kw, mp_obj_t *args) {
