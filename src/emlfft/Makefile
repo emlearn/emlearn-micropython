@@ -35,7 +35,7 @@ ifeq ($(ARCH), armv6m)
 	SOFTFP_O := mulsf3.o addsf3.o subsf3.o _clzsi2.o _udivsi3.o
 endif
 ifeq ($(ARCH), armv7m)
-	SOFTFP_O := mulsf3.o addsf3.o subsf3.o _clzsi2.o _udivsi3.o
+	SOFTFP_O := _arm_addsubsf3.o _arm_muldivsf3.o mulsf3.o addsf3.o subsf3.o _clzsi2.o _udivsi3.o
 endif
 
 
@@ -96,7 +96,7 @@ _arm_truncdfsf2.o:
 _truncdfsf2.o:
 	$(CROSS)ar -x $(LIBGCC_FILENAME) $(SOFTFP_O)
 
-_divsi3.o:
+_udivsi3.o:
 	$(CROSS)ar -x $(LIBGCC_FILENAME) $(SOFTFP_O)
 
 CFLAGS += -I$(EMLEARN_DIR)
