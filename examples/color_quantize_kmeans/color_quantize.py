@@ -96,7 +96,7 @@ def quantize_path(inp, outp, palette, n_samples=100):
 
     # Learn a palette
     start = time.ticks_us()
-    kmeans_cluster(samples, palette, max_iter=20)
+    emlkmeans.cluster(samples, palette, max_iter=20)
     dur = (time.ticks_diff(time.ticks_us(), start) / 1000.0)
     print('cluster duration (ms)', dur)
 

@@ -1,6 +1,11 @@
 
+import array
 
-@micropython.native
+# FIXME: get Exception: can't merge files when more than one contains native code
+# when the native code emitter is enabled. Which is critical for performance...
+# maybe we can move the inner part into a kmeans_cluster_step done in C
+
+#@micropython.native
 def cluster(values, centroids,
         channels=3, max_iter=10, stop_changes=0):
     """
