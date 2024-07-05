@@ -62,7 +62,7 @@ release:
 	zip -r $(RELEASE_NAME).zip $(RELEASE_NAME)
 	#cp $(RELEASE_NAME).zip emlearn-micropython-latest.zip
 
-check: emltrees.results emlneighbors.results emliir.results tinymaix_cnn.results
+check: emltrees.results emlneighbors.results emliir.results tinymaix_cnn.results emlkmeans.results
 
 dist: $(MODULES_PATH)/emltrees.mpy $(MODULES_PATH)/emlneighbors.mpy $(MODULES_PATH)/emliir.mpy
 
