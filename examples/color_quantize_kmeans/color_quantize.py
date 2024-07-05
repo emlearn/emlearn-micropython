@@ -12,7 +12,7 @@ import gc
 import emlkmeans
 
 @micropython.native
-def apply_palette(img, quant, palette, rowstride):
+def quantize_image(img, quant, palette, rowstride):
     """Quantize an image to the specified palette"""
 
     # check palette
@@ -28,23 +28,39 @@ def apply_palette(img, quant, palette, rowstride):
 
     rows = len(img) // (rowstride * 3)
 
-    print('aa', rows, rowstride)
-    
-    # using a view is faster
-    img_view = memoryview(img)
+    quantize_image_inner(img, quant, palette, int(rowstride), int(rows))
+
+@micropython.viper
+def quantize_image_inner(img, quant, palette, rowstride : int, rows : int):
+    """
+    Assumes all inputs to be sane. To support viper code emitter
+    """
+
+    rgb = bytearray([0, 0, 0])
+    #img_view = memoryview(img)
 
     for row in range(rows):
+        row_offset = (row*rowstride)
         for col in range(rowstride):
-            i = 3 * (row*rowstride + col)
-            rgb = img_view[i:i+3]
+            # input data
+            # PERF: just reading the pixel takes half of the execution time :(
+            i = 3 * (row_offset + col)
+            # doing the 3 bytes separately is fastest
+            rgb[0] = img[i+0]
+            rgb[1] = img[i+1]
+            rgb[2] = img[i+2]
+            # XXX: using a slice crashes/hangs with @micropython.viper
+            #rgb = img_view[i:i+3]
+            # slower than separate bytes
+            #rgb = img[i:i+3]
 
             # find closest value in palette
             palette_idx, distance = emlkmeans.euclidean_argmin(palette, rgb)
             #palette_idx, distance = 0, 0
-    
-            quant[row*rowstride + col] = palette_idx
 
-    pass
+            o = row_offset + col
+            quant[o] = palette_idx
+
 
 def make_image(width, height, channels=3, typecode='B', value=0):
     """Utility to create image stored as 1d buffer/array"""
@@ -93,7 +109,7 @@ def quantize_path(inp, outp, palette, n_samples=100):
 
     # Quantize to palette
     start = time.ticks_us()
-    apply_palette(loaded.parray, out.parray, palette, rowstride=res[1])
+    quantize_image(loaded.parray, out.parray, palette, rowstride=res[1])
 
     # Configure palette in image
     for i in range(len(palette)//3):
