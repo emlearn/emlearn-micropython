@@ -10,6 +10,11 @@
 #define debug_printf(...) //(0)
 #endif
 
+int
+__aeabi_idiv0(int return_value) {
+  return return_value;
+}
+
 // Find which vector in @vectors that @v is closes to
 uint16_t
 compute_euclidean3_argmin_uint8(const uint8_t *vectors, int vectors_length,

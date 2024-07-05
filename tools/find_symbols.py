@@ -133,7 +133,7 @@ def parse(args=None):
     a = parser.add_argument
 
     a('--archive', type=str, metavar='FILE', default=None,
-      help='Number of mel bands')
+      help='Archive to look in')
     a('--symbols', type=str, default=None,
       help='Symbols to look for')
     a('--nm-bin', type=str, default='nm',
