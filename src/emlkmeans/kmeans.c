@@ -5,7 +5,7 @@
 #include <stdint.h>
 
 #if 0
-#define debug_printf(...) mp_printf(&mp_plat_print, "distance-" __VA_ARGS__)
+#define debug_printf(...) mp_printf(&mp_plat_print, "eml-kmeans-" __VA_ARGS__)
 #else
 #define debug_printf(...) //(0)
 #endif
@@ -50,7 +50,7 @@ euclidean_argmin(mp_obj_t vectors_obj, mp_obj_t point_obj) {
     // First arg
     mp_buffer_info_t bufinfo;
     mp_get_buffer_raise(vectors_obj, &bufinfo, MP_BUFFER_RW);
-    if (bufinfo.typecode != 'B') {
+    if ((bufinfo.typecode != 'B') && (bufinfo.typecode != BYTEARRAY_TYPECODE)) {
         mp_raise_ValueError(MP_ERROR_TEXT("expecting B array (uint8)"));
     }
     const uint8_t *values = bufinfo.buf;
@@ -58,7 +58,12 @@ euclidean_argmin(mp_obj_t vectors_obj, mp_obj_t point_obj) {
 
     // Second arg
     mp_get_buffer_raise(point_obj, &bufinfo, MP_BUFFER_RW);
-    if (bufinfo.typecode != 'B') {
+
+    debug_printf("point typecode=%d \n", \
+        bufinfo.typecode
+    );
+
+    if ((bufinfo.typecode != 'B') && (bufinfo.typecode != BYTEARRAY_TYPECODE)) {
         mp_raise_ValueError(MP_ERROR_TEXT("expecting B array (uint8)"));
     }
     const uint8_t *point = bufinfo.buf;
