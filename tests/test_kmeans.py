@@ -42,9 +42,26 @@ def test_kmeans_two_clusters():
     for typecode in ['bytearray', 'B']:
         dataset, centroids = make_two_cluster_data(typecode)
 
-        assignments = emlkmeans.cluster(dataset, centroids, channels=n_features)
+        assignments = emlkmeans.cluster(dataset, centroids, features=n_features)
         assert len(assignments) == len(dataset)/n_features
         assert list(assignments) == [0, 0, 1, 1], assignments
 
 
+def test_kmeans_many_features():
+
+    n_features = 10
+    n_samples = 100
+    n_clusters = 10
+    typecode = 'B'
+    # TODO: actually throw out some clusters, see we can find them
+    dataset = array.array(typecode, (0 for _ in range(n_features*n_samples)) )
+    centroids = array.array(typecode, (0 for _ in range(n_features*n_clusters)) )
+
+    assignments = emlkmeans.cluster(dataset, centroids, features=n_features, max_iter=2)
+    assert len(assignments) == len(dataset)/n_features
+    assert min(assignments) >= 0
+    assert max(assignments) < n_clusters
+
 test_kmeans_two_clusters()
+test_kmeans_many_features()
+
