@@ -5,9 +5,10 @@ import array
 # when the native code emitter is enabled. Which is critical for performance...
 # maybe we can move the inner part into a kmeans_cluster_step done in C
 
+
 #@micropython.native
-def cluster(values, centroids,
-        channels=3, max_iter=10, stop_changes=0):
+def cluster_iter(values, centroids, assignments, features,
+        max_iter=10, stop_changes=0):
     """
     Perform K-Means clustering of @values
 
@@ -16,16 +17,14 @@ def cluster(values, centroids,
     NOTE: will mutate @centroids
     """
 
+    channels = features
     n_clusters = len(centroids) // channels
     n_samples = len(values) // channels
-
-    assert channels == 3, 'only support 3 channels for now'
 
     assert channels < 255, channels
     assert n_clusters < 255, n_clusters
     assert n_samples < 65535, n_samples
 
-    assignments = array.array('B', (255 for _ in range(n_samples)))
     cluster_sums = array.array('L', (0 for _ in range(n_clusters*channels)))
     cluster_counts = array.array('H', (0 for _ in range(n_clusters)))
 
@@ -36,6 +35,7 @@ def cluster(values, centroids,
         for s in range(n_samples):
             v = values[s*channels:(s+1)*channels]
 
+            # PERF: considering taking all N points at the same time, filling indices and (optionally) distances
             idx, dist = euclidean_argmin(centroids, v)
             #idx, dist = 0, 0
 
@@ -43,11 +43,16 @@ def cluster(values, centroids,
                 changes += 1            
             assignments[s] = idx
 
-        print('iter', i, changes)
+        # Pass control back to caller
+        # So one can do other work between the iterations
+        # or implement custom stopping criteria
+        yield changes
+
         if changes <= stop_changes:
             break
 
         ## update cluster centroids
+        # PERF: consider moving this to C. With a update_centroids() function
         # reset old values
         for c in range(n_clusters*channels):
             cluster_sums[c] = 0
@@ -70,9 +75,18 @@ def cluster(values, centroids,
 
             for i in range(channels):
                 centroids[(c*channels)+i] = cluster_sums[(c*channels)+i] // count
-
-        #yield assignments
-        # TODO: make this into a generator? so other work can be done in between
         
 
+
+def cluster(values, centroids, features, **kwargs):
+    """Convenience wrapper around cluster_iter"""
+
+    n_samples = len(values) // features
+    assignments = array.array('B', (255 for _ in range(n_samples)))
+
+    generator = cluster_iter(values, centroids, assignments, features, **kwargs)
+    for changes in generator:
+        pass
+
     return assignments
+

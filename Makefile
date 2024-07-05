@@ -64,6 +64,6 @@ release:
 
 check: emltrees.results emlneighbors.results emliir.results tinymaix_cnn.results emlfft.results emlkmeans.results
 
-dist: $(MODULES_PATH)/emltrees.mpy $(MODULES_PATH)/emlneighbors.mpy $(MODULES_PATH)/emliir.mpy $(MODULES_PATH)/emlfft.mpy
+dist: $(MODULES_PATH)/emltrees.mpy $(MODULES_PATH)/emlneighbors.mpy $(MODULES_PATH)/emliir.mpy $(MODULES_PATH)/emlfft.mpy $(MODULES_PATH)/emlkmeans.mpy
 
 
