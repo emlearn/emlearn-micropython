@@ -7,6 +7,7 @@ Color quantization
 import array
 import time
 import os
+import gc
 
 import emlkmeans
 
@@ -23,7 +24,7 @@ def apply_palette(img, quant, palette, rowstride):
 
     # check images
     assert len(img) % (channels*rowstride) == 0, len(img)
-    assert len(quant) % (channels*rowstride) == 0, len(quant)
+    assert len(quant) % (1*rowstride) == 0, len(quant)
 
     rows = len(img) // (rowstride * 3)
 
@@ -43,14 +44,11 @@ def apply_palette(img, quant, palette, rowstride):
             #palette_idx, distance = 0, 0
     
             # copy the palette value
-            p = palette_idx*3
 
             #print(palette_idx, distance, p, (r,g,b), tuple(palette[p:p+3]))
 
-            # TODO: only output palette index values
-            quant[i+0] = palette[p+0]
-            quant[i+1] = palette[p+1]
-            quant[i+2] = palette[p+2]
+            quant[row*rowstride + col] = palette_idx
+
 
     pass
 
@@ -83,7 +81,7 @@ def quantize_path(inp, outp, palette, n_samples=100):
     print('loaded image of dimensions', res)
 
     # TODO: use 8 or 4 bit palette instead of full color
-    out = MicroBMP(res[0], res[1], 24)
+    out = MicroBMP(res[0], res[1], 8)
 
     # Sample some pixels
     # This reduces the computational requirements of ths clustering step a lot
@@ -100,13 +98,13 @@ def quantize_path(inp, outp, palette, n_samples=100):
     dur = (time.ticks_diff(time.ticks_us(), start) / 1000.0)
     print('cluster duration (ms)', dur)
 
-    # Show selected palette
-    for i in range(len(palette)//3):
-        print(palette[(i*3):(i*3)+3])
-
-    # Apply palette
+    # Quantize to palette
     start = time.ticks_us()
     apply_palette(loaded.parray, out.parray, palette, rowstride=res[1])
+
+    # Configure palette in image
+    for i in range(len(palette)//3):
+        out.palette[i] = bytearray(palette[(i*3):(i*3)+3])
 
     dur = (time.ticks_diff(time.ticks_us(), start) / 1000.0)
     print('apply palette duration (ms)', dur)
