@@ -11,7 +11,7 @@ import gc
 
 import emlkmeans
 
-
+@micropython.native
 def apply_palette(img, quant, palette, rowstride):
     """Quantize an image to the specified palette"""
 
@@ -29,26 +29,20 @@ def apply_palette(img, quant, palette, rowstride):
     rows = len(img) // (rowstride * 3)
 
     print('aa', rows, rowstride)
+    
+    # using a view is faster
+    img_view = memoryview(img)
 
     for row in range(rows):
         for col in range(rowstride):
             i = 3 * (row*rowstride + col)
-            rgb = array.array('B', img[i:i+3])
+            rgb = img_view[i:i+3]
 
             # find closest value in palette
-            #print('p', palette)
-            #print('p', rgb)
-            assert len(rgb) == 3
             palette_idx, distance = emlkmeans.euclidean_argmin(palette, rgb)
-
             #palette_idx, distance = 0, 0
     
-            # copy the palette value
-
-            #print(palette_idx, distance, p, (r,g,b), tuple(palette[p:p+3]))
-
             quant[row*rowstride + col] = palette_idx
-
 
     pass
 
@@ -80,7 +74,6 @@ def quantize_path(inp, outp, palette, n_samples=100):
     res = (loaded.DIB_w, loaded.DIB_h)
     print('loaded image of dimensions', res)
 
-    # TODO: use 8 or 4 bit palette instead of full color
     out = MicroBMP(res[0], res[1], 8)
 
     # Sample some pixels
