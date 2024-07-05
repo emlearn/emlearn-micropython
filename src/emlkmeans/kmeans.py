@@ -34,10 +34,7 @@ def cluster(values, centroids,
         ## update sample assignments
         changes = 0
         for s in range(n_samples):
-            v = values[(s*channels)+0:(s*channels)+3]
-            #v0 = values[(s*channels)+0]
-            #v1 = values[(s*channels)+1]
-            #v2 = values[(s*channels)+2]
+            v = values[s*channels:(s+1)*channels]
 
             idx, dist = euclidean_argmin(centroids, v)
             #idx, dist = 0, 0
@@ -60,13 +57,9 @@ def cluster(values, centroids,
         # evaluate samples
         for s in range(n_samples):
             c = assignments[s]
-            v0 = values[(s*channels)+0]
-            v1 = values[(s*channels)+1]
-            v2 = values[(s*channels)+2]            
+            for i in range(channels):
+                cluster_sums[(c*channels)+i] += values[(s*channels)+i]
 
-            cluster_sums[(c*channels)+0] += v0
-            cluster_sums[(c*channels)+1] += v1
-            cluster_sums[(c*channels)+2] += v2
             cluster_counts[c] += 1
 
         # set new centroid means
@@ -75,9 +68,8 @@ def cluster(values, centroids,
             if count == 0:
                 continue
 
-            centroids[(c*channels)+0] = cluster_sums[(c*channels)+0] // count
-            centroids[(c*channels)+1] = cluster_sums[(c*channels)+1] // count
-            centroids[(c*channels)+2] = cluster_sums[(c*channels)+2] // count
+            for i in range(channels):
+                centroids[(c*channels)+i] = cluster_sums[(c*channels)+i] // count
 
         #yield assignments
         # TODO: make this into a generator? so other work can be done in between
