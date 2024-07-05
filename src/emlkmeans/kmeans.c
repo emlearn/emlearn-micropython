@@ -4,6 +4,10 @@
 #include <string.h>
 #include <stdint.h>
 
+#ifndef BYTEARRAY_TYPECODE 
+#define BYTEARRAY_TYPECODE 1
+#endif
+
 #if 0
 #define debug_printf(...) mp_printf(&mp_plat_print, "eml-kmeans-" __VA_ARGS__)
 #else
