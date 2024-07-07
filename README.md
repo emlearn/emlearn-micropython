@@ -14,18 +14,24 @@ particularly well suited for low-compexity and low-power classification tasks.
 It can be combined with feature preprocessing, including neural networks to address more complex tasks.
 
 ## Status
-**Minimally useful**
+**Minimally useful, on some MicroPython ports**
 
-- Has been tested on `armv6m` (RP2040), `xtensawin` (ESP32) and `x64` (Unix port)
-- Pre-built modules are available for the most common architectures/devices
+- Tested *working* on `x64` (Unix port) and `armv7emsp` (Cortex M4F/M7 / STM32).
+- **Not working** on `armv6m` (Cortex M0 / RP2040). [Issue](https://github.com/emlearn/emlearn-micropython/issues/14)
+- **Not working** on `xtensawin` (ESP32). [Issue](https://github.com/emlearn/emlearn-micropython/issues/12)
 
 ## Features
 
 - Classification with [RandomForest](https://en.wikipedia.org/wiki/Random_forest)/DecisionTree models
 - Classification and on-device learning with [K-Nearest Neighbors (KNN)](https://en.wikipedia.org/wiki/K-nearest_neighbors_algorithm)
+- Classification with Convolutional Neural Network (CNN), using [TinyMaix](https://github.com/sipeed/TinyMaix/) library.
+- Fast Fourier Transform (FFT) for feature preprocessing, or general DSP
+- Infinite Impulse Response (IIR) filters for feature preprocessing, or general DSP
+- Clustering using K-means
 - Installable as a MicroPython native module. No rebuild/flashing needed
-- Models can be loaded at runtime from a .CSV file in disk/flash
+- Models can be loaded at runtime from a file in disk/flash
 - Highly efficient. Inference times down to 100 microseconds, RAM usage <2 kB, FLASH usage <2 kB
+- Pre-built binaries available for most architectures.
 
 ## Prerequisites
 
