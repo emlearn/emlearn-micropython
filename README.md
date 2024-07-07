@@ -38,7 +38,7 @@ It can be combined with feature preprocessing, including neural networks to addr
 Minimally you will need
 
 - Python 3.10+ on host
-- MicroPython 1.22+ running onto your device
+- MicroPython 1.23+ running onto your device
 
 #### Download repository
 
@@ -132,7 +132,7 @@ See [MicroPython: Building native modules](https://docs.micropython.org/en/lates
 We assume that micropython is installed in the same place as this repository.
 If using another location, adjust `MPY_DIR` accordingly.
 
-You should be using the latest MicroPython 1.22 (or newer).
+You should be using the latest MicroPython 1.23 (or newer).
 
 #### Build
 

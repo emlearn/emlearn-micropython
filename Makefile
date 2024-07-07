@@ -1,6 +1,6 @@
 
 ARCH ?= x64
-MPY_ABI_VERSION ?= 6.2
+MPY_ABI_VERSION ?= 6.3
 MPY_DIR ?= ../micropython
 MICROPYTHON_BIN ?= micropython
 

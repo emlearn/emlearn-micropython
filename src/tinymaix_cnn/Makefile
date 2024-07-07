@@ -5,7 +5,7 @@ MPY_DIR = ../../micropython
 ARCH = x64
 
 # The ABI version for .mpy files
-MPY_ABI_VERSION := 6.2
+MPY_ABI_VERSION := 6.3
 
 # Location of deps
 TINYMAIX_DIR := ../../dependencies/TinyMaix

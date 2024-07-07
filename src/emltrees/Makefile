@@ -5,7 +5,7 @@ MPY_DIR = ../../micropython
 ARCH = x64
 
 # The ABI version for .mpy files
-MPY_ABI_VERSION := 6.2
+MPY_ABI_VERSION := 6.3
 
 # Location of emlearn library
 EMLEARN_DIR := $(shell python3 -c "import emlearn; print(emlearn.includedir)")
