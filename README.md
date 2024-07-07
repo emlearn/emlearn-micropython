@@ -49,7 +49,7 @@ git clone https://github.com/emlearn/emlearn-micropython
 
 ## Installing from a release
 
-#### Find architecture
+#### Find architecture and .mpy version
 
 Identify which CPU architecture your device uses.
 You need to specify `ARCH` to install the correct module version.
@@ -64,6 +64,10 @@ You need to specify `ARCH` to install the correct module version.
 | armv7emdp     | ARM Thumb 2, double floats        | Cortex-M7             |
 | xtensa        | non-windowed                      | ESP8266               |
 | xtensawin     | windowed with window size 8       | ESP32                 |
+
+Information is also available in the official documentation:
+[MicroPython: .mpy files](https://docs.micropython.org/en/latest/reference/mpyfiles.html#versioning-and-compatibility-of-mpy-files)
+
 
 #### Download release files
 
