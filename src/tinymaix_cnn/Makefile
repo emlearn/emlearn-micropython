@@ -20,16 +20,19 @@ SRC = mod_cnn.c
 
 # Stuff to make soft-float work
 # If symbols are undefined, use tools/find_symbols.py to locate object files to add
-SOFTFP_O := _truncdfsf2.o _addsubdf3.o _extendsfdf2.o _divsf3.o
+SOFTFP_O :=
 SOFTFP_ENABLE := 0
 ifeq ($(ARCH), armv6m)
 	SOFTFP_ENABLE=1
+#    SOFTFP_O += 
 endif
 ifeq ($(ARCH), armv7m)
 	SOFTFP_ENABLE=1
+    SOFTFP_O += _arm_addsubsf3.o _arm_muldivsf3.o _arm_fixsfsi.o _arm_cmpsf2.o _arm_fixunssfsi.o _arm_addsubdf3.o _arm_truncdfsf2.o
 endif
 ifeq ($(ARCH), xtensawin)
 	SOFTFP_ENABLE=1
+    SOFTFP_O += _truncdfsf2.o _addsubdf3.o _extendsfdf2.o _divsf3.o
 endif
 
 ifeq ($(SOFTFP_ENABLE), 1)
@@ -53,6 +56,9 @@ LIBGCC_FILENAME = $(shell $(CROSS)gcc $(CFLAGS) -print-libgcc-file-name)
 $(info $(LIBGCC_FILENAME))
 
 _addsubdf3.o:
+	$(CROSS)ar -x $(LIBGCC_FILENAME) $(SOFTFP_O)
+
+_arm_addsubsf3.o:
 	$(CROSS)ar -x $(LIBGCC_FILENAME) $(SOFTFP_O)
 
 CFLAGS += -I$(TINYMAIX_DIR)/include -I$(TINYMAIX_DIR)/src -Wno-error=unused-variable -Wno-error=multichar
