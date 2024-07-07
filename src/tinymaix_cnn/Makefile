@@ -30,6 +30,10 @@ ifeq ($(ARCH), armv7m)
 	SOFTFP_ENABLE=1
     SOFTFP_O += _arm_addsubsf3.o _arm_muldivsf3.o _arm_fixsfsi.o _arm_cmpsf2.o _arm_fixunssfsi.o _arm_addsubdf3.o _arm_truncdfsf2.o
 endif
+ifeq ($(ARCH), armv7emsp)
+	SOFTFP_ENABLE=1
+    SOFTFP_O += _arm_addsubdf3.o _arm_truncdfsf2.o
+endif
 ifeq ($(ARCH), xtensawin)
 	SOFTFP_ENABLE=1
     SOFTFP_O += _truncdfsf2.o _addsubdf3.o _extendsfdf2.o _divsf3.o
@@ -58,7 +62,7 @@ $(info $(LIBGCC_FILENAME))
 _addsubdf3.o:
 	$(CROSS)ar -x $(LIBGCC_FILENAME) $(SOFTFP_O)
 
-_arm_addsubsf3.o:
+_arm_addsubdf3.o:
 	$(CROSS)ar -x $(LIBGCC_FILENAME) $(SOFTFP_O)
 
 CFLAGS += -I$(TINYMAIX_DIR)/include -I$(TINYMAIX_DIR)/src -Wno-error=unused-variable -Wno-error=multichar
