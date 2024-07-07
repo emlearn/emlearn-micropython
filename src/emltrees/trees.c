@@ -18,6 +18,12 @@ void *memset(void *s, int c, size_t n) {
 }
 #endif
 
+// Softfloat
+int
+__aeabi_idiv0(int return_value) {
+  return return_value;
+}
+
 
 // For building up an EmlTrees structure
 typedef struct _EmlTreesBuilder {

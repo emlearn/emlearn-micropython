@@ -22,7 +22,7 @@ SRC = trees.c trees.py
 
 # Stuff to make soft-float work
 # If symbols are undefined, use tools/find_symbols.py to locate object files to add
-SOFTFP_O := _arm_cmpsf2.o lesf2.o _arm_fixsfsi.o fixsfsi.o eqsf2.o gesf2.o _arm_addsubsf3.o _arm_muldivsf3.o
+SOFTFP_O := _arm_cmpsf2.o lesf2.o _arm_fixsfsi.o fixsfsi.o eqsf2.o gesf2.o _arm_addsubsf3.o _arm_muldivsf3.o addsf3.o _clzsi2.o _udivsi3.o floatsisf.o divsf3.o _thumb1_case_uqi.o
 XTENSA_SOFTFP_O := _divsf3.o
 SOFTFP_ENABLE := 0
 ifeq ($(ARCH), armv6m)
