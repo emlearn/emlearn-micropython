@@ -1,6 +1,9 @@
 
 How ready is MicroPython for use in a TinyML setting.
 
+##
+
+
 ## Efficient data processing
 
 Good! Integer only code can be made quite fast with @micropython.native/viper
@@ -12,16 +15,21 @@ Floating point code cannot be optimized with @micropython.native
 
 ## Interoperability
 
-No interoperable datastructure for multi-dimensional arrays
+No interoperable datastructure for multi-dimensional arrays.
+Ref notes on [multi_dimensional_arrays](multi_dimensional_arrays.md).
 
 ## Drivers
 
 Almost no accelerometer/IMU drivers implement FIFO based-readout.
 Causes poor sampling accuracy / high jitter.
 
-PDM microphones are not supported.
-ESP32
-RP2040
+PDM microphones are not supported, on any port?
+ESP32, RP2040, STM32, NRF52.
+
+## Connectivity
+
+Good support for WiFi based commmunication on ESP32.
+
 
 ## Preprocessing
 
