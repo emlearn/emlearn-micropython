@@ -16,20 +16,48 @@ So here is my attempt at raising this concern, and how we could address it :)
 
 Most of the IMU drivers out there today have functions to read the current values
 of the accelerometer/gyro/magnetometer data.
-
-EXAMPLE CODE
+Each call of the function returns a single datapoint in time.
+Example: `(x, y, z) = get_xyz()`.
 
 When one only does a single readings of the data, this works rather OK.
 For example to check the current orientation of a rarely moving object, say for asset tracking.
 
-However when doing continious sampling, doing this by looping over.
-
-Such continious sampling is needed for example when one tracks a moving object,
-detect gestures, implement a regulation loop (PID), measure vibrations etc.
+However many applications requires continious sampling of several samples.
+Examples includ tracking a moving object, detect gestures,
+implement a regulation loop (PID), measure vibrations etc.
 
 ## Problems with continious sampling using repeated polling
 
-This is less-than-ideal for several reasons:
+Here is example code for continious sampling,
+at a slow 25 Hz and processing 1 second time-windows.
+This could for example be human activity detection on a smartwatch,
+gesture detection for a "magic wand",
+animal activity detection on a LoRa tracker, et.c.
+
+```
+    SAMPLERATE = 25
+    THRESHOLD = 25 
+    sensor = SomeIMU(i2c=machine.I2C(...))
+    samples = []
+    while True:
+        t = time.ticks_ms()
+        xyz = sensor.get_xyz()
+        samples.append(xyz)
+
+        if len(samples) == THRESHOLD:
+            process_samples(samples)
+            samples = []
+
+        # Try compensate for execution time causing variation in data sampling time
+        # But - if more than 1/SAMPLERATE (4ms for 25 Hz) - will miss the entire timestep...
+        time_spent = time.ticks_diff(time.ticks_ms(), t)
+
+        # Very little benefit from lightsleep on very short durations
+        wait_time = max(1000/SAMPLERATE - time_spent, 0)
+        time.sleep_ms(wait_time)
+```
+
+Doing continious sampling by fetching single samples is less-than-ideal for several reasons:
 
 1. Any variation/delay in time of reading causes uneven sampling of data. Jitter/noise.
 2. Application processor must be constantly running. High power consumption.
@@ -47,8 +75,8 @@ When MicroPython code executes, there will at some point be a need to do some ga
 The likelihood increases with how much allocations the code does,
 but can generally happen at any point in time.
 One garbage collection run may take many milliseconds, and will cause the data to be sampled at the wrong time.
-This can mess up the results of most types of analysis,
-be it Digital Signal Processing, control theory, or Machine Learning - because they rely on regularly sampled data.
+This can mess up the results of many types of analysis - because they rely on regularly sampled data.
+Most methods from Digital Signal Processing, control theory, or Machine Learning.
 
 2. Execution time might be too slow for high samplerates.
 To read at 1kHz+, code would need to spend under 1 ms per iteration,
@@ -89,15 +117,12 @@ so one should still support usage without interrupts.
 
 ## Application pseudo code
 
-Here is some illustrative code for how such a driver could be used
-to implement low-power continious data analysis of short time-windows of IMU data.
-This could for example be human activity detection on a smartwatch,
-gesture detection for a "magic wand",
-animal activity detection on a LoRa tracker, et.c.
+Here is some illustrative code for how such a driver could be used in the same scenario as above.
+
 
 ```
     SAMPLERATE = 25
-    THRESHOLD = 25
+    THRESHOLD = 25 # NOTE: Should be max 75% of IMU FIFO capacity
     imu = SuperIMU2k(i2c=machine.I2C(...), odr=SAMPLERATE)
 
     while True:
@@ -105,11 +130,16 @@ animal activity detection on a LoRa tracker, et.c.
         if level < THRESHOLD:
             samples = imu.read_fifo_data(THRESHOLD)        
 
-            # should take 100 ms or less. Otherwise compensate the sleep time
+            # Can take up to 100 ms without needing to compensate sleep time
+            # Or up to 1000ms if one does the compensation
             process_samples(samples) 
 
-        machine.lightsleep(900)
+        machine.lightsleep(100)
 ```
+
+This code will spend 90-99% of the time in lightsleep, for 10-100x power savings.
+It will also just work if using high samplerates (1000 Hz+).
+And the same approach will work to collect data from multiple sensors at the same time.
 
 ## Call to Action: Use the FIFO!
 
