@@ -28,6 +28,9 @@ $(MODULES_PATH)/tinymaix_cnn.mpy:
 $(MODULES_PATH)/emlkmeans.mpy:
 	make -C src/emlkmeans/ ARCH=$(ARCH) MPY_DIR=$(MPY_DIR_ABS) V=1 clean dist
 
+$(MODULES_PATH)/eml_iir_q15.mpy:
+	make -C src/eml_iir_q15/ ARCH=$(ARCH) MPY_DIR=$(MPY_DIR_ABS) V=1 clean dist
+
 emltrees.results: $(MODULES_PATH)/emltrees.mpy
 	MICROPYPATH=$(MODULES_PATH) $(MICROPYTHON_BIN) tests/test_trees.py
 
@@ -45,6 +48,9 @@ tinymaix_cnn.results: $(MODULES_PATH)/tinymaix_cnn.mpy
 
 emlkmeans.results: $(MODULES_PATH)/emlkmeans.mpy
 	MICROPYPATH=$(MODULES_PATH) $(MICROPYTHON_BIN) tests/test_kmeans.py
+
+eml_iir_q15.results: $(MODULES_PATH)/eml_iir_q15.mpy
+	MICROPYPATH=$(MODULES_PATH) $(MICROPYTHON_BIN) tests/test_iir_q15.py
 
 .PHONY: clean
 
