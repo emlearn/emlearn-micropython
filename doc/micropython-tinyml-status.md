@@ -5,6 +5,9 @@ How ready is MicroPython for use in a TinyML setting.
 
 Completely broken on at least one port, due to being garbage collected.
 
+Using floating point / math operations is difficult / very tedious.
+Need to manually resolve all symbols.
+https://github.com/micropython/micropython/issues/5629 
 
 ## Efficient data processing
 
@@ -21,12 +24,18 @@ Native machine code emitters with @micropython.native/viper
 Good! Integer only code can be made quite fast with 
 Limitation. Floating point code cannot be optimized with @micropython.native
 
-Inefficient conersion from bytes to array.array?
+Inefficient conversion from bytes to array.array?
+! Missing a "cast" type operation.
 When data comes an IMU/accelerometer over I2C/SPI it is just bytes.
 However these actually represent integer values, typically int16,
 stored in either little or big endian formats.
 TODO: benchmark the various options here.
 Plain buffer/array accesses vs struct.unpack / unpack_into
+
+!Inefficient creation of array.array
+Must use a generator-based constructor - the only type that is standardized.
+This can take seconds for many items.
+Would want to initialize , or initialized filled with a particular value.
 
 Semi-related. Encoding base64 cannot be done without allocations. LINK issue
 Useful for serializing binary data for sending in textual protocols.
