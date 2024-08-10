@@ -21,22 +21,6 @@ except ImportError as e:
     print(e)
     pass
 
-# https://stackoverflow.com/a/20932062
-def butter2_lowpass(f, sr):
-    ff = f / sr
-    ita = 1.0/ math.tan(math.pi*ff)
-    q = math.sqrt(2.0)
-    b0 = 1.0 / (1.0 + q*ita + ita*ita)
-    b1 = 2 * b0
-    b2 = b0
-    a1 = 2.0 * (ita*ita - 1.0) * b0
-    a2 = -(1.0 - q*ita + ita*ita) * b0
-
-    # Return in biquad / Second Order Stage format
-    # to be compatible with scipy, a1 and a2 needed to be flipped??
-    sos = [ b0, b1, b2, 1.0, -a1, -a2 ]
-
-    return sos
 
 def make_two_sines(f1 = 2.0, f2 = 20.0, sr = 100, dur = 1.0):
     n = int(dur * sr)
