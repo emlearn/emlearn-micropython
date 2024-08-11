@@ -1,4 +1,12 @@
 
+"""
+Support for Numpy .npy files for MicroPython
+
+References:
+https://numpy.org/doc/stable/reference/generated/numpy.lib.format.html
+https://numpy.org/doc/1.13/neps/npy-format.html#a-simple-file-format-for-numpy-arrays
+"""
+
 import struct 
 import array
 
@@ -11,26 +19,42 @@ format_mapping = {
 def find_section(data, prefix, suffix):
     start = data.index(prefix) + len(prefix)
     end = start + data[start:].index(suffix)
-    
-    print('tt', start, data[start:])
+
     section = data[start:end]
     return section
 
 def array_from_bytes(typecode, buffer):
-    # Workaround due 
+    # Workaround due
     return array.array(typecode, buffer)
 
-def read_npy(path):
-    """
-    References:
-    https://numpy.org/doc/stable/reference/generated/numpy.lib.format.html
-    https://numpy.org/doc/1.13/neps/npy-format.html#a-simple-file-format-for-numpy-arrays
-    """
-    with open(path, 'rb') as f:
+class Reader():
+
+    def __init__(self, filelike, header_maxlength=16*10):
+
+        if isinstance(filelike, str):
+            self.file = open(filelike, 'rb')
+        else:
+            self.file = filelike
+
+        self.header_maxlength = header_maxlength
+
+
+    def close(self):
+        if self.file:
+            self.file.close()
+        self.file = None
+
+    def __enter__(self):
+        self._read_header()        
+        return self
+    
+    def __exit__(self, exc_type, exc_value, exc_tb):
+        self.close()
+
+    def _read_header(self):
 
         # Read header data
-        expected_header_maxlength = 16*10
-        data = f.read(expected_header_maxlength)
+        data = self.file.read(self.header_maxlength)
 
         # Check magic
         npy_magic = b'\x93NUMPY'
@@ -72,28 +96,39 @@ def read_npy(path):
         data_start = header_start + header_length
         assert (data_start % 16) == 0, data_start # should always be 16 bytes aligned
 
+        self.typecode = typecode
+        self.itemsize = itemsize
+        self.shape = shape
+        self.data_start = data_start
+
+    def read_data_chunks(self, chunksize):
+
         # determine amount of data expected
         total_items = 1
-        for d in shape:
+        for d in self.shape:
             total_items *= d
-        total_data_bytes = itemsize * total_items
-        
-        # read the data
-        f.seek(data_start)
+        total_data_bytes = self.itemsize * total_items
 
-        chunksize = 100
-        chunksize_bytes = itemsize * chunksize
+        # read the data
+        self.file.seek(self.data_start)
+
+        chunksize_bytes = self.itemsize * chunksize
         read_bytes = 0
         while read_bytes < total_data_bytes:
-            sub = f.read(chunksize_bytes)
-            arr = array_from_bytes(typecode, sub)
+            sub = self.file.read(chunksize_bytes)
+            arr = array_from_bytes(self.typecode, sub)
             yield arr
             read_bytes += len(sub)
 
+def test_simple():
 
+    with Reader('benchmarks/iir/noise.npy') as reader:
+        print(reader.shape, reader.typecode, reader.itemsize)
 
-for s in read_npy('benchmarks/iir/noise.npy'):
-    print(s)
+        for s in reader.read_data_chunks(100):
+            print(s)
+
+test_simple()
 
     # testcases
     # supported
