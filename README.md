@@ -28,10 +28,12 @@ It can be combined with feature preprocessing, including neural networks to addr
 - Fast Fourier Transform (FFT) for feature preprocessing, or general DSP
 - Infinite Impulse Response (IIR) filters for feature preprocessing, or general DSP
 - Clustering using K-means
+- Load/save Numpy .npy files using [micropython-npyfile](https://github.com/jonnor/micropython-npyfile/)
 - Installable as a MicroPython native module. No rebuild/flashing needed
 - Models can be loaded at runtime from a file in disk/flash
 - Highly efficient. Inference times down to 100 microseconds, RAM usage <2 kB, FLASH usage <2 kB
 - Pre-built binaries available for most architectures.
+
 
 ## Prerequisites
 
