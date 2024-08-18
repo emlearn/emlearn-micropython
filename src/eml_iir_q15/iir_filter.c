@@ -47,8 +47,8 @@ static mp_obj_t iir_filter_new(mp_obj_t array_obj) {
     // Extract buffer pointer and verify typecode
     mp_buffer_info_t bufinfo;
     mp_get_buffer_raise(array_obj, &bufinfo, MP_BUFFER_RW);
-    if (bufinfo.typecode != 'i') {
-        mp_raise_ValueError(MP_ERROR_TEXT("expecting int16/i array"));
+    if (bufinfo.typecode != 'h') {
+        mp_raise_ValueError(MP_ERROR_TEXT("expecting int16/h array"));
     }
     q15_t *values = bufinfo.buf;
     const int n_values = bufinfo.len / sizeof(*values);
@@ -57,7 +57,7 @@ static mp_obj_t iir_filter_new(mp_obj_t array_obj) {
         mp_raise_ValueError(MP_ERROR_TEXT("Filter coefficients must be multiple of 6"));
     }
 
-    const int post_shift = 1; // FIXME: allow to pass as argument
+    const int post_shift = 2; // FIXME: allow to pass as argument
 
     // Construct object
     mp_obj_iir_filter_t *o = mp_obj_malloc(mp_obj_iir_filter_t, (mp_obj_type_t *)&iir_filter_type);
@@ -103,8 +103,8 @@ static mp_obj_t iir_filter_run(mp_obj_t self_obj, mp_obj_t array_obj) {
     // Extract buffer pointer and verify typecode
     mp_buffer_info_t bufinfo;
     mp_get_buffer_raise(array_obj, &bufinfo, MP_BUFFER_RW);
-    if (bufinfo.typecode != 'i') {
-        mp_raise_ValueError(MP_ERROR_TEXT("expecting int16/i array"));
+    if (bufinfo.typecode != 'h') {
+        mp_raise_ValueError(MP_ERROR_TEXT("expecting int16/h array"));
     }
     q15_t *values = bufinfo.buf;
     const int n_values = bufinfo.len / sizeof(*values);

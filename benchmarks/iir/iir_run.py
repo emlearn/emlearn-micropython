@@ -1,11 +1,16 @@
 
+import os
 import sys
+
 import npyfile
+
+ST_SIZE = 6
 
 def iir_process_file(inp, out, filters, chunksize):
 
     coefficients_shape, coefficients = npyfile.load(filters)
     print('c', coefficients_shape, coefficients)
+    
 
     # NOTE: filter shape and type checked by the C modules
 
@@ -13,7 +18,11 @@ def iir_process_file(inp, out, filters, chunksize):
     with npyfile.Reader(inp) as reader:
 
         # Check inputs and setup filters
-        print('r', reader.shape, reader.typecode, reader.itemsize)
+        print('r', inp, os.stat(inp)[ST_SIZE], reader.shape, reader.typecode, reader.itemsize)
+
+        #if reader.typecode == 'i':
+        #    reader.typecode = 'h'
+        #    coefficients = array.array('h', coefficients)
 
         if len(reader.shape) != 1:
             raise ValueError("Input must be 1d")
@@ -26,17 +35,12 @@ def iir_process_file(inp, out, filters, chunksize):
         else:
             raise ValueError("Input must either be float32/f or int16/h")
 
-
-        with npyfile.Writer(inp, reader.shape, reader.typecode) as writer:
+        with npyfile.Writer(out, reader.shape, reader.typecode) as writer:
 
             # Apply filters
             for chunk in reader.read_data_chunks(chunksize):
-                print(len(chunk))
-
                 filter.run(chunk) # operates in-place
-
                 writer.write_values(chunk)
-
 
 def main():
 

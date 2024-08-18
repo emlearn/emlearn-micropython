@@ -19,6 +19,9 @@ def run_iir(data : array.array,
 
     with tempfile.TemporaryDirectory() as temp_dir:
 
+        #temp_dir = 'temp'
+        #os.makedirs(temp_dir)
+
         filter_path = os.path.join(temp_dir, 'filter.npy')
         input_path = os.path.join(temp_dir, 'input.npy')
         output_path = os.path.join(temp_dir, 'output.npy')
@@ -27,6 +30,8 @@ def run_iir(data : array.array,
         npyfile.save(filter_path, coefficients)
         npyfile.save(input_path, data)
 
+        input_size = os.stat(input_path).st_size
+    
         assert not os.path.exists(output_path), output_path
 
         # run the processing function
@@ -40,9 +45,14 @@ def run_iir(data : array.array,
         cmd = ' '.join(args)
 
         print('run: ', cmd)
+        try:
+            out = subprocess.check_output(args)
+        except subprocess.CalledProcessError as e:
+            out = e.stdout
 
-        out = subprocess.check_output(args)
-        print(out)
+        print('out')
+        for line in out.decode('utf-8').split('\n'):
+            print(line)
 
         # load the output
         assert os.path.exists(output_path), output_path

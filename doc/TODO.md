@@ -4,7 +4,7 @@
 
 - Level 0a. Run a pretrained example/demo in the browser
 - Level 0b. Run a pretrained example/demo on a board
-- Level 1. Train on-device
+- Level 1. Train custom model on-device
 - Level 2. Collect a dataset, do training on PC, deploy back to microcontroller
 - Level 3. Bake the custom model into the firmware
 
@@ -49,7 +49,7 @@ Examples
 Benchmarks
 
 - Add FLASH and RAM usage
-- Test gzip compression of .csv model
+- Test gzip compression of .csv model for trees
 - Add a couple of different sized models to benchmark?
 - Add another application/dataset for benchmark
 
