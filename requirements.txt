@@ -1,2 +1,3 @@
 emlearn>=0.21.0
 scikit-learn>=1.0.0
+ar>=1.0.0
