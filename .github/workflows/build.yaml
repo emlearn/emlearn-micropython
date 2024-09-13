@@ -43,7 +43,7 @@ jobs:
       working-directory: micropython
       run: source tools/ci.sh && ci_esp32_idf_setup
     - name: Build module xtensawin
-      run: source micropython/esp-idf/export.sh && pip install emlearn && make dist ARCH=xtensawin V=1
+      run: source micropython/esp-idf/export.sh && pip install -r requirements.txt && make dist ARCH=xtensawin V=1
     - name: Archive dist artifacts
       uses: actions/upload-artifact@v3
       with:
