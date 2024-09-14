@@ -22,7 +22,7 @@ jobs:
       with:
         repository: jonnor/micropython
         path: micropython
-        ref: why-mpy-linking2
+        ref: why-mpy-linking3
     - name: Install Python dependencies
       run: pip install -r requirements.txt
     - name: Setup MicroPython X86
