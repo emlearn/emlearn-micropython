@@ -26,7 +26,7 @@ $(DIST_DIR):
 $(DIST_FILE): $(MOD).mpy $(DIST_DIR)
 	cp $< $@
 
-MPY_LINK_RUNTIME = 1
+MICROPY_LINK_RUNTIME = 1
 
 # Include to get the rules for compiling and linking the module
 include $(MPY_DIR)/py/dynruntime.mk
