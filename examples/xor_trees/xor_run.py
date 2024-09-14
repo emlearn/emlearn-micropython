@@ -10,11 +10,12 @@ with open('xor_model.csv', 'r') as f:
     emltrees.load_model(model, f)
 
 # run it
+max_val = (2**15-1) # 1.0 as int16
 examples = [
-    array.array('f', [0.0, 0.0]),
-    array.array('f', [1.0, 1.0]),
-    array.array('f', [0.0, 1.0]),
-    array.array('f', [1.0, 0.0]),
+    array.array('h', [0, 0]),
+    array.array('h', [max_val, max_val]),
+    array.array('h', [0, max_val]),
+    array.array('h', [max_val, 0]),
 ]
 
 for ex in examples: 
