@@ -23,11 +23,6 @@ void NORETURN abort() {
 }
 #endif
 
-int
-__aeabi_idiv0(int return_value) {
-  return return_value;
-}
-
 
 // Copy of eml_fft.h, without eml_fft_fill
 // - contains sin/cos that trips up mpy_ld.py (even if the function is not used)
