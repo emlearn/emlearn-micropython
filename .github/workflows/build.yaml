@@ -17,12 +17,12 @@ jobs:
         submodules: true
     - uses: actions/setup-python@v5
       with:
-        python-version: '3.11'
+        python-version: '3.10'
     - uses: actions/checkout@v4
       with:
         repository: jonnor/micropython
         path: micropython
-        ref: emlearn-micropython-v1.23
+        ref: why-mpy-linking3
     - name: Install Python dependencies
       run: pip install -r requirements.txt
     - name: Setup MicroPython X86
