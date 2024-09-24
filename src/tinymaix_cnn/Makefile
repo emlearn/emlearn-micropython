@@ -24,7 +24,7 @@ SOFTFP_O :=
 SOFTFP_ENABLE := 0
 ifeq ($(ARCH), armv6m)
 	SOFTFP_ENABLE=1
-#    SOFTFP_O += 
+    SOFTFP_O += _divsi3.o mulsf3.o subsf3.o subdf3.o _arm_cmpsf2.o lesf2.o _arm_fixsfsi.o _fixunssfsi.o fixsfsi.o extendsfdf2.o eqsf2.o gesf2.o _arm_addsubsf3.o _arm_muldivsf3.o addsf3.o _clzsi2.o _udivsi3.o floatsisf.o divsf3.o truncdfsf2.o _thumb1_case_uqi.o
 endif
 ifeq ($(ARCH), armv7m)
 	SOFTFP_ENABLE=1
@@ -58,6 +58,9 @@ include $(MPY_DIR)/py/dynruntime.mk
 # CROSS is defined by the included
 LIBGCC_FILENAME = $(shell $(CROSS)gcc $(CFLAGS) -print-libgcc-file-name)
 $(info $(LIBGCC_FILENAME))
+
+_arm_cmpsf2.o:
+	$(CROSS)ar -x $(LIBGCC_FILENAME) $(SOFTFP_O)
 
 _addsubdf3.o:
 	$(CROSS)ar -x $(LIBGCC_FILENAME) $(SOFTFP_O)
