@@ -99,6 +99,10 @@ _truncdfsf2.o:
 _udivsi3.o:
 	$(CROSS)ar -x $(LIBGCC_FILENAME) $(SOFTFP_O)
 
+_arm_addsubsf3.o:
+	$(CROSS)ar -x $(LIBGCC_FILENAME) $(SOFTFP_O)
+
+
 CFLAGS += -I$(EMLEARN_DIR)
 
 dist: $(DIST_FILE)
