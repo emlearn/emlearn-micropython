@@ -1,6 +1,7 @@
 
 
 import time
+import array
 
 # Using https://github.com/cnadler86/micropython-camera-API for ESP32 with OV2640 camera
 from camera import Camera, GrabMode, PixelFormat, FrameSize, GainCeiling
@@ -72,7 +73,7 @@ def compute_mean(arr, rowstride):
     return mean
 
 
-def save_image(path, arr, width, height):
+def save_image_bmp(path, arr, width, height):
 
     # https://github.com/jacklinquan/micropython-microbmp
     # wget https://raw.githubusercontent.com/jacklinquan/micropython-microbmp/refs/heads/main/microbmp.py        
@@ -90,6 +91,19 @@ def save_image(path, arr, width, height):
     # Save output
     out.save(path)
 
+def save_image_npy(path, arr, width, height):
+    
+    # https://github.com/jonnor/micropython-npyfile/
+    import npyfile
+
+    data = array.array('B', arr)
+
+    shape = (width, height)
+    npyfile.save(path, data, shape)
+
+# TODO: downscale to 32x32
+# TODO: compute histogram, print it
+
 def main():
 
     camera = setup_camera()
@@ -97,7 +111,7 @@ def main():
     height = 96
     print('after constructor')
 
-    image_no = 0
+    image_no = 100
 
     while True:
 
@@ -118,13 +132,13 @@ def main():
         mean = compute_mean(buf, width)
         print('mean', mean)
 
-        path = f'img{image_no}.bmp'
-        save_image(path, buf, width, height)
+        path = f'img{image_no}.npy'
+        save_image_npy(path, buf, width, height)
         #print_2d_buffer(buf, 96)
         print('Saved', path)
 
         image_no += 1
-        time.sleep(5.0)
+        time.sleep(1.0)
 
 main()
 
