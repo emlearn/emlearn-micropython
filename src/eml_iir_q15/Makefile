@@ -16,7 +16,7 @@ DIST_DIR := ../../dist/$(ARCH)_$(MPY_ABI_VERSION)
 MOD = eml_iir_q15
 
 # Source files (.c or .py)
-SRC = iir_filter.c
+SRC = iir_filter.c iir_filter.py
 
 SRC += \
     ${CMSIS_DSP_DIR}/Source/FilteringFunctions/arm_biquad_cascade_df1_q15.c \
