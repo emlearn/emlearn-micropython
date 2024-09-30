@@ -1,3 +1,6 @@
 [submodule "dependencies/TinyMaix"]
 	path = dependencies/TinyMaix
 	url = https://github.com/jonnor/TinyMaix.git
+[submodule "dependencies/CMSIS-DSP"]
+	path = dependencies/CMSIS-DSP
+	url = https://github.com/ARM-software/CMSIS-DSP.git
