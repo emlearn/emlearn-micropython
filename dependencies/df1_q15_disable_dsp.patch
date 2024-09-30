@@ -1,0 +1,13 @@
+diff --git a/Source/FilteringFunctions/arm_biquad_cascade_df1_q15.c b/Source/FilteringFunctions/arm_biquad_cascade_df1_q15.c
+index 697a9ed2..e407c305 100644
+--- a/Source/FilteringFunctions/arm_biquad_cascade_df1_q15.c
++++ b/Source/FilteringFunctions/arm_biquad_cascade_df1_q15.c
+@@ -317,7 +317,7 @@ ARM_DSP_ATTRIBUTE void arm_biquad_cascade_df1_q15(
+ {
+ 
+ 
+-#if defined (ARM_MATH_DSP)
++#if 0 // ARM_MATH_DSP disabled
+ 
+   const q15_t *pIn = pSrc;                             /* Source pointer */
+         q15_t *pOut = pDst;                            /* Destination pointer */

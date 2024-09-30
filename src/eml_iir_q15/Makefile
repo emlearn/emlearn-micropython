@@ -70,8 +70,12 @@ _arm_cmpsf2.o:
 _ashrdi3.o:
 	$(CROSS)ar -x $(LIBGCC_FILENAME) $(SOFTFP_O)
 
+$(CMSIS_DSP_DIR)/iir_q15.patched:
+	cd $(CMSIS_DSP_DIR) && git apply -v ../df1_q15_disable_dsp.patch
+	echo DONE > $@
+
 # Set compile flag for non-ARM
 # TODO: avoid this when target is actually arm
 CFLAGS += -D__GNUC_PYTHON__
 
-dist: $(DIST_FILE)
+dist: $(CMSIS_DSP_DIR)/iir_q15.patched $(DIST_FILE)
