@@ -24,11 +24,12 @@ SRC += \
 
 # Stuff to make soft-float work
 # If symbols are undefined, use tools/find_symbols.py to locate object files to add
-SOFTFP_O := 
 
-SOFTFP_O := _arm_cmpsf2.o lesf2.o _arm_fixsfsi.o fixsfsi.o eqsf2.o gesf2.o addsf3.o mulsf3.o subsf3.o _clzsi2.o divdf3.o
-SOFTFP_O += _dvmd_tls.o _aeabi_uldivmod.o _aeabi_ldivmod.o _divsi3.o _udivsi3.o _modsi3.o _umodsi3.o _thumb1_case_uhi.o  _udivmoddi4.o bpabi.o _clzdi2.o _ashldi3.o _lshrdi3.o _muldi3.o _divdi3.o _arm_muldivsf3.o _arm_addsubsf3.o _ashrdi3.o
+SOFTFP_O :=
 SOFTFP_ENABLE := 0
+
+ARM_SOFTFP_O := _arm_cmpsf2.o lesf2.o _arm_fixsfsi.o fixsfsi.o eqsf2.o gesf2.o addsf3.o mulsf3.o subsf3.o _clzsi2.o divdf3.o
+ARM_SOFTFP_O += _dvmd_tls.o _aeabi_uldivmod.o _aeabi_ldivmod.o _divsi3.o _udivsi3.o _modsi3.o _umodsi3.o _thumb1_case_uhi.o  _udivmoddi4.o bpabi.o _clzdi2.o _ashldi3.o _lshrdi3.o _muldi3.o _divdi3.o _arm_muldivsf3.o _arm_addsubsf3.o _ashrdi3.o
 
 ifeq ($(ARCH), xtensawin)
     SOFTFP_O += _ashrdi3.o
@@ -36,9 +37,11 @@ ifeq ($(ARCH), xtensawin)
 endif
 
 ifeq ($(ARCH), armv6m)
+    SOFTFP_O += $(ARM_SOFTFP_O)
 	SOFTFP_ENABLE=1
 endif
 ifeq ($(ARCH), armv7m)
+    SOFTFP_O += $(ARM_SOFTFP_O)
 	SOFTFP_ENABLE=1
 endif
 
