@@ -49,15 +49,17 @@ def train():
 
     return clf
 
+def main():
+    clf = train()
 
-clf = train()
+    out_dir = './'
+    if not os.path.exists(out_dir):
+        os.makedirs(out_dir)
 
-out_dir = './'
-if not os.path.exists(out_dir):
-    os.makedirs(out_dir)
+    emlearn_export(clf, os.path.join(out_dir, 'eml_digits.csv'))
+    m2c_export(clf, os.path.join(out_dir, 'm2c_digits.py'))
+    everywhereml_export(clf, os.path.join(out_dir, 'everywhere_digits.py'))
 
-emlearn_export(clf, os.path.join(out_dir, 'eml_digits.csv'))
-m2c_export(clf, os.path.join(out_dir, 'm2c_digits.py'))
-everywhereml_export(clf, os.path.join(out_dir, 'everywhere_digits.py'))
-
+if __name__ == '__main__':
+    main()
 
