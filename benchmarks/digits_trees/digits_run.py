@@ -10,7 +10,7 @@ import emltrees
 
 
 def emlearn_create():
-    model = emltrees.new(10, 300, 10)
+    model = emltrees.new(10, 1000, 10)
 
     # Load a CSV file with the model
     with open('eml_digits.csv', 'r') as f:
