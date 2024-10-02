@@ -43,10 +43,9 @@ def scale(v):
     return vi
 
 def scale_filter(matrix):
-    result = []
-    for row in matrix:
-        result.append([scale(u) for u in row])
-    return result
+    row = matrix
+    print('SCC', len(row), row[0])
+    return [scale(u) for u in row]
 
 #########################################
 
@@ -63,7 +62,8 @@ def normalize(v):
 #########################################
 
 def ordered_features(results, matrix, axis, is_all=False):
-    WINDOW_SIZE = len(matrix[0])
+    WINDOW_SIZE = len(matrix)
+    v = matrix
     MEDIAN = WINDOW_SIZE // 2
     Q1 = WINDOW_SIZE // 4
     Q3 = 3 * WINDOW_SIZE // 4
@@ -77,28 +77,34 @@ def ordered_features(results, matrix, axis, is_all=False):
     median = []
     q25 = []
     q75 = []
-    for v in matrix:
-        l = sorted(list(v))
-        l2 = [x*x for x in l]
-        sm = sum(l)
-        sqs = sum(l2)
-        avg = sum(l) / len(l)
-        mean.append(avg)
-        median.append(l[MEDIAN])
-        q25.append(l[Q1])
-        q75.append(l[Q3])
-        iqr.append(l[Q3] - l[Q1])
-        mn.append(l[0])
-        mx.append(l[-1])
-        energy.append((sqs / len(l2)) ** 0.5) # rms
-        std.append((sqs - avg * avg) ** 0.5)
+
+    l = sorted(list(v))
+    l2 = [x*x for x in l]
+    sm = sum(l)
+    sqs = sum(l2)
+    avg = sum(l) / len(l)
+
+    mean = avg
+    median = l[MEDIAN]
+
+    q25 = l[Q1]
+    q75 = l[Q3]
+    iqr = (l[Q3] - l[Q1])
+   
+    mn = l[0]
+    mx = l[-1]
+
+    energy = ((sqs / len(l2)) ** 0.5) # rms
+    std = ((sqs - avg * avg) ** 0.5)
+
         #mad_list = [abs(x - l[MEDIAN]) for x in l]
         #mad_list.sort()
         #mad.append(mad_list[MEDIAN])
         #bins, bin_edges = np.histogram(l, bins=10, density=True)
         #print(scipy.stats.entropy(bins), bins)
-        entropy.append(0) # FIXME: not implemented
-        #entropy.append(scipy.stats.entropy(bins))
+        # scipy.stats.entropy(bins)
+    entropy = 0 # FIXME: not implemented
+
     if len(axis) and axis[0] != "-":
         axis = "-" + axis
     alltxt = "all" if is_all else ""
@@ -146,13 +152,12 @@ def areg(results, matrix, suffix):
 #########################################w
 
 def jerk_filter(matrix):
-    result = []
-    for row in matrix:
-        jrow = [0]
-        for i in range(len(row) - 1):
-            jrow.append(row[i + 1] - row[i])
-        result.append(jrow)
-    return result
+    row = matrix
+
+    jrow = [0]
+    for i in range(len(row) - 1):
+        jrow.append(row[i + 1] - row[i])
+    return jrow
 
 #########################################w
 
@@ -165,8 +170,7 @@ def norm(x, y, z, code):
     return [(x[i]*x[i] + y[i]*y[i] + z[i]*z[i]) for i in range(len(x))]
 
 def norm_filter(x, y, z, code):
-    # apply the filter for each row in the matrixes
-    return [norm(x[i], y[i], z[i], code) for i in range(len(x))]
+    return norm(x, y, z, code)
 
 ##########################################
 
@@ -185,16 +189,17 @@ def median(a, b, c):
         return b # c, b, a
 
 def median_filter(data):
-    result = []
-    for row in data:
-        r = []
-        r.append(row[0])
-        for i in range(1, len(row) - 1):
-            v = median(row[i-1], row[i], row[i+1])
-            r.append(v)
-        r.append(row[-1])
-        result.append(r)
-    return result
+    print(data.shape)
+    row = data
+
+    r = []
+    r.append(row[0])
+    for i in range(1, len(row) - 1):
+        v = median(row[i-1], row[i], row[i+1])
+        r.append(v)
+    r.append(row[-1])
+
+    return r
 
 #########################################w
 
@@ -204,9 +209,9 @@ def calculate_features(xyz):
 
     import numpy
     assert xyz.shape[1] == 3, xyz.shape
-    x = numpy.expand_dims(xyz[:, 0], axis=0)
-    y = numpy.expand_dims(xyz[:, 1], axis=0)
-    z = numpy.expand_dims(xyz[:, 2], axis=0)
+    x = numpy.expand_dims(xyz[:, 0], axis=0)[0]
+    y = numpy.expand_dims(xyz[:, 1], axis=0)[0]
+    z = numpy.expand_dims(xyz[:, 2], axis=0)[0]
 
     return calculate_features_xyz((x,y,z))
 
@@ -270,8 +275,9 @@ def calculate_features_xyz(xyz):
         all_results += results
         all_feature_names += names
 
-    assert all(len(r) == 1 for r in all_results)
-    all_results = [ r[0] for r in all_results ]
+    all_results = [ (r[0] if len(r) == 1 else r) for r in all_results ]
+    #assert all(len(r) == 1 for r in all_results)
+
     #print(len(all_results), len(all_results[0]))
     #all_results = numpy.array(all_results)
     assert len(all_results) == 92
@@ -405,11 +411,22 @@ def main():
             # process the data
 
             # TEMP: use numpy array rep
-            import numpy
-            w = numpy.array(arr).reshape(-1, 3)
-            print(w.shape)
-            f = calculate_features(w)
-            print(f)
+            if True:
+                import numpy
+                w = numpy.array(arr).reshape(-1, 3)
+                f = calculate_features(w)
+                print(f)
+            else:
+                # FIXME: verify/fix it actually being stored in this order
+                # Or do the de-interleaving
+                x = arr[:window_length]
+                y = arr[window_length:window_length*2]
+                z = arr[window_length*2:]
+                assert len(x) == window_length
+                assert len(y) == window_length
+                assert len(z) == window_length
+                f = calculate_features_xyz((x, y, z))
+                print(f)
 
             sample_counter += 1
             if sample_counter > limit_samples:
