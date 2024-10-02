@@ -376,13 +376,45 @@ def calculate_features_of_transform(x, y, z, jerk_name):
 
 def main():
 
-    import numpy
+    import npyfile
 
-    windows = numpy.load('pamap2_windows.npy')
+    path = 'pamap2_windows.npy'
+    skip_samples = 0
+    limit_samples = 2
 
-    for w in windows[0:2]:
-        f = calculate_features(w)
-        print(f)
+    with npyfile.Reader(path) as data:
+
+        # Check that data is expected format
+        # 
+        shape = data.shape
+        assert len(shape) == 3, shape
+        n_samples, window_length, n_axes = shape
+        assert n_axes == 3, shape
+        assert window_length == 128, shape
+
+        # FIXME: use single precision float, or h/int16
+        #assert data.typecode == 'f', data.typecode
+        #assert data.itemsize == 1, data.itemsize
+
+        chunk_size = window_length*n_axes
+        sample_counter = 0
+
+        data_chunks = data.read_data_chunks(chunk_size, offset=chunk_size*skip_samples)
+        for arr in data_chunks:
+
+            # process the data
+
+            # TEMP: use numpy array rep
+            import numpy
+            w = numpy.array(arr).reshape(-1, 3)
+            print(w.shape)
+            f = calculate_features(w)
+            print(f)
+
+            sample_counter += 1
+            if sample_counter > limit_samples:
+                break
+
 
 if __name__ == '__main__':
     main()
