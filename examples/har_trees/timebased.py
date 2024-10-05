@@ -21,11 +21,7 @@ L1_NORM = 1
 L2_NORM = 2
 L2_NORM_SQUARED = 3
 
-MAGNITUDE = L2_NORM
-MAGNITUDE_SQUARED = L2_NORM_SQUARED
-
 #########################################
-
 
 def scale(v):
     # The data is in range such that 1g == 1.0 in the data.
@@ -60,63 +56,60 @@ def normalize(v):
 
 #########################################
 
-def ordered_features(results, matrix, axis, is_all=False):
+FEATURE_MEAN = 0
+FEATURE_MEDIAN = 1
+FEATURE_Q25 = 2
+FEATURE_Q75 = 3
+FEATURE_IQR = 4
+FEATURE_MIN = 5
+FEATURE_MAX = 6
+FEATURE_STD = 7
+FEATURE_ENERGY = 8
+FEATURE_ENTROPY = 9
+ORDERED_FEATURES_N = 10
+
+def ordered_features(matrix : array.array, results : array.array):
+    assert len(results) == ORDERED_FEATURES_N
+
     WINDOW_SIZE = len(matrix)
     v = matrix
     MEDIAN = WINDOW_SIZE // 2
     Q1 = WINDOW_SIZE // 4
     Q3 = 3 * WINDOW_SIZE // 4
-    mean = []
-    iqr = []
-    mn = []
-    mx = []
-    std = []
-    energy = []
-    entropy = []
-    median = []
-    q25 = []
-    q75 = []
 
     l = sorted(list(v))
     l2 = [x*x for x in l]
     sm = sum(l)
     sqs = sum(l2)
     avg = sum(l) / len(l)
-
-    mean = avg
-    median = l[MEDIAN]
-    q25 = l[Q1]
-    q75 = l[Q3]
-    iqr = (l[Q3] - l[Q1])
-   
+    median = l[MEDIAN]  
     mn = l[0]
     mx = l[-1]
-
     energy = ((sqs / len(l2)) ** 0.5) # rms
     std = ((sqs - avg * avg) ** 0.5)
 
-        #mad_list = [abs(x - l[MEDIAN]) for x in l]
-        #mad_list.sort()
-        #mad.append(mad_list[MEDIAN])
-        #bins, bin_edges = np.histogram(l, bins=10, density=True)
-        #print(scipy.stats.entropy(bins), bins)
-        # scipy.stats.entropy(bins)
+    # FIXME: implement FEATURE_MAD
+    #mad_list = [abs(x - l[MEDIAN]) for x in l]
+    #mad_list.sort()
+    #mad.append(mad_list[MEDIAN])
+
+    # FIXME: implement entropy
+    #bins, bin_edges = np.histogram(l, bins=10, density=True)
+    #print(scipy.stats.entropy(bins), bins)
+    # scipy.stats.entropy(bins)
     entropy = 0 # FIXME: not implemented
 
-    if len(axis) and axis[0] != "-":
-        axis = "-" + axis
-    alltxt = "all" if is_all else ""
-    results["tTotalAcc-mean{}(){}".format(alltxt, axis)] = mean
-    results["tTotalAcc-median{}(){}".format(alltxt, axis)] = median
-    results["tTotalAcc-q25{}(){}".format(alltxt, axis)] = q25
-    results["tTotalAcc-q75{}(){}".format(alltxt, axis)] = q75
-    results["tTotalAcc-iqr{}(){}".format(alltxt, axis)] = iqr
-    results["tTotalAcc-min{}(){}".format(alltxt, axis)] = mn
-    results["tTotalAcc-max{}(){}".format(alltxt, axis)] = mx
-    results["tTotalAcc-std{}(){}".format(alltxt, axis)] = std
-    results["tTotalAcc-energy{}(){}".format(alltxt, axis)] = energy
-    results["tTotalAcc-entropy{}(){}".format(alltxt, axis)] = entropy
-    #results["tTotalAcc-mad()" + axis] = mad
+    results[FEATURE_MEAN] = avg
+    results[FEATURE_MEDIAN] = median
+    results[FEATURE_Q25] = l[Q1]
+    results[FEATURE_Q75] = l[Q3]
+    results[FEATURE_IQR] = (l[Q3] - l[Q1])
+    results[FEATURE_MIN] = mn
+    results[FEATURE_MAX] = mx
+    results[FEATURE_STD] = std
+    results[FEATURE_ENERGY] = energy
+    results[FEATURE_ENTROPY] = entropy
+
 
 #########################################
 
@@ -130,23 +123,6 @@ def corr(results, a, b, suffix):
         corrs.append(r)
     results["tTotalAcc-correlation()-" + suffix] = corrs
 
-#########################################
-
-def areg(results, matrix, suffix):
-    from spectrum import arburg
-
-    corrs = [[] for _ in range(4)]
-    for v in matrix:
-        l = sorted(list(v))
-        a = arburg(l, 4)
-        for i in range(4):
-            corrs[i].append(np.real(a[0][i]))
-
-    if len(suffix):
-        suffix += ","
-    for i in range(4):
-        results["tTotalAcc-arCoeff()-" + suffix + str(i + 1)] = corrs[i]
-
 #########################################w
 
 def jerk_filter(matrix):
@@ -159,16 +135,16 @@ def jerk_filter(matrix):
 
 #########################################w
 
-def norm(x, y, z, code):
+def norm_filter(x, y, z, code):
     if code == L1_NORM:
         return [abs(x[i]) + abs(y[i]) + abs(z[i]) for i in range(len(x))]
-    if code == L2_NORM:
+    elif code == L2_NORM:
         return [(x[i]*x[i] + y[i]*y[i] + z[i]*z[i])**0.5 for i in range(len(x))]
-    # L2_NORM_SQUARED
-    return [(x[i]*x[i] + y[i]*y[i] + z[i]*z[i]) for i in range(len(x))]
+    elif code == L2_NORM_SQUARED:
+        return [(x[i]*x[i] + y[i]*y[i] + z[i]*z[i]) for i in range(len(x))]
+    else:
+        raise ValueError('Unsupported norm', code)
 
-def norm_filter(x, y, z, code):
-    return norm(x, y, z, code)
 
 ##########################################
 
@@ -231,25 +207,34 @@ def calculate_features_xyz(xyz):
     all_results = []
     all_feature_names = []
 
+    # reusable scratch buffer, to reduce allocations
+    features_array = array.array('f', (0 for _ in range(ORDERED_FEATURES_N)))
+
     for do_jerk in jerk_options:
         if do_jerk:
-            tx = x_jerk; ty = y_jerk; tz = z_jerk
+            tx = x_jerk
+            ty = y_jerk
+            tz = z_jerk
             tl1 = l1_norm_jerk
             tl2 = l2_norm_sq_jerk
             jerk_name = "Jerk"
         else:
-            tx = x; ty = y; tz = z
+            tx = x
+            ty = y
+            tz = z
             tl1 = l1_norm
             tl2 = l2_norm_sq
             jerk_name = ""
 
-        results = calculate_features_of_transform(tx, ty, tz, jerk_name)
+        results = calculate_features_of_transform(tx, ty, tz, features_array)
         all_results += results
 
-        results = calculate_features_of_norm_transform(tl1, jerk_name, "L1Norm")
+        # jerk_name, "L1Norm"
+        results = calculate_features_of_norm_transform(tl1, features_array)
         all_results += results
 
-        results = calculate_features_of_norm_transform(tl2, jerk_name, "MagSq")
+        # jerk_name, "MagSq"
+        results = calculate_features_of_norm_transform(tl2, features_array)
 
         all_results += results
 
@@ -257,98 +242,74 @@ def calculate_features_xyz(xyz):
 
     return all_results
 
-norm_transform_names = [
-    "tTotalAcc-mean()",
-    "tTotalAcc-min()",
-    "tTotalAcc-max()",
-    "tTotalAcc-median()",           
-    "tTotalAcc-iqr()",
-    "tTotalAcc-energy()",
-    "tTotalAcc-std()",
-    # skip the autoregression
-    "tTotalAcc-entropy()",
+# Q25/Q75 dropped
+norm_features = [
+    FEATURE_MEAN,
+    FEATURE_MIN,
+    FEATURE_MAX,
+    FEATURE_MEDIAN,
+    FEATURE_IQR,
+    FEATURE_ENERGY,
+    FEATURE_STD,
+    FEATURE_ENTROPY,
 ]
 
-def calculate_features_of_norm_transform(m, jerk_name, norm_name):
-    results = {}
-    ordered_features(results, m, "")
+def calculate_features_of_norm_transform(m, features_array):
+    ordered_features(m, features_array)
 
     results_list = []
-    for n in norm_transform_names:
-        results_list.append(results[n])
+    for n in norm_features:
+        results_list.append(features_array[n])
 
-    suffix = jerk_name + norm_name
-    assert len(results_list) == len(norm_transform_names)
+    assert len(results_list) == len(norm_features)
 
     return results_list
 
 
-transform_names = [
-    "tTotalAcc-mean()-X",
-    "tTotalAcc-mean()-Y",
-    "tTotalAcc-mean()-Z",
-    #"tTotalAcc-meanall()",
-    "tTotalAcc-max()-X",
-    "tTotalAcc-max()-Y",
-    "tTotalAcc-max()-Z",
-    #"tTotalAcc-maxall()",
-    "tTotalAcc-min()-X",
-    "tTotalAcc-min()-Y",
-    "tTotalAcc-min()-Z",
-    #"tTotalAcc-minall()",
-    "tTotalAcc-median()-X",
-    "tTotalAcc-median()-Y",
-    "tTotalAcc-median()-Z",
-    #"tTotalAcc-medianall()",
-    "tTotalAcc-q25()-X",
-    "tTotalAcc-q25()-Y",
-    "tTotalAcc-q25()-Z",
-    "tTotalAcc-q75()-X",
-    "tTotalAcc-q75()-Y",
-    "tTotalAcc-q75()-Z",
-    "tTotalAcc-iqr()-X",
-    "tTotalAcc-iqr()-Y",
-    "tTotalAcc-iqr()-Z",
-    #"tTotalAcc-iqrall()",
-    "tTotalAcc-energy()-X",
-    "tTotalAcc-energy()-Y",
-    "tTotalAcc-energy()-Z",
-    # do not do "all" for energy, std, and entropy - if these things vary,
-    # they should show up as high energy/std/entropy of the magnitude???
-    "tTotalAcc-std()-X",
-    "tTotalAcc-std()-Y",
-    "tTotalAcc-std()-Z",
-    #"tTotalAcc-stdall()",
-    #"tTotalAcc-correlation()-XY",
-    #"tTotalAcc-correlation()-XZ",
-    #"tTotalAcc-correlation()-YZ",
-    "tTotalAcc-entropy()-X",
-    "tTotalAcc-entropy()-Y",
-    "tTotalAcc-entropy()-Z",
-    #"tTotalAcc-sma()",
+transform_features = [
+    FEATURE_MEAN,
+    FEATURE_MAX,
+    FEATURE_MIN,
+    FEATURE_MEDIAN,
+    FEATURE_Q25,
+    FEATURE_Q75,
+    FEATURE_IQR,
+    FEATURE_ENERGY,
+    FEATURE_STD,
+    FEATURE_ENTROPY,
+    # TODO: include correlation
+    # TODO: include 'all'? type features
+    # TODO: inlcude "sma" feature ?
 ]
 
-def calculate_features_of_transform(x, y, z, jerk_name):
-    results = {}
+def calculate_features_of_transform(x, y, z, features_array : array.array):
+    results_list = []
 
-    ordered_features(results, x, "X")
-    ordered_features(results, y, "Y")
-    ordered_features(results, z, "Z")
+    # X
+    ordered_features(x, features_array)
+    for n in transform_features:
+        results_list.append(features_array[n])
 
-    ordered_features(results, x + y + z, "", True)
+    # Y
+    ordered_features(y, features_array)
+    for n in transform_features:
+        results_list.append(features_array[n])
+
+    # Z
+    ordered_features(z, features_array)
+    for n in transform_features:
+        results_list.append(features_array[n])
+
+    # FIXME: this should be a SUM probably, not a concatenation
+    #combined = x + y + z
+    #ordered_features(combined, results)
 
     # FIXME: raises exception
     #corr(results, x, y, "XY")
     #corr(results, x, z, "XZ")
     #corr(results, y, z, "YZ")
 
-    results_list = []
-    for n in transform_names:
-        results_list.append(results[n])
-
-    suffix = jerk_name
-
-    assert len(results_list) == len(transform_names)
+    assert len(results_list) == len(transform_features)*3
     return results_list
 
 
@@ -388,15 +349,9 @@ def compute_dataset_features(path, skip_samples, limit_samples):
                 y_values[i] = arr[(i*3)+1]
                 z_values[i] = arr[(i*3)+2]
 
-            # if it was stored as continious runs of XX...YY...ZZ... instead
-            #x = arr[:window_length]
-            #y = arr[window_length:window_length*2]
-            #z = arr[window_length*2:]
-
             assert len(x_values) == window_length
             assert len(y_values) == window_length
             assert len(z_values) == window_length
-            # FIXME: do not include feature names in each computation
             features = calculate_features_xyz((x_values, y_values, z_values))
             yield features
 
