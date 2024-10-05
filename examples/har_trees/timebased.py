@@ -86,7 +86,6 @@ def ordered_features(results, matrix, axis, is_all=False):
 
     mean = avg
     median = l[MEDIAN]
-
     q25 = l[Q1]
     q75 = l[Q3]
     iqr = (l[Q3] - l[Q1])
@@ -189,7 +188,6 @@ def median(a, b, c):
         return b # c, b, a
 
 def median_filter(data):
-    print(data.shape)
     row = data
 
     r = []
@@ -275,11 +273,9 @@ def calculate_features_xyz(xyz):
         all_results += results
         all_feature_names += names
 
-    all_results = [ (r[0] if len(r) == 1 else r) for r in all_results ]
-    #assert all(len(r) == 1 for r in all_results)
+    #for r in all_results:
+    #    print(r)
 
-    #print(len(all_results), len(all_results[0]))
-    #all_results = numpy.array(all_results)
     assert len(all_results) == 92
 
     return all_results, all_feature_names
@@ -411,7 +407,7 @@ def main():
             # process the data
 
             # TEMP: use numpy array rep
-            if True:
+            if False:
                 import numpy
                 w = numpy.array(arr).reshape(-1, 3)
                 f = calculate_features(w)
@@ -419,14 +415,16 @@ def main():
             else:
                 # FIXME: verify/fix it actually being stored in this order
                 # Or do the de-interleaving
+
                 x = arr[:window_length]
                 y = arr[window_length:window_length*2]
                 z = arr[window_length*2:]
                 assert len(x) == window_length
                 assert len(y) == window_length
                 assert len(z) == window_length
+                # FIXME: do not include feature names in each computation
                 f = calculate_features_xyz((x, y, z))
-                print(f)
+                print(f[0])
 
             sample_counter += 1
             if sample_counter > limit_samples:
