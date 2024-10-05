@@ -24,6 +24,7 @@ L2_NORM_SQUARED = 3
 
 #########################################
 
+@micropython.native
 def scale(v):
     # The data is in range such that 1g == 1.0 in the data.
     # We want to get back to the raw acceleration data (+-4g range),
@@ -39,12 +40,14 @@ def scale(v):
         vi = MIN_VAL
     return vi
 
+@micropython.native
 def scale_filter(matrix):
     row = matrix
     return [scale(u) for u in row]
 
 #########################################
 
+@micropython.native
 def normalize(v):
     mn = min(v)
     mx = max(v)
@@ -126,6 +129,7 @@ def corr(results, a, b, suffix):
 
 #########################################w
 
+@micropython.native
 def jerk_filter(matrix):
     row = matrix
 
@@ -136,6 +140,8 @@ def jerk_filter(matrix):
 
 #########################################w
 
+# TODO: move this enum checking away, use dedicated functions instead
+@micropython.native
 def norm_filter(x, y, z, code):
     if code == L1_NORM:
         return [abs(x[i]) + abs(y[i]) + abs(z[i]) for i in range(len(x))]
@@ -149,6 +155,7 @@ def norm_filter(x, y, z, code):
 
 ##########################################
 
+@micropython.native
 def median(a, b, c):
     if a > b:
         if b > c:
@@ -163,6 +170,7 @@ def median(a, b, c):
             return c # b, c, a
         return b # c, b, a
 
+@micropython.native
 def median_filter(data):
     row = data
 
@@ -182,6 +190,7 @@ def calculate_features_xyz(xyz):
 
     filter_start = time.ticks_ms()
 
+    # TODO: try to do all the filter operations in-place on array.array
     x = median_filter(x)
     y = median_filter(y)
     z = median_filter(z)
