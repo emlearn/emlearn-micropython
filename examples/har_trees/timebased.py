@@ -14,6 +14,7 @@ import os
 import sys
 import math
 import array
+import time
 
 #########################################
 
@@ -179,6 +180,8 @@ def calculate_features_xyz(xyz):
 
     x, y, z = xyz
 
+    filter_start = time.ticks_ms()
+
     x = median_filter(x)
     y = median_filter(y)
     z = median_filter(z)
@@ -204,8 +207,9 @@ def calculate_features_xyz(xyz):
     l1_norm_jerk = jerk_filter(l1_norm)
     l2_norm_sq_jerk = jerk_filter(l2_norm_sq)
 
+    filter_end = time.ticks_ms()
+
     all_results = []
-    all_feature_names = []
 
     # reusable scratch buffer, to reduce allocations
     features_array = array.array('f', (0 for _ in range(ORDERED_FEATURES_N)))
@@ -237,6 +241,12 @@ def calculate_features_xyz(xyz):
         results = calculate_features_of_norm_transform(tl2, features_array)
 
         all_results += results
+
+    features_end = time.ticks_ms()
+    feature_duration = time.ticks_diff(features_end, filter_end)
+    filter_duration = time.ticks_diff(filter_end, filter_start)
+
+    print('feature-calc-details', filter_duration, feature_duration)
 
     assert len(all_results) == 92
 
@@ -352,7 +362,12 @@ def compute_dataset_features(path, skip_samples, limit_samples):
             assert len(x_values) == window_length
             assert len(y_values) == window_length
             assert len(z_values) == window_length
+
+            feature_calc_start = time.ticks_ms()
             features = calculate_features_xyz((x_values, y_values, z_values))
+            duration = time.ticks_diff(time.ticks_ms(), feature_calc_start)
+            print('feature-calc-end', duration)
+
             yield features
 
             sample_counter += 1
@@ -365,9 +380,10 @@ def main():
     skip_samples = 0
     limit_samples = 2
 
-    generator = compute_dataset_features(path, skip_samples=skip_samples, limit_samples=2)
+    generator = compute_dataset_features(path,
+        skip_samples=skip_samples, limit_samples=limit_samples)
     for features in generator:
-        print('features', features)
+        print('features', len(features))
 
 
 if __name__ == '__main__':
