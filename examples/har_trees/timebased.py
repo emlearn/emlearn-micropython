@@ -18,45 +18,11 @@ import time
 
 #########################################
 
+DATA_TYPECODE = 'h' # int16
+
 L1_NORM = 1
 L2_NORM = 2
 L2_NORM_SQUARED = 3
-
-#########################################
-
-@micropython.native
-def scale(v):
-    # The data is in range such that 1g == 1.0 in the data.
-    # We want to get back to the raw acceleration data (+-4g range),
-    # such that 1g == 32 in the data.
-    SCALING_FACTOR = 128 // 4
-    MAX_VAL = 127
-    MIN_VAL = -128
-
-    vi = int(round(float(v) * SCALING_FACTOR, 0))
-    if vi > MAX_VAL:
-        vi = MAX_VAL
-    elif vi < MIN_VAL:
-        vi = MIN_VAL
-    return vi
-
-@micropython.native
-def scale_filter(matrix):
-    row = matrix
-    return [scale(u) for u in row]
-
-#########################################
-
-@micropython.native
-def normalize(v):
-    mn = min(v)
-    mx = max(v)
-    mean = np.mean(v)
-    d = (mx - mn) / 2.0 # from -1 to +1: length 2
-    if d:
-        return [(x - mean) / d for x in v]
-    else:
-        return [0.0 for x in v]
 
 #########################################
 
@@ -72,6 +38,14 @@ FEATURE_ENERGY = 8
 FEATURE_ENTROPY = 9
 ORDERED_FEATURES_N = 10
 
+@micropython.native
+def l2_sum(arr):
+    acc = 0.0
+    for x in arr:
+        acc += (x*x)       
+    return acc
+
+@micropython.native
 def ordered_features(matrix : array.array, results : array.array):
     assert len(results) == ORDERED_FEATURES_N
 
@@ -81,15 +55,14 @@ def ordered_features(matrix : array.array, results : array.array):
     Q1 = WINDOW_SIZE // 4
     Q3 = 3 * WINDOW_SIZE // 4
 
-    l = sorted(list(v))
-    l2 = [x*x for x in l]
+    l = sorted(v)
     sm = sum(l)
-    sqs = sum(l2)
-    avg = sum(l) / len(l)
+    sqs = l2_sum(l)
+    avg = sm / len(l)
     median = l[MEDIAN]  
     mn = l[0]
     mx = l[-1]
-    energy = ((sqs / len(l2)) ** 0.5) # rms
+    energy = ((sqs / len(l)) ** 0.5) # rms
     std = ((sqs - avg * avg) ** 0.5)
 
     # FIXME: implement FEATURE_MAD
@@ -117,41 +90,39 @@ def ordered_features(matrix : array.array, results : array.array):
 
 #########################################
 
-def corr(results, a, b, suffix):
-    corrs = []
-    for v1, v2 in zip(a, b):
+def corr(a, b, out):
+
+    for i, (v1, v2) in enumerate(zip(a, b)):
         cc = np.corrcoef(v1, v2)
         r = cc[0][1]
         if math.isnan(r):
             r = 1.0 # std == 0; assume perfect correlation (wise?)
-        corrs.append(r)
-    results["tTotalAcc-correlation()-" + suffix] = corrs
+        out[i] = r
 
 #########################################w
 
 @micropython.native
-def jerk_filter(matrix):
-    row = matrix
-
-    jrow = [0]
-    for i in range(len(row) - 1):
-        jrow.append(row[i + 1] - row[i])
-    return jrow
+def jerk_filter(inp, out):
+    out[0] = 0
+    for i in range(len(inp) - 1):
+        out[i] = (inp[i + 1] - inp[i])
 
 #########################################w
 
-# TODO: move this enum checking away, use dedicated functions instead
 @micropython.native
-def norm_filter(x, y, z, code):
-    if code == L1_NORM:
-        return [abs(x[i]) + abs(y[i]) + abs(z[i]) for i in range(len(x))]
-    elif code == L2_NORM:
-        return [(x[i]*x[i] + y[i]*y[i] + z[i]*z[i])**0.5 for i in range(len(x))]
-    elif code == L2_NORM_SQUARED:
-        return [(x[i]*x[i] + y[i]*y[i] + z[i]*z[i]) for i in range(len(x))]
-    else:
-        raise ValueError('Unsupported norm', code)
+def norm_filter_l1(x, y, z, out):
+    for i in range(len(x)):
+        out[i] = abs(x[i]) + abs(y[i]) + abs(z[i])
 
+@micropython.native
+def norm_filter_l2(x, y, z, out):
+    for i in range(len(x)):
+        out[i] = (x[i]*x[i] + y[i]*y[i] + z[i]*z[i])**0.5
+
+@micropython.native
+def norm_filter_l2_squared(x, y, z, out):
+    for i in range(len(x)):
+        out[i] = (x[i]*x[i] + y[i]*y[i] + z[i]*z[i])
 
 ##########################################
 
@@ -171,52 +142,66 @@ def median(a, b, c):
         return b # c, b, a
 
 @micropython.native
-def median_filter(data):
-    row = data
+def median_filter(inp, out):
 
-    r = []
-    r.append(row[0])
-    for i in range(1, len(row) - 1):
-        v = median(row[i-1], row[i], row[i+1])
-        r.append(v)
-    r.append(row[-1])
+    #return None
 
-    return r
+    out[0] = inp[0]
+    for i in range(1, len(inp) - 1):
+        v = median(inp[i-1], inp[i], inp[i+1])
+        out[i] = v
+    out[-1] = inp[-1]
 
 
 def calculate_features_xyz(xyz):
 
-    x, y, z = xyz
+    xo, yo, zo = xyz
+    window_length = len(xo)
 
+    # pre-allocate arrays
+    alloc_start = time.ticks_ms()
+
+    xm = array.array(DATA_TYPECODE, range(window_length))
+    ym = array.array(DATA_TYPECODE, range(window_length))
+    zm = array.array(DATA_TYPECODE, range(window_length))
+
+    l2_norm_sq = array.array(DATA_TYPECODE, range(window_length))
+    l1_norm = array.array(DATA_TYPECODE, range(window_length))
+    l1_norm_jerk = array.array(DATA_TYPECODE, range(window_length))
+    l2_norm_sq_jerk = array.array(DATA_TYPECODE, range(window_length))
+
+    # Compute filtered versions
     filter_start = time.ticks_ms()
 
-    # TODO: try to do all the filter operations in-place on array.array
-    x = median_filter(x)
-    y = median_filter(y)
-    z = median_filter(z)
-
-    x = scale_filter(x)
-    y = scale_filter(y)
-    z = scale_filter(z)
+    median_filter(xo, xm)
+    median_filter(yo, ym)
+    median_filter(zo, zm)
 
     # Doing a derivative is going to reduce the effective recovery data frequency 2 times.
     # This assumes that the data is already low-pass filtered (for 50 Hz to 20 Hz in the dataset)
     # therefore high-frequency components are negligible
-    x_jerk = jerk_filter(x)
-    y_jerk = jerk_filter(y)
-    z_jerk = jerk_filter(z)
+    jerk_filter(xm, xo)
+    jerk_filter(ym, yo)
+    jerk_filter(zm, zo)
 
+    x = xm
+    y = ym
+    z = zm
+    x_jerk = xo
+    y_jerk = yo
+    z_jerk = zo
+
+    # compute norms
     # do the squared L2 norm for now instead of the normal L2 norm
-    norm_options = [None, L1_NORM, L2_NORM_SQUARED]
-    jerk_options = [False, True]
-
-    l1_norm = norm_filter(x, y, z, L1_NORM)
-    l2_norm_sq = norm_filter(x, y, z, L2_NORM_SQUARED)
-
-    l1_norm_jerk = jerk_filter(l1_norm)
-    l2_norm_sq_jerk = jerk_filter(l2_norm_sq)
+    norm_filter_l1(x, y, z, l1_norm)
+    norm_filter_l2_squared(x, y, z, l2_norm_sq)
+    jerk_filter(l1_norm, l1_norm_jerk)
+    jerk_filter(l2_norm_sq, l2_norm_sq_jerk)
 
     filter_end = time.ticks_ms()
+
+    norm_options = [None, L1_NORM, L2_NORM_SQUARED]
+    jerk_options = [False, True]
 
     all_results = []
 
@@ -252,12 +237,13 @@ def calculate_features_xyz(xyz):
         all_results += results
 
     features_end = time.ticks_ms()
-    feature_duration = time.ticks_diff(features_end, filter_end)
+    alloc_duration = time.ticks_diff(filter_start, alloc_start) 
     filter_duration = time.ticks_diff(filter_end, filter_start)
+    feature_duration = time.ticks_diff(features_end, filter_end)
 
-    print('feature-calc-details', filter_duration, feature_duration)
+    print('feature-calc-details', alloc_duration, filter_duration, feature_duration)
 
-    assert len(all_results) == 92
+    assert len(all_results) == 92, len(all_results)
 
     return all_results
 
@@ -272,6 +258,7 @@ norm_features = [
     FEATURE_STD,
     FEATURE_ENTROPY,
 ]
+#norm_features = []
 
 def calculate_features_of_norm_transform(m, features_array):
     ordered_features(m, features_array)
@@ -300,6 +287,7 @@ transform_features = [
     # TODO: include 'all'? type features
     # TODO: inlcude "sma" feature ?
 ]
+#transform_features = []
 
 def calculate_features_of_transform(x, y, z, features_array : array.array):
     results_list = []
@@ -346,14 +334,14 @@ def compute_dataset_features(path, skip_samples, limit_samples):
         assert n_axes == 3, shape
         assert window_length == 128, shape
 
-        # FIXME: use single precision float, or h/int16
-        #assert data.typecode == 'f', data.typecode
-        #assert data.itemsize == 1, data.itemsize
+        # We expect data to be h/int16
+        assert data.typecode == DATA_TYPECODE, data.typecode
+        assert data.itemsize == 2, data.itemsize
 
         # pre-allocate values
-        x_values = array.array('f', (0 for _ in range(window_length)))
-        y_values = array.array('f', (0 for _ in range(window_length)))
-        z_values = array.array('f', (0 for _ in range(window_length)))
+        x_values = array.array(DATA_TYPECODE, (0 for _ in range(window_length)))
+        y_values = array.array(DATA_TYPECODE, (0 for _ in range(window_length)))
+        z_values = array.array(DATA_TYPECODE, (0 for _ in range(window_length)))
 
         chunk_size = window_length*n_axes
         sample_counter = 0
@@ -367,6 +355,10 @@ def compute_dataset_features(path, skip_samples, limit_samples):
                 x_values[i] = arr[(i*3)+0]
                 y_values[i] = arr[(i*3)+1]
                 z_values[i] = arr[(i*3)+2]
+
+            #print(x_values)
+            #print(y_values)
+            #print(z_values)
 
             assert len(x_values) == window_length
             assert len(y_values) == window_length
@@ -392,7 +384,7 @@ def main():
     generator = compute_dataset_features(path,
         skip_samples=skip_samples, limit_samples=limit_samples)
     for features in generator:
-        print('features', len(features))
+        print('features', len(features), features)
 
 
 if __name__ == '__main__':
