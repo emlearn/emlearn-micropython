@@ -243,54 +243,44 @@ def calculate_features_xyz(xyz):
             tl2 = l2_norm_sq
             jerk_name = ""
 
-        results, names = calculate_features_of_transform(tx, ty, tz, jerk_name)
-        assert len(results) == len(names), (len(results), len(names))
+        results = calculate_features_of_transform(tx, ty, tz, jerk_name)
         all_results += results
-        all_feature_names += names
 
-        results, names = calculate_features_of_norm_transform(tl1, jerk_name, "L1Norm")
-        assert len(results) == len(names), (len(results), len(names))
+        results = calculate_features_of_norm_transform(tl1, jerk_name, "L1Norm")
         all_results += results
-        all_feature_names += names
 
-        results, names = calculate_features_of_norm_transform(tl2, jerk_name, "MagSq")
-        assert len(results) == len(names), (len(results), len(names))
+        results = calculate_features_of_norm_transform(tl2, jerk_name, "MagSq")
 
         all_results += results
-        all_feature_names += names
-
-    #for r in all_results:
-    #    print(r)
 
     assert len(all_results) == 92
 
-    return all_results, all_feature_names
+    return all_results
 
+norm_transform_names = [
+    "tTotalAcc-mean()",
+    "tTotalAcc-min()",
+    "tTotalAcc-max()",
+    "tTotalAcc-median()",           
+    "tTotalAcc-iqr()",
+    "tTotalAcc-energy()",
+    "tTotalAcc-std()",
+    # skip the autoregression
+    "tTotalAcc-entropy()",
+]
 
 def calculate_features_of_norm_transform(m, jerk_name, norm_name):
     results = {}
     ordered_features(results, m, "")
 
-    names = [
-        "tTotalAcc-mean()",
-        "tTotalAcc-min()",
-        "tTotalAcc-max()",
-        "tTotalAcc-median()",           
-        "tTotalAcc-iqr()",
-        "tTotalAcc-energy()",
-        "tTotalAcc-std()",
-        # skip the autoregression
-        "tTotalAcc-entropy()",
-    ]
-
     results_list = []
-    for n in names:
+    for n in norm_transform_names:
         results_list.append(results[n])
 
     suffix = jerk_name + norm_name
-    names = [n.replace("-", suffix + "-") for n in names]
+    assert len(results_list) == len(norm_transform_names)
 
-    return results_list, names
+    return results_list
 
 
 transform_names = [
@@ -337,7 +327,6 @@ transform_names = [
     "tTotalAcc-entropy()-Z",
     #"tTotalAcc-sma()",
 ]
-print('NAMES', len(transform_names))
 
 def calculate_features_of_transform(x, y, z, jerk_name):
     results = {}
@@ -358,19 +347,14 @@ def calculate_features_of_transform(x, y, z, jerk_name):
         results_list.append(results[n])
 
     suffix = jerk_name
-    names = [n.replace("Acc-", "Acc" + suffix + "-") for n in transform_names]
 
-    return results_list, names
+    assert len(results_list) == len(transform_names)
+    return results_list
 
 
-def main():
+def compute_dataset_features(path, skip_samples, limit_samples):
 
     import npyfile
-
-    path = 'pamap2_windows.npy'
-    skip_samples = 0
-    limit_samples = 2
-
 
     with npyfile.Reader(path) as data:
 
@@ -413,12 +397,22 @@ def main():
             assert len(y_values) == window_length
             assert len(z_values) == window_length
             # FIXME: do not include feature names in each computation
-            f = calculate_features_xyz((x_values, y_values, z_values))
-            print(f[0])
+            features = calculate_features_xyz((x_values, y_values, z_values))
+            yield features
 
             sample_counter += 1
             if sample_counter > limit_samples:
                 break
+
+def main():
+
+    path = 'pamap2_windows.npy'
+    skip_samples = 0
+    limit_samples = 2
+
+    generator = compute_dataset_features(path, skip_samples=skip_samples, limit_samples=2)
+    for features in generator:
+        print('features', features)
 
 
 if __name__ == '__main__':
