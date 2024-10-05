@@ -13,7 +13,7 @@
 import os
 import sys
 import math
-
+import array
 
 #########################################
 
@@ -44,7 +44,6 @@ def scale(v):
 
 def scale_filter(matrix):
     row = matrix
-    print('SCC', len(row), row[0])
     return [scale(u) for u in row]
 
 #########################################
@@ -199,19 +198,6 @@ def median_filter(data):
 
     return r
 
-#########################################w
-
-def calculate_features(xyz):
-    
-    # XXX: limited to a single window, for now
-
-    import numpy
-    assert xyz.shape[1] == 3, xyz.shape
-    x = numpy.expand_dims(xyz[:, 0], axis=0)[0]
-    y = numpy.expand_dims(xyz[:, 1], axis=0)[0]
-    z = numpy.expand_dims(xyz[:, 2], axis=0)[0]
-
-    return calculate_features_xyz((x,y,z))
 
 def calculate_features_xyz(xyz):
 
@@ -307,6 +293,52 @@ def calculate_features_of_norm_transform(m, jerk_name, norm_name):
     return results_list, names
 
 
+transform_names = [
+    "tTotalAcc-mean()-X",
+    "tTotalAcc-mean()-Y",
+    "tTotalAcc-mean()-Z",
+    #"tTotalAcc-meanall()",
+    "tTotalAcc-max()-X",
+    "tTotalAcc-max()-Y",
+    "tTotalAcc-max()-Z",
+    #"tTotalAcc-maxall()",
+    "tTotalAcc-min()-X",
+    "tTotalAcc-min()-Y",
+    "tTotalAcc-min()-Z",
+    #"tTotalAcc-minall()",
+    "tTotalAcc-median()-X",
+    "tTotalAcc-median()-Y",
+    "tTotalAcc-median()-Z",
+    #"tTotalAcc-medianall()",
+    "tTotalAcc-q25()-X",
+    "tTotalAcc-q25()-Y",
+    "tTotalAcc-q25()-Z",
+    "tTotalAcc-q75()-X",
+    "tTotalAcc-q75()-Y",
+    "tTotalAcc-q75()-Z",
+    "tTotalAcc-iqr()-X",
+    "tTotalAcc-iqr()-Y",
+    "tTotalAcc-iqr()-Z",
+    #"tTotalAcc-iqrall()",
+    "tTotalAcc-energy()-X",
+    "tTotalAcc-energy()-Y",
+    "tTotalAcc-energy()-Z",
+    # do not do "all" for energy, std, and entropy - if these things vary,
+    # they should show up as high energy/std/entropy of the magnitude???
+    "tTotalAcc-std()-X",
+    "tTotalAcc-std()-Y",
+    "tTotalAcc-std()-Z",
+    #"tTotalAcc-stdall()",
+    #"tTotalAcc-correlation()-XY",
+    #"tTotalAcc-correlation()-XZ",
+    #"tTotalAcc-correlation()-YZ",
+    "tTotalAcc-entropy()-X",
+    "tTotalAcc-entropy()-Y",
+    "tTotalAcc-entropy()-Z",
+    #"tTotalAcc-sma()",
+]
+print('NAMES', len(transform_names))
+
 def calculate_features_of_transform(x, y, z, jerk_name):
     results = {}
 
@@ -321,57 +353,12 @@ def calculate_features_of_transform(x, y, z, jerk_name):
     #corr(results, x, z, "XZ")
     #corr(results, y, z, "YZ")
 
-    names = [
-        "tTotalAcc-mean()-X",
-        "tTotalAcc-mean()-Y",
-        "tTotalAcc-mean()-Z",
-        #"tTotalAcc-meanall()",
-        "tTotalAcc-max()-X",
-        "tTotalAcc-max()-Y",
-        "tTotalAcc-max()-Z",
-        #"tTotalAcc-maxall()",
-        "tTotalAcc-min()-X",
-        "tTotalAcc-min()-Y",
-        "tTotalAcc-min()-Z",
-        #"tTotalAcc-minall()",
-        "tTotalAcc-median()-X",
-        "tTotalAcc-median()-Y",
-        "tTotalAcc-median()-Z",
-        #"tTotalAcc-medianall()",
-        "tTotalAcc-q25()-X",
-        "tTotalAcc-q25()-Y",
-        "tTotalAcc-q25()-Z",
-        "tTotalAcc-q75()-X",
-        "tTotalAcc-q75()-Y",
-        "tTotalAcc-q75()-Z",
-        "tTotalAcc-iqr()-X",
-        "tTotalAcc-iqr()-Y",
-        "tTotalAcc-iqr()-Z",
-        #"tTotalAcc-iqrall()",
-        "tTotalAcc-energy()-X",
-        "tTotalAcc-energy()-Y",
-        "tTotalAcc-energy()-Z",
-        # do not do "all" for energy, std, and entropy - if these things vary,
-        # they should show up as high energy/std/entropy of the magnitude???
-        "tTotalAcc-std()-X",
-        "tTotalAcc-std()-Y",
-        "tTotalAcc-std()-Z",
-        #"tTotalAcc-stdall()",
-        #"tTotalAcc-correlation()-XY",
-        #"tTotalAcc-correlation()-XZ",
-        #"tTotalAcc-correlation()-YZ",
-        "tTotalAcc-entropy()-X",
-        "tTotalAcc-entropy()-Y",
-        "tTotalAcc-entropy()-Z",
-        #"tTotalAcc-sma()",
-    ]
-
     results_list = []
-    for n in names:
+    for n in transform_names:
         results_list.append(results[n])
 
     suffix = jerk_name
-    names = [n.replace("Acc-", "Acc" + suffix + "-") for n in names]
+    names = [n.replace("Acc-", "Acc" + suffix + "-") for n in transform_names]
 
     return results_list, names
 
@@ -383,6 +370,7 @@ def main():
     path = 'pamap2_windows.npy'
     skip_samples = 0
     limit_samples = 2
+
 
     with npyfile.Reader(path) as data:
 
@@ -398,6 +386,11 @@ def main():
         #assert data.typecode == 'f', data.typecode
         #assert data.itemsize == 1, data.itemsize
 
+        # pre-allocate values
+        x_values = array.array('f', (0 for _ in range(window_length)))
+        y_values = array.array('f', (0 for _ in range(window_length)))
+        z_values = array.array('f', (0 for _ in range(window_length)))
+
         chunk_size = window_length*n_axes
         sample_counter = 0
 
@@ -405,26 +398,23 @@ def main():
         for arr in data_chunks:
 
             # process the data
+            # De-interleave data from XYZ1 XYZ2... into separate continious X,Y,Z
+            for i in range(window_length):
+                x_values[i] = arr[(i*3)+0]
+                y_values[i] = arr[(i*3)+1]
+                z_values[i] = arr[(i*3)+2]
 
-            # TEMP: use numpy array rep
-            if False:
-                import numpy
-                w = numpy.array(arr).reshape(-1, 3)
-                f = calculate_features(w)
-                print(f)
-            else:
-                # FIXME: verify/fix it actually being stored in this order
-                # Or do the de-interleaving
+            # if it was stored as continious runs of XX...YY...ZZ... instead
+            #x = arr[:window_length]
+            #y = arr[window_length:window_length*2]
+            #z = arr[window_length*2:]
 
-                x = arr[:window_length]
-                y = arr[window_length:window_length*2]
-                z = arr[window_length*2:]
-                assert len(x) == window_length
-                assert len(y) == window_length
-                assert len(z) == window_length
-                # FIXME: do not include feature names in each computation
-                f = calculate_features_xyz((x, y, z))
-                print(f[0])
+            assert len(x_values) == window_length
+            assert len(y_values) == window_length
+            assert len(z_values) == window_length
+            # FIXME: do not include feature names in each computation
+            f = calculate_features_xyz((x_values, y_values, z_values))
+            print(f[0])
 
             sample_counter += 1
             if sample_counter > limit_samples:
