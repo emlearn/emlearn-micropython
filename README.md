@@ -34,6 +34,11 @@ It can be combined with feature preprocessing, including neural networks to addr
 - Highly efficient. Inference times down to 100 microseconds, RAM usage <2 kB, FLASH usage <2 kB
 - Pre-built binaries available for most architectures.
 
+## Examples
+
+- [xor_trees](./examples/xor_trees/). A "Hello World", using RandomForest.
+- [mnist_cnn](./examples/mnist_cnn/). Basic image classification, using Convolutional Neural Network.
+- [har_trees](./examples/har_trees/). Accelerometer-based Human Activity Recognition, using Random Forest
 
 ## Prerequisites
 
