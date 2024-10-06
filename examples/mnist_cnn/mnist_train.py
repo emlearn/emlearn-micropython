@@ -54,11 +54,14 @@ def train_mnist(h5_file, epochs=10):
     model.summary()
 
     model.compile(optimizer='adam', loss = "categorical_crossentropy", metrics = ["categorical_accuracy"]) 
-    H = model.fit(x_train, y_train, batch_size=128, epochs=EPOCHS, verbose=1, validation_data = (x_test, y_test), shuffle=True)
+    H = model.fit(x_train, y_train, batch_size=128, epochs=epochs, verbose=1, validation_data = (x_test, y_test), shuffle=True)
 
     model.save(h5_file)
 
 def generate_test_files(out_dir, x, y):
+
+    if not os.path.exists(out_dir):
+        os.makedirs(out_dir)
 
     expect_bytes = 28*28*1
     classes = numpy.unique(y)
@@ -146,29 +149,34 @@ def generate_tinymaix_model(h5_file,
     assert os.path.exists(tmld_file), tmld_file
     assert os.path.exists(header_file), header_file
 
+    return tmld_file
 
 def main():
 
     h5_file = "mnist_cnn.h5"
-    tinymaix_tools_dir = './TinyMaix/tools'
+    tinymaix_tools_dir = '../../dependencies/TinyMaix/tools'
+    assert os.path.exists(tinymaix_tools_dir), tinymaix_tools_dir
 
+    quantize_data = None # disables quantization
+    quantize_data = os.path.join(tinymaix_tools_dir, 'quant_img_mnist/')
+    if quantize_data is not None:
+        assert os.path.exists(quantize_data)
+    precision = 'int8' if quantize_data else 'fp32'
+
+    # Run training
     train_mnist(h5_file)
 
     #data = x_test[1]
 
-    quantize_data = True # disables quantization
-    quantize_data = './TinyMaix/tools/quant_img_mnist/'
-    precision = 'int8' if quantize_data else 'fp32'
-
     # Export the model using TinyMaix
-
-    generate_tinymaix_model(h5_file,
+    out = generate_tinymaix_model(h5_file,
         input_shape=(28,28,1),
         output_shape=(1,),
         tools_dir=tinymaix_tools_dir,
         precision=precision,
         quantize_data=quantize_data,
     )
+    print('Wrote model to', out)
 
 if __name__ == '__main__':
     main()

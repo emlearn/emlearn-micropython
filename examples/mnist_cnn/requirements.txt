@@ -1,0 +1,4 @@
+tensorflow-cpu<2.14.1
+numpy<2.0.0
+pandas>=2.0.0
+pillow>=10.0.0
