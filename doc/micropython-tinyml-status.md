@@ -81,6 +81,14 @@ Ideally would be compatible with that.
 
 ?No ready-to-install libraries for OPUS/MP3 encoding/decoding.
 
+### Image files
+
+!No mip-installable library for JPEG files.
+
+!No mip installable library for PNG files.
+
+OpenMV [omv.image](https://docs.openmv.io/library/omv.image.html) module supports loading/saving JPEG/PNG.
+
 ## Library interoperability
 
 No interoperable datastructure for multi-dimensional arrays.
@@ -110,8 +118,11 @@ Could this be implemented as a .mpy native module?
 
 #### Camera
 No standard interface in upstream MicroPython.
+Open issue: https://github.com/micropython/micropython/issues/15753
+With proof-of-concept implementation for ESP32.
 
-OpenMV has . But is a custom distribution of MicroPython.
+OpenMV has a good module, with drivers for dozens of popular cameras.
+But is a custom distribution of MicroPython.
 
 ## Connectivity
 
@@ -189,5 +200,8 @@ But over 10x slower than emlearn-micropython.
 ### Convolutional Neural Network
 
 `tinymaix_cnn` available in [emlearn-micropython](https://github.com/emlearn/emlearn-micropython).
+
+TensorFlow Lite support in [OpenMV](https://docs.openmv.io/library/omv.ml.html).
+But as a custom MicroPython distribution.
 
 
