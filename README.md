@@ -39,6 +39,7 @@ It can be combined with feature preprocessing, including neural networks to addr
 - [xor_trees](./examples/xor_trees/). A "Hello World", using RandomForest.
 - [mnist_cnn](./examples/mnist_cnn/). Basic image classification, using Convolutional Neural Network.
 - [har_trees](./examples/har_trees/). Accelerometer-based Human Activity Recognition, using Random Forest
+- [soundlevel_iir](./examples/har_trees/). Sound Level Meter, using Infinite Impulse Response (IIR) filters.
 
 ## Prerequisites
 
