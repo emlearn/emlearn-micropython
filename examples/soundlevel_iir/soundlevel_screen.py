@@ -99,7 +99,6 @@ mic_samples = array.array('h', (0 for _ in range(chunk_samples))) # int16
 # memoryview used to reduce heap allocation in while loop
 mic_samples_mv = memoryview(mic_samples)
 
-soundlevel_db = 0.0
 next_display_update = 0.0
 
 MIC_DBFS=-26 # MSM261S4030H0R
@@ -109,19 +108,18 @@ meter = SoundlevelMeter(buffer_size=chunk_samples,
     mic_sensitivity=MIC_DBFS,
     time_integration=0.125,
     frequency_weighting='A',
+    summary_interval=0,
 )
 
 
 def audio_ready_callback(arg):
-    global soundlevel_db
     start_time = time.ticks_ms()
 
-    db = meter.process(mic_samples)
-    soundlevel_db = db
+    meter.process(mic_samples)
 
     duration = time.ticks_diff(time.ticks_ms(), start_time)
-
-    print('audio-ready', time.ticks_ms(), db, duration)
+    if duration >= 125:
+        print('warn-audio-processing-too-slow', time.ticks_ms(), duration)
 
     # re-trigger audio
     num_read = audio_in.readinto(mic_samples_mv)
@@ -140,10 +138,11 @@ def main():
 
     while True:
         if time.time() >= next_display_update:
-            render_display(db=soundlevel_db)
-            last_display_update = time.time() + 0.100
+            soundlevel_db = meter.last_value()
+            if soundlevel_db is not None:
+                render_display(db=soundlevel_db)
+            last_display_update = time.time() + 0.200
 
-        print('main-loop-iter', soundlevel_db)
         time.sleep_ms(10)
 
 
