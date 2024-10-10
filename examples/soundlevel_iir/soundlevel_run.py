@@ -10,6 +10,8 @@ import array
 from machine import Pin, I2S
 
 from soundlevel import SoundlevelMeter
+from summarizer import Summarizer
+from collections import deque
 
 # Microphone sensitivity.
 # Specifies how to convert digital samples to physical sound level pressure
@@ -47,6 +49,9 @@ meter = SoundlevelMeter(buffer_size=chunk_samples,
     frequency_weighting='A',
 )
 
+SUMMARY_INTERVAL = 10.0
+summarizer = Summarizer(int((1/0.128)*SUMMARY_INTERVAL))
+summary_queue = deque([], 1)
 
 def audio_ready_callback(arg):
     global soundlevel_db
@@ -54,6 +59,12 @@ def audio_ready_callback(arg):
 
     db = meter.process(mic_samples)
     soundlevel_db = db
+
+    summarizer.push(db)
+    if summarizer.full():
+        m = summarizer.compute_all()
+        summary_queue.append(m)
+        summarizer.reset()
 
     duration = time.ticks_diff(time.ticks_ms(), start_time)
     if duration >= 125:
@@ -75,8 +86,18 @@ def main():
 
     while True:
         if time.time() >= next_display_update:
-            print(f'Soundlevel: {soundlevel_db:.1f} dB(A)')
-            last_display_update = time.time() + 0.100
+            summarizer.push(soundlevel_db)
+            print(f'soundlevel shortleq={soundlevel_db:.1f}', end='\r')
+            last_display_update = time.time() + 0.125
+
+        if len(summary_queue):
+            m = summary_queue.pop()
+            print('soundlevels-summary ', end='')
+            for k, v in m.items():
+                print(f'{k}={v:.1f} ', end='')
+            print('')
+
+            next_summary = time.time() + 10.0
 
         time.sleep_ms(10)
 
