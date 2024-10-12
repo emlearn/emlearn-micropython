@@ -10,7 +10,6 @@ import array
 from machine import Pin, I2S
 
 from soundlevel import SoundlevelMeter
-from collections import deque
 
 # Microphone sensitivity.
 # Specifies how to convert digital samples to physical sound level pressure

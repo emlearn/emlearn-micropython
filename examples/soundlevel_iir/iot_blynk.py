@@ -16,8 +16,7 @@ class BlynkClient():
             protocol='https',
         ):
 
-        self._telemetry_url = protocol + '://' + hostname + '/external/api/batch/update?token=' + token
-  
+        self._batch_url = protocol + '://' + hostname + '/external/api/batch/update?token=' + token
 
     def post_telemetry(self, values : list[dict[str, float]]):
         """
@@ -54,11 +53,12 @@ class BlynkClient():
         Each entry in values must have key being a pin name, and the associated value
         """
         args = '&'.join([ f'{k}={v}' for k, v in values.items() ])
-        url = self._telemetry_url + '&' + args
+        url = self._batch_url + '&' + args
         print('post-multiple', url)
-        r = requests.get(url)
+        r = requests.get(url, timeout=5.0)
         print('post-multiple-done', r.status_code)
-        assert r.status_code == 200, (r.status_code, r.content)
+        print('post-multiple-back', r.content)
+        #assert r.status_code == 200, (r.status_code, r.content)
 
     def post_timestamped(self, pin : str, values : list[tuple[int, float]]):
         """
@@ -67,7 +67,7 @@ class BlynkClient():
         """
 
         payload = values
-        url = self._telemetry_url+f'&pin={pin}'
+        url = self._batch_url+f'&pin={pin}'
         r = requests.post(url, json=payload)
         assert r.status_code == 200, (r.status_code, r.content)
 

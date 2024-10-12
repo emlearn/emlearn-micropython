@@ -52,6 +52,7 @@ wlan = network.WLAN(network.STA_IF)
 
 if secrets.BLYNK_AUTH_TOKEN:
     from iot_blynk import BlynkClient
+    BLYNK_PIN_MAPPING = dict(Leq='v2', Lmin='v3', Lmax='v4')
     api = BlynkClient(token=secrets.BLYNK_AUTH_TOKEN)
 else:
     raise ValueError('No IoT API configured')
@@ -88,7 +89,6 @@ def main():
     # Start connecting to WiFi
     wifi_connect()
 
-    #L10,Lmax,Lmin,Leq,L50,L90
 
     while True:
 
@@ -107,9 +107,12 @@ def main():
             if wlan.isconnected():
                 print('send-metrics', len(meter._summary_queue))
                 m = meter._summary_queue.pop()
-                values = [ m ]
-                api.post_telemetry(values)
-
+                vv = { pin: m[key] for key, pin in BLYNK_PIN_MAPPING.items() }
+                values = [ vv ]
+                try:
+                    api.post_telemetry(values)
+                except Exception as e:
+                    print('post-error', e)
             else:
                 print('wifi-reconnect')
                 wlan.active(False)
