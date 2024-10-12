@@ -25,9 +25,11 @@ class BlynkClient():
         The 'time' key should be in Unix milliseconds.
         """
         stream_values = {}
+        notime_values = {}
 
         # Blynk HTTP API currently cannot send multiple timestamped values on multiple streams
-        # so we shuffle the data into being organized per-stream
+        # so where time is specified - we shuffle the data into being organized per-stream
+        # data which is not timestamped is handled sent in a single request
         for datapoint in values:
             if 'time' in datapoint.keys():
                 t = datapoint['time']
@@ -38,16 +40,27 @@ class BlynkClient():
                         stream_values[key] = []
                     stream_values[key].append((t, value))
             else:
-                print('WARNING: ignored datapoint without time')
+                notime_values.update(datapoint)
 
-        # NOTE: if no timestamps are provided (and there are multiple values)
-        # then regular batch update would be better, since it could be done in 1 request
-        # https://docs.blynk.io/en/blynk.cloud/device-https-api/update-multiple-datastreams-api
+        if notime_values:
+            self.post_multiple(notime_values)
     
         for key, datapoints in stream_values.items():
-            self.post_timestamped_values(key, datapoints)
+            self.post_timestamped(key, datapoints)
 
-    def post_timestamped_values(self, pin : str, values : list[tuple[int, float]]):
+    def post_multiple(self, values : dict[str, str]):
+        """
+        Post multiple values at current time
+        Each entry in values must have key being a pin name, and the associated value
+        """
+        args = '&'.join([ f'{k}={v}' for k, v in values.items() ])
+        url = self._telemetry_url + '&' + args
+        print('post-multiple', url)
+        r = requests.get(url)
+        print('post-multiple-done', r.status_code)
+        assert r.status_code == 200, (r.status_code, r.content)
+
+    def post_timestamped(self, pin : str, values : list[tuple[int, float]]):
         """
         Post multiple values from different times, for 1 stream
         Each entry in values must be a tuple with (timestamp, value)
@@ -58,38 +71,6 @@ class BlynkClient():
         r = requests.post(url, json=payload)
         assert r.status_code == 200, (r.status_code, r.content)
 
-def unix_time_seconds():
-    timestamp = time.time()
-    epoch_year = time.gmtime(0)[0]
 
-    if epoch_year == 2020:
-        # seconds between 2000 (MicroPython epoch) and 1970 (Unix epoch)
-        epoch_difference = 946684800
-        timestamp = timestamp + epoch_difference
-    elif epoch_year == 1970:
-        pass
-    else:
-        raise ValueError('Unknown epoch year')
-
-    return float(timestamp)
-
-def main():
-    # bc3ab311-4e92-11ef-b45a-8f71ad378839
-    BLYNK_AUTH_TOKEN = 'Cxvp01Mvo2-A8er9mGRWLfHnPcTNvaTP'
-    api = BlynkClient(token=BLYNK_AUTH_TOKEN)
-
-    t = int(unix_time_seconds() * 1000)
-
-    values = []
-    for s in range(0, 60, 10):
-        v = {'time': t-(s*1000), 'V1': 78.0+s}
-        values.append(v)
-
-    api.post_telemetry(values)
-    print(values)
-    print('Posted telemetry')
-
-if __name__ == '__main__':
-    main()
 
 
