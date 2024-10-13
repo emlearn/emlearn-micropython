@@ -45,7 +45,7 @@ meter = SoundlevelMeter(buffer_size=chunk_samples,
     mic_sensitivity=MIC_DBFS,
     time_integration=0.125,
     frequency_weighting='A',
-    summary_interval=10.0,
+    summary_interval=20.0,
 )
 
 wlan = network.WLAN(network.STA_IF)
