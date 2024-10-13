@@ -77,8 +77,8 @@ def wifi_connect():
 
 
 def main():
-
-    next_display_update = 0.0
+    STATUS_UPDATE_INTERVAL = 5.0
+    next_status_update = time.time() + STATUS_UPDATE_INTERVAL
 
     # Setting a callback function makes the readinto() method non-blocking
     audio_in.irq(audio_ready_callback)
@@ -93,30 +93,31 @@ def main():
     while True:
 
         # check our current status
-        if time.time() >= next_display_update:
+        if time.time() >= next_status_update:
             print('main-alive-tick', wlan.status())
             # Tiny blink to show we are alive
             #led_pin.value(1)
             #time.sleep_ms(1)
             #led_pin.value(0)
-            next_display_update = time.time() + 5.0
 
-        # check for soundlevel data ready to send
-        if len(meter._summary_queue):
-    
-            if wlan.isconnected():
-                print('send-metrics', len(meter._summary_queue))
-                m = meter._summary_queue.pop()
-                vv = { pin: m[key] for key, pin in BLYNK_PIN_MAPPING.items() }
-                values = [ vv ]
-                try:
-                    api.post_telemetry(values)
-                except Exception as e:
-                    print('post-error', e)
-            else:
+            if not wlan.isconnected():
                 print('wifi-reconnect')
                 wlan.active(False)
                 wifi_connect()
+
+            next_status_update = time.time() + STATUS_UPDATE_INTERVAL
+
+        # check for soundlevel data ready to send
+        if len(meter._summary_queue) and wlan.isconnected():
+            print('send-metrics', len(meter._summary_queue))
+            m = meter._summary_queue.pop()
+            vv = { pin: m[key] for key, pin in BLYNK_PIN_MAPPING.items() }
+            values = [ vv ]
+            try:
+                api.post_telemetry(values)
+            except Exception as e:
+                print('post-error', e)
+
 
         time.sleep_ms(10)
 
