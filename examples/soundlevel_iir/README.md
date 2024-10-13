@@ -126,8 +126,11 @@ This requires a device which has support for `network.WLAN` MicroPython module.
 Typically an ESP32 or RP2.
 
 This example uses the [Blynk](https://blynk.io/) IoT platform.
-So you will need to register for an account there (free plan is sufficcient),
-and register a device.
+So you will need to register for an account there (free plan is sufficcient).
+
+After you have registered, you will need to 1. Create a Template, 2. Create a dashboard, and 3. Register a Device.
+
+FIXME: document how to do these steps
 
 Put your WiFi credentials and Blynk auth token into a file called `secrets.py`.
 
