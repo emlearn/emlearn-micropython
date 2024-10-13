@@ -1,6 +1,6 @@
 
 """
-IoT-enable sound level meter example - sends data to IoT platform
+IoT-enabled sound level meter example - sends data to an IoT platform
 """
 
 import machine
@@ -95,10 +95,6 @@ def main():
         # check our current status
         if time.time() >= next_status_update:
             print('main-alive-tick', wlan.status())
-            # Tiny blink to show we are alive
-            #led_pin.value(1)
-            #time.sleep_ms(1)
-            #led_pin.value(0)
 
             if not wlan.isconnected():
                 print('wifi-reconnect')

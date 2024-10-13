@@ -84,37 +84,74 @@ Install the emlearn modules
 ```console
 micropython -m mip install https://emlearn.github.io/emlearn-micropython/builds/master/x64_6.3/emlearn_arrayutils.mpy
 micropython -m mip install https://emlearn.github.io/emlearn-micropython/builds/master/x64_6.3/emliir.mpy
+```
 
 Compute soundlevels for a file
 ```console
 micropython soundlevel_file.py test_burst.wav
 ```
 
+The output is newline-delimited JSON ([NDJSON](https://github.com/ndjson/ndjson-spec)).
+If you want some other format, like CSV - modify the example code.
+
 ## Example: Compute soundlevels on device
 
-Recommended: Make sure you have it running successfully on host first.
+Flash your device with a standard MicroPython firmware, from the [MicroPython.org downloads](https://micropython.org/download/).
 
-Flash your device with a standard MicroPython firmware, from the MicroPython.org downloads page.
+Ensure you have an I2S microphone, and that the pinout is correct in `soundlevel_live.py`.
 
-Download native modules.
+Install the emlearn modules *for your architecture*. ESP32=xtensawin
 ```console
-
+mpremote mip install https://emlearn.github.io/emlearn-micropython/builds/master/xtensawin_6.3/emlearn_arrayutils.mpy
+mpremote mip install https://emlearn.github.io/emlearn-micropython/builds/master/xtensawin_6.3/emliir.mpy
 ```
 
+Copy example code to the device
 ```console
-mpremote cp device/emliir.mpy :
-mpremote cp device/emlearn_arrayutils.mpy :
 mpremote cp soundlevel.py :
-mpremote run soundlevel_run.py
 ```
+
+Run
+```console
+mpremote run soundlevel_live.py
+```
+
+It should show the current soundlevel, which reacts instantly to sound changes.
+Every 10 seconds the summarized soundlevels should be logged.
+
 
 ## Example: Log soundlevels to cloud over WiFi
 
 This requires a device which has support for `network.WLAN` MicroPython module.
 Typically an ESP32 or RP2.
 
-Uses [Blynk](https://blynk.io/).
+This example uses the [Blynk](https://blynk.io/) IoT platform.
+So you will need to register for an account there (free plan is sufficcient),
+and register a device.
 
+Put your WiFi credentials and Blynk auth token into a file called `secrets.py`.
+
+```python
+BLYNK_AUTH_TOKEN = 'MY TOKEN HERE'
+WIFI_SSID = 'MY WIFI SSID'
+WIFI_PASSWORD = 'MY WIFI PASSWORD'
+```
+
+Install the emlearn modules *for your architecture*. ESP32=xtensawin
+```console
+mpremote mip install https://emlearn.github.io/emlearn-micropython/builds/master/xtensawin_6.3/emlearn_arrayutils.mpy
+mpremote mip install https://emlearn.github.io/emlearn-micropython/builds/master/xtensawin_6.3/emliir.mpy
+```
+
+Copy example to the device
+```console
+mpremote cp secrets.py iot_blynk.py soundlevel.py :
+```
+
+Run the example
+```console
+mpremote run soundlevel_iot.py
+```
 
 
 
@@ -125,10 +162,29 @@ in addition to an I2S microphone.
 It uses [micropython-nano-gui](https://github.com/peterhinch/micropython-nano-gui) for the screen.
 So the example can be adapted to other displays supported by that framework.
 
+Install the emlearn modules *for your architecture*. ESP32=xtensawin
+```console
+mpremote mip install https://emlearn.github.io/emlearn-micropython/builds/master/xtensawin_6.3/emlearn_arrayutils.mpy
+mpremote mip install https://emlearn.github.io/emlearn-micropython/builds/master/xtensawin_6.3/emliir.mpy
+```
 
+Install UI framework and screen driver
+```console
+mpremote mip install "github:peterhinch/micropython-nano-gui/drivers/ssd1306"
+mpremote mip install "github:peterhinch/micropython-nano-gui"
+```
+
+Copy example to the device
+```console
+mpremote cp color_setup.py soundlevel.py :
+```
+
+Run the example
 ```
 mpremote run soundlevel_screen.py
 ```
+
+The screen should update continiously to show the current sound level.
 
 
 ## Development
