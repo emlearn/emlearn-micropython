@@ -28,8 +28,10 @@ It can be combined with feature preprocessing, including neural networks to addr
 - Fast Fourier Transform (FFT) for feature preprocessing, or general DSP
 - Infinite Impulse Response (IIR) filters for feature preprocessing, or general DSP
 - Clustering using K-means
+- Scaling and data type transformations for `array`, using `emlearn_arrayutils`.
 - Load/save Numpy .npy files using [micropython-npyfile](https://github.com/jonnor/micropython-npyfile/)
 - Installable as a MicroPython native module. No rebuild/flashing needed
+- Operates on standard `array.array` data structures
 - Models can be loaded at runtime from a file in disk/flash
 - Highly efficient. Inference times down to 100 microseconds, RAM usage <2 kB, FLASH usage <2 kB
 - Pre-built binaries available for most architectures.
@@ -39,7 +41,7 @@ It can be combined with feature preprocessing, including neural networks to addr
 - [xor_trees](./examples/xor_trees/). A "Hello World", using RandomForest.
 - [mnist_cnn](./examples/mnist_cnn/). Basic image classification, using Convolutional Neural Network.
 - [har_trees](./examples/har_trees/). Accelerometer-based Human Activity Recognition, using Random Forest
-- [soundlevel_iir](./examples/har_trees/). Sound Level Meter, using Infinite Impulse Response (IIR) filters.
+- [soundlevel_iir](./examples/soundlevel_iir/). Sound Level Meter, using Infinite Impulse Response (IIR) filters.
 
 ## Prerequisites
 
