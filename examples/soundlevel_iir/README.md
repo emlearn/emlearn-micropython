@@ -8,7 +8,7 @@ It can also be used as a starting point for other applications that need to proc
 The core code can be run on any MicroPyton port (including PC/Unix),
 but to run the on-device examples you will need particular hardware (see hardware requirements section).
 
-FIXME: image of the different examples. Show Device screen, Blynk dashboard
+![Sound level meter with Blynk dashboard](./soundlevel-blynk-combined.png)
 
 ## Features
 
@@ -25,8 +25,8 @@ sound level meter used for noise measurements:
 
 The following emlearn functionality are used in the implementation:
 
-- `emliir`, IIR filters to implement the A weighting filter
-- `emlearn_arrayutils.linear_map` to convert array values between `float` and `int16`
+- `emliir`. IIR filters to implement the A weighting filter
+- `emlearn_arrayutils.linear_map()`. To convert array values between `float` and `int16`
 
 
 #### Notes on measurement correctness
