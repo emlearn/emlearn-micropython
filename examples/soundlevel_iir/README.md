@@ -128,11 +128,59 @@ Typically an ESP32 or RP2.
 This example uses the [Blynk](https://blynk.io/) IoT platform.
 So you will need to register for an account there (free plan is sufficcient).
 
-After you have registered, you will need to 1. Create a Template, 2. Create a dashboard, and 3. Register a Device.
+After you have registered, you will need to 1. Create a Template, 2. Create datastreams, 3. Create a dashboard, and 4. Register a Device.
 
-FIXME: document how to do these steps
+#### Create Blynk Template
 
-Put your WiFi credentials and Blynk auth token into a file called `secrets.py`.
+The Template structure in Blynk has all the setup related to one type of device,
+including the datastreams, dashboard, and devices.
+
+Go to **Developer Zone -> My Templates**, and hit ***New Template**.
+
+- Name: Soundlevel Meter
+- Hardware: ESP32
+- Connection Type: WiFi
+
+For reference, see [Blynk.io: Template Quick Setup](https://docs.blynk.io/en/getting-started/template-quick-setup).
+
+#### Setup Blynk Datastreams
+
+Create 3 *Virtual Pin* Datastreams for the Template.
+The names/pin should be: Leq/V2, Lmin/V3, Lmax/V4.
+Each should have the following configuration:
+
+- Data Type: Double
+- Min: 20
+- Max: 120
+- Enable History Data: Yes
+
+Remember to hit **Save and Apply** after adding the datastreams.
+
+For reference, see [Blynk.io: Set Up Datastreams](https://docs.blynk.io/en/getting-started/template-quick-setup/set-up-datastreams).
+
+#### Create Blynk Web Dashboard
+
+- Go to the *Web Dashboard* tab, click *Edit*
+- Add a *Chart* widget
+- Edit the Chart widget, and add the 3 datastreams. Leq,Lmin,Lmax
+- Save the dashboard
+
+For reference, see [Blynk.io: Set Up Web Dashboard](https://docs.blynk.io/en/getting-started/template-quick-setup/set-up-web-dashboard).
+
+
+#### Register a device in Blynk
+
+- In the right hand menu of Blynk dashboard, select `Devices -> Create New Device`.
+- Make sure that the selected **Template** is "Soundlevel Meter".
+- Hit **Create** to register the device
+- Copy the **Auth Token**, you will need it in the next step.
+
+For reference, see [Blynk.io: Manual Device Activation, Getting Auth Token](https://docs.blynk.io/en/getting-started/activating-devices/manual-device-activation).
+
+#### Setup the device
+
+Put your *WiFi network name (SSID)*, *WiFi password* and *Blynk auth token* into a file called `secrets.py`.
+Use the following variable names.
 
 ```python
 BLYNK_AUTH_TOKEN = 'MY TOKEN HERE'
@@ -156,6 +204,10 @@ Run the example
 mpremote run soundlevel_iot.py
 ```
 
+You should see some log output, and within 30 seconds you should see the first attempts to send data to Blynk.
+If the status code is 200, then you should see data appear in your dashboard.
+
+![Graph over soundlevel in Blynk](./soundlevel-blynk-graph.png)
 
 
 ## Example: Show soundlevels on screen
@@ -189,6 +241,7 @@ mpremote run soundlevel_screen.py
 
 The screen should update continiously to show the current sound level.
 
+![Soundlevel being shown on display](./soundlevel-screen.png)
 
 ## Development
 
