@@ -8,7 +8,7 @@
   "keywords": "machinelearning,randomforest,classification,decisiontree",
   "urls": [
     ["./xor_run.py", "xor_run.py"],
-    ["./xor_model.csv", "xor_model.csv"],
+    ["./xor_model.csv", "xor_model.csv"]
   ],
   "deps": [["emlearn", "master"]]
 }
