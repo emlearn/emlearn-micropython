@@ -1,0 +1,14 @@
+{
+  "name": "emlearn-micropython XOR classification example",
+  "version": "0.3.0",
+  "description": "XOR classification Hello World using Random Forest",
+  "author": "Jon Nordby",
+  "license": "MIT",
+  "readme": "github:emlearn/emlearn-micropython/blob/master/examples/xor_trees/README.md",
+  "keywords": "machinelearning,randomforest,classification,decisiontree",
+  "urls": [
+    ["./xor_run.py", "xor_run.py"],
+    ["./xor_model.csv", "xor_model.csv"],
+  ],
+  "deps": [["emlearn", "master"]]
+}
