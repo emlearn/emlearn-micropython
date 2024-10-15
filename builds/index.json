@@ -1,0 +1,19 @@
+{
+  "v": "3.viper-ide",
+  "updated": 1728745833,
+  "packages": [{
+    "name": "emlearn",
+    "version": "master",
+    "description": "Enables MicroPython applications to run efficient Machine Learning models on microcontroller, without having to touch any C code",
+    "author": "Jon Nordby",
+    "license": "MIT",
+    "homepage": "https://emlearn.github.io/emlearn-micropython",
+    "versions": [
+      {
+        "version": "master",
+        "url": "master/package.json",
+        "mpy": "6.3"
+      }
+    ]
+  }]
+}
