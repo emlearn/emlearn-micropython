@@ -1,6 +1,6 @@
 
 import array
-import tinymaix_cnn
+import emlearn_cnn
 import time
 import gc
 
@@ -26,7 +26,7 @@ def test_cnn_mnist():
     model = None
     with open(MODEL, 'rb') as f:
         model_data = array.array('B', f.read())
-        model = tinymaix_cnn.new(model_data)
+        model = emlearn_cnn.new(model_data)
 
     # run on some test data
     for class_no in range(0, 10):
