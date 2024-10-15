@@ -31,7 +31,8 @@ python xor_train.py
 ## Running on host
 
 ```console
-curl -o emltrees.mpy https://github.com/emlearn/emlearn-micropython/raw/refs/heads/gh-pages/builds/master/x64_6.3/emltrees.mpy
+micropython -m mip install https://emlearn.github.io/emlearn-micropython/builds/master/x64_6.3/emlearn_trees.mpy
+
 micropython xor_run.py
 ```
 
@@ -43,9 +44,7 @@ This command is for ESP32 (xtensawin).
 For other hardware, replace the string.
 
 ```console
-mkdir -p device
-curl -o device/emltrees.mpy https://github.com/emlearn/emlearn-micropython/raw/refs/heads/gh-pages/builds/master/xtensawin_6.3/emltrees.mpy
-mpremote cp emltrees.mpy :
+mpremote mip install https://emlearn.github.io/emlearn-micropython/builds/master/xtensawin_6.3/emlearn_trees.mpy
 ```
 
 ```

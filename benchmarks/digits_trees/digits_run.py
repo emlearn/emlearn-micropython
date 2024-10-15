@@ -6,15 +6,15 @@ from digits_data import digits
 
 from everywhere_digits import RandomForestClassifier
 import m2c_digits
-import emltrees
+import emlearn_trees
 
 
 def emlearn_create():
-    model = emltrees.new(10, 1000, 10)
+    model = emlearn_trees.new(10, 1000, 10)
 
     # Load a CSV file with the model
     with open('eml_digits.csv', 'r') as f:
-        emltrees.load_model(model, f)
+        emlearn_trees.load_model(model, f)
     return model
 
 def argmax(l):

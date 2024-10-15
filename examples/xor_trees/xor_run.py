@@ -1,13 +1,13 @@
 # device/micropython code
 
-import emltrees
+import emlearn_trees
 import array
 
-model = emltrees.new(5, 30, 2)
+model = emlearn_trees.new(5, 30, 2)
 
 # Load a CSV file with the model
 with open('xor_model.csv', 'r') as f:
-    emltrees.load_model(model, f)
+    emlearn_trees.load_model(model, f)
 
 # run it
 max_val = (2**15-1) # 1.0 as int16

@@ -10,8 +10,8 @@ MPY_DIR_ABS = $(abspath $(MPY_DIR))
 
 MODULES_PATH = ./dist/$(ARCH)_$(MPY_ABI_VERSION)
 
-$(MODULES_PATH)/emltrees.mpy:
-	make -C src/emltrees/ ARCH=$(ARCH) MPY_DIR=$(MPY_DIR_ABS) V=1 clean dist
+$(MODULES_PATH)/emlearn_trees.mpy:
+	make -C src/emlearn_trees/ ARCH=$(ARCH) MPY_DIR=$(MPY_DIR_ABS) V=1 clean dist
 
 $(MODULES_PATH)/emlneighbors.mpy:
 	make -C src/emlneighbors/ ARCH=$(ARCH) MPY_DIR=$(MPY_DIR_ABS) V=1 clean dist
@@ -34,7 +34,7 @@ $(MODULES_PATH)/eml_iir_q15.mpy:
 $(MODULES_PATH)/emlearn_arrayutils.mpy:
 	make -C src/emlearn_arrayutils/ ARCH=$(ARCH) MPY_DIR=$(MPY_DIR_ABS) V=1 clean dist
 
-emltrees.results: $(MODULES_PATH)/emltrees.mpy
+emlearn_trees.results: $(MODULES_PATH)/emlearn_trees.mpy
 	MICROPYPATH=$(MODULES_PATH) $(MICROPYTHON_BIN) tests/test_trees.py
 
 emlneighbors.results: $(MODULES_PATH)/emlneighbors.mpy
@@ -61,7 +61,7 @@ emlearn_arrayutils.results: $(MODULES_PATH)/emlearn_arrayutils.mpy
 .PHONY: clean
 
 clean:
-	make -C src/emltrees/ ARCH=$(ARCH) MPY_DIR=$(MPY_DIR_ABS) V=1 clean
+	make -C src/emlearn_trees/ ARCH=$(ARCH) MPY_DIR=$(MPY_DIR_ABS) V=1 clean
 	make -C src/emlneighbors/ ARCH=$(ARCH) MPY_DIR=$(MPY_DIR_ABS) V=1 clean
 	make -C src/emliir/ ARCH=$(ARCH) MPY_DIR=$(MPY_DIR_ABS) V=1 clean
 	rm -rf ./dist
@@ -74,8 +74,8 @@ release:
 	zip -r $(RELEASE_NAME).zip $(RELEASE_NAME)
 	#cp $(RELEASE_NAME).zip emlearn-micropython-latest.zip
 
-check: emltrees.results emlneighbors.results emliir.results eml_iir_q15.results emlfft.results emlkmeans.results emlearn_arrayutils.results emlearn_cnn.results
+check: emlearn_trees.results emlneighbors.results emliir.results eml_iir_q15.results emlfft.results emlkmeans.results emlearn_arrayutils.results emlearn_cnn.results
 
-dist: $(MODULES_PATH)/emltrees.mpy $(MODULES_PATH)/emlneighbors.mpy $(MODULES_PATH)/emliir.mpy $(MODULES_PATH)/eml_iir_q15.mpy $(MODULES_PATH)/emlfft.mpy $(MODULES_PATH)/emlkmeans.mpy $(MODULES_PATH)/emlearn_arrayutils.mpy $(MODULES_PATH)/emlearn_cnn.mpy
+dist: $(MODULES_PATH)/emlearn_trees.mpy $(MODULES_PATH)/emlneighbors.mpy $(MODULES_PATH)/emliir.mpy $(MODULES_PATH)/eml_iir_q15.mpy $(MODULES_PATH)/emlfft.mpy $(MODULES_PATH)/emlkmeans.mpy $(MODULES_PATH)/emlearn_arrayutils.mpy $(MODULES_PATH)/emlearn_cnn.mpy
 
 

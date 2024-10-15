@@ -15,7 +15,7 @@ DIST_DIR := ../../dist/$(ARCH)_$(MPY_ABI_VERSION)
 
 # Name of module
 # NOTE: cannot contain _ - functions do not register on the module then?
-MOD = emltrees
+MOD = emlearn_trees
 
 # Source files (.c or .py)
 SRC = trees.c trees.py
