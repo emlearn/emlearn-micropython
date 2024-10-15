@@ -2,3 +2,8 @@ build/
 tmp/
 *.o
 *.mpy
+
+venv/
+
+.ipynb_checkpoints/
+__pycache__/
