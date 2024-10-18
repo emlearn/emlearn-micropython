@@ -1,7 +1,7 @@
 
 import os
 import array
-import emlneighbors
+import emlearn_neighbors
 
 TRAINING_STATE = 'training'
 UNLOCKED_STATE = 'unlocked'
@@ -193,9 +193,9 @@ class SequenceLock():
         
         items = self.training_examples
         features = self.sequence_length-1
-        self.model = emlneighbors.new(items, features, items)
+        self.model = emlearn_neighbors.new(items, features, items)
 
-        # XXX: could be dropped if emlneighbors allowed accessing n_items
+        # XXX: could be dropped if emlearn_neighbors allowed accessing n_items
         self.training_items = 0 
 
     def _get_distances(self, features):

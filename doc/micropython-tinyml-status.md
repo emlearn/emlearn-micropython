@@ -195,7 +195,7 @@ But over 10x slower than emlearn-micropython.
 
 ### K-nearest-neighbours
 
-`emlneighbors` available in [emlearn-micropython](https://github.com/emlearn/emlearn-micropython).
+`emlearn_neighbors` available in [emlearn-micropython](https://github.com/emlearn/emlearn-micropython).
 
 ### Convolutional Neural Network
 
