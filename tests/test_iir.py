@@ -1,5 +1,5 @@
 
-import emliir
+import emlearn_iir
 
 import array
 import gc
@@ -26,7 +26,7 @@ def test_iir_del():
         -1.999111423794296,
         0.9991118187443988
     ])
-    model = emliir.new(coefficients)
+    model = emlearn_iir.new(coefficients)
     after_new = gc.mem_alloc()
     added = after_new - before_new
 

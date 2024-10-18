@@ -1,5 +1,5 @@
 
-import emlneighbors
+import emlearn_neighbors
 
 import array
 import gc
@@ -12,7 +12,7 @@ def test_neighbors_del():
     gc.enable()
     gc.collect()
     before_new = gc.mem_alloc()
-    model = emlneighbors.new(30, 5, 1)
+    model = emlearn_neighbors.new(30, 5, 1)
     after_new = gc.mem_alloc()
     added = after_new - before_new
     gc.collect()
@@ -29,7 +29,7 @@ def test_neighbors_trivial():
     n_features = 3
     n_items = 100
     k_neighbors = 2
-    model = emlneighbors.new(n_items, n_features, k_neighbors)
+    model = emlearn_neighbors.new(n_items, n_features, k_neighbors)
 
     item = array.array('h', [0, 0, 0])
 
@@ -54,7 +54,7 @@ def test_neighbors_trivial():
 
 def test_neighbors_get_results():
 
-    model = emlneighbors.new(100, 3, 1)
+    model = emlearn_neighbors.new(100, 3, 1)
 
     data = [
         (array.array('h', [-100, -100, -2]), 0),

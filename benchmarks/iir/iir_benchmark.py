@@ -14,9 +14,9 @@ except ImportError as e:
     print(e)
     pass
 
-emliir = None
+emlearn_iir = None
 try:
-    import emliir
+    import emlearn_iir
 except ImportError as e:
     print(e)
     pass
@@ -70,9 +70,9 @@ def main():
         print('ulab', t)
 
     # emlearn
-    if emliir:
+    if emlearn_iir:
         start = time.ticks_us()
-        iir = emliir.new(coeff)
+        iir = emlearn_iir.new(coeff)
         for r in range(repeats):
             iir.run(a)
         t = (time.ticks_diff(time.ticks_us(), start) / repeats ) / 1000.0 # ms

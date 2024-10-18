@@ -14,7 +14,7 @@ EMLEARN_DIR := $(shell python3 -c "import emlearn; print(emlearn.includedir)")
 DIST_DIR := ../../dist/$(ARCH)_$(MPY_ABI_VERSION)
 
 # Name of module
-MOD = emliir
+MOD = emlearn_iir
 
 # Source files (.c or .py)
 SRC = iir_filter.c

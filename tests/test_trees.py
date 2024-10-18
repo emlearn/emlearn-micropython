@@ -1,5 +1,5 @@
 
-import emltrees
+import emlearn_trees
 
 import array
 import gc
@@ -12,7 +12,7 @@ def test_trees_del():
     gc.collect()
     before_new = gc.mem_alloc()
 
-    model = emltrees.new(5, 30, 4)
+    model = emlearn_trees.new(5, 30, 4)
     after_new = gc.mem_alloc()
     added = after_new - before_new
 
@@ -29,11 +29,11 @@ def test_trees_xor():
     Loading simple XOR model and predictions should give correct results
     """
 
-    model = emltrees.new(5, 30, 4)
+    model = emlearn_trees.new(5, 30, 4)
 
     # Load a CSV file with the model
     with open('examples/xor_trees/xor_model.csv', 'r') as f:
-        emltrees.load_model(model, f)
+        emlearn_trees.load_model(model, f)
 
     # run it
     s = 32767 # max int16

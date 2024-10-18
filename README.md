@@ -57,9 +57,20 @@ Download the repository with examples etc
 git clone https://github.com/emlearn/emlearn-micropython
 ```
 
-## Installing from a release
+## Usage
+
+Start with the instructions in [XOR example](./examples/xor_trees/).
+
 
 #### Find architecture and .mpy version
+
+The correct .mpy files to use depend on the CPU architecture of your microcontroller,
+as well as the MicroPython version.
+
+| MicroPython version | .mpy version  |
+|---------------------| ------------- |
+| 1.23.x              | 6.3           |
+
 
 Identify which CPU architecture your device uses.
 You need to specify `ARCH` to install the correct module version.
@@ -78,43 +89,6 @@ You need to specify `ARCH` to install the correct module version.
 Information is also available in the official documentation:
 [MicroPython: .mpy files](https://docs.micropython.org/en/latest/reference/mpyfiles.html#versioning-and-compatibility-of-mpy-files)
 
-
-#### Download release files
-
-Download from [releases](https://github.com/emlearn/emlearn-micropython/releases).
-
-#### Install on device
-
-Copy the .mpy file for the correct `ARCH` to your device.
-```
-mpremote cp emltrees.mpy :emltrees.mpy
-mpremote cp emlneighbors.mpy :emlneighbors.mpy
-```
-
-NOTE: If there is no ready-made build for your device/architecture,
-then you will need to build the .mpy module yourself.
-
-## Usage
-
-NOTE: Make sure to install the module first (see above)
-
-Train a model with scikit-learn
-```
-pip install emlearn scikit-learn
-python examples/xor_trees/xor_train.py
-```
-
-Copy model file to device
-
-```
-mpremote cp xor_model.csv :xor_model.csv
-```
-
-Run program that uses the model
-
-```
-mpremote run examples/xor_run.py
-```
 
 ## Benchmarks
 
@@ -157,7 +131,7 @@ make dist ARCH=armv6m MPY_DIR=../micropython
 
 Install it on device
 ```
-mpremote cp dist/armv6m*/emltrees.mpy :emltrees.mpy
+mpremote cp dist/armv6m*/emlearn_trees.mpy :emlearn_trees.mpy
 ```
 
 #### Run tests

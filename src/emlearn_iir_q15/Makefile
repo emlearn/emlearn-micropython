@@ -13,7 +13,7 @@ CMSIS_DSP_DIR := ../../dependencies/CMSIS-DSP
 DIST_DIR := ../../dist/$(ARCH)_$(MPY_ABI_VERSION)
 
 # Name of module
-MOD = eml_iir_q15
+MOD = emlearn_iir_q15
 
 # Source files (.c or .py)
 SRC = iir_filter.c iir_filter.py

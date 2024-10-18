@@ -7,9 +7,9 @@ def convert_coefficients(c, scale=(2**13)-1):
     assert (len(c) % 6 == 0), len(c)
     n_stages = len(c) // 6
     
-    # Transposed Direct Form II / sosfilt / emliir
+    # Transposed Direct Form II / sosfilt / emlearn_iir
     # [ b0, b1, b2, 1.0, -a1, -a2 ]
-    # Direct Form I / eml_iir_q15 
+    # Direct Form I / emlearn_iir_q15 
     # [ b0, 0, b1, b2, a1, a2 ]
 
     # NOTE: CMSIS-DSP “a” coefficients are negative compared to SciPy conventions

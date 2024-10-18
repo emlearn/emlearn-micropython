@@ -3,7 +3,8 @@
 # User journey
 
 - Level 0a. Run a pretrained example/demo in the browser
-- Level 0b. Run a pretrained example/demo on a board
+- Level 0b. Run a pretrained example/demo on PC/host
+- Level 0c. Run a pretrained example/demo on a board
 - Level 1. Train custom model on-device
 - Level 2. Collect a dataset, do training on PC, deploy back to microcontroller
 - Level 3. Bake the custom model into the firmware
@@ -20,33 +21,21 @@
 
 sequence. On-device training demo
 
-- Record piezo data with ADC. 100 Hz?
-Typical taps. Slower pushes. Handling noises.
-- Setup event detection for piezo.
-In its own module.
-Threshold on delta and level?
-- Create emliir module, use for piezo detection
+- Use accelerometer instead of piezo. On M5StickC, for example
+- Compute impulsive-ness feature. Magnitude, RMS, exponential smooth, then Delta * times level ?
+- Alternative: Use IIR for knock detection
 - Maybe blink during unlocked state
 - Add a blink to each event. For user feedback
 - Make demo video
+- Add some documentation / README
 - Make state diagram
 - Make timing diagram. Highlight distances/features
-- Add some documentation / README
 
-Learnings.
-
-- Putting piezo on small thin plate worked well.
-On table not working, no response.
-Hitting direct not so good either, rise of finger causes change. Double-trigger. Also tricky to hit in right place.
-- LEDs as protection diodes worked well. Both red and green can be used. Lights up on direct hits, if placed by piezo.
-- Analog RC filter is beneficial for piezo connections. Using 10k+100nF, has 160 Hz cutoff. Should maybe move it to 80Hz? Since only sampling at 100 Hz. 
-- Only direct hits can reach trigger levels on 3.3V I/O. Need ADC for other cases. But am seing some 100mV when placed on small plate
-
-Examples
+#### Examples
 
 - Add a novelty detection example?
 
-Benchmarks
+#### Benchmarks
 
 - Add FLASH and RAM usage
 - Test gzip compression of .csv model for trees
@@ -56,3 +45,5 @@ Benchmarks
 In-browser demo
 
 - Test MicroPython build for WASM/browser
+- Test getting audio input into MicroPython Webassembly
+- Test getting IMU data (ie on phone), in browser

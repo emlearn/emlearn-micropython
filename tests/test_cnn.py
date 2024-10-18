@@ -1,6 +1,6 @@
 
 import array
-import tinymaix_cnn
+import emlearn_cnn
 
 MNIST_MODEL = 'examples/mnist_cnn/mnist_cnn.tmdl'
 MNIST_DATA_DIR = 'examples/mnist_cnn/data/'
@@ -10,7 +10,7 @@ def test_cnn_create():
     model = None
     with open(MNIST_MODEL, 'rb') as f:
         model_data = array.array('B', f.read())
-        model = tinymaix_cnn.new(model_data)
+        model = emlearn_cnn.new(model_data)
 
         # TODO: enable these checks
         #wrong_type = array.array('f', [])
@@ -40,7 +40,7 @@ def test_cnn_mnist():
     model = None
     with open(MNIST_MODEL, 'rb') as f:
         model_data = array.array('B', f.read())
-        model = tinymaix_cnn.new(model_data)
+        model = emlearn_cnn.new(model_data)
 
     correct = 0
     for class_no in range(0, 10):

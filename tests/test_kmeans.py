@@ -1,5 +1,5 @@
 
-import emlkmeans
+import emlearn_kmeans
 
 import array
 import gc
@@ -42,7 +42,7 @@ def test_kmeans_two_clusters():
     for typecode in ['bytearray', 'B']:
         dataset, centroids = make_two_cluster_data(typecode)
 
-        assignments = emlkmeans.cluster(dataset, centroids, features=n_features)
+        assignments = emlearn_kmeans.cluster(dataset, centroids, features=n_features)
         assert len(assignments) == len(dataset)/n_features
         assert list(assignments) == [0, 0, 1, 1], assignments
 
@@ -57,7 +57,7 @@ def test_kmeans_many_features():
     dataset = array.array(typecode, (0 for _ in range(n_features*n_samples)) )
     centroids = array.array(typecode, (0 for _ in range(n_features*n_clusters)) )
 
-    assignments = emlkmeans.cluster(dataset, centroids, features=n_features, max_iter=2)
+    assignments = emlearn_kmeans.cluster(dataset, centroids, features=n_features, max_iter=2)
     assert len(assignments) == len(dataset)/n_features
     assert min(assignments) >= 0
     assert max(assignments) < n_clusters

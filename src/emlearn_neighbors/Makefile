@@ -14,7 +14,7 @@ DIST_DIR := ../../dist/$(ARCH)_$(MPY_ABI_VERSION)
 
 # Name of module
 # NOTE: cannot contain _ - functions do not register on the module then?
-MOD = emlneighbors
+MOD = emlearn_neighbors
 
 # Source files (.c or .py)
 SRC = neighbors.c

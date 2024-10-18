@@ -13,7 +13,7 @@ TINYMAIX_DIR := ../../dependencies/TinyMaix
 DIST_DIR := ../../dist/$(ARCH)_$(MPY_ABI_VERSION)
 
 # Name of module
-MOD = tinymaix_cnn
+MOD = emlearn_cnn
 
 # Source files (.c or .py)
 SRC = mod_cnn.c

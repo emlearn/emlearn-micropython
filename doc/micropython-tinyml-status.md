@@ -167,14 +167,14 @@ FIR filters.
 
 IIR filters.
 `scipy.signal.sosfilt` available in [ulab](https://github.com/v923z/micropython-ulab).
-`emliir` available in [emlearn-micropython](https://github.com/emlearn/emlearn-micropython).
+`emlearn_iir` available in [emlearn-micropython](https://github.com/emlearn/emlearn-micropython).
 
 ### Fast Fourier Transform (FFT)
 Key part of computing frequency spectrum, or time-frequency representations (spectrogram).
 
 FFT.
 `numpy.fft.fft` available in [ulab](https://github.com/v923z/micropython-ulab).
-`emlfft` available in [emlearn-micropython](https://github.com/emlearn/emlearn-micropython).
+`emlearn_fft` available in [emlearn-micropython](https://github.com/emlearn/emlearn-micropython).
 
 DCT.
 Not available?
@@ -195,7 +195,7 @@ But over 10x slower than emlearn-micropython.
 
 ### K-nearest-neighbours
 
-`emlneighbors` available in [emlearn-micropython](https://github.com/emlearn/emlearn-micropython).
+`emlearn_neighbors` available in [emlearn-micropython](https://github.com/emlearn/emlearn-micropython).
 
 ### Convolutional Neural Network
 
