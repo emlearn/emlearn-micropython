@@ -16,9 +16,9 @@ try:
 except ImportError as e:
     print(e)
 
-emlfft = None
+emlearn_fft = None
 try:
-    import emlfft
+    import emlearn_fft
     pass
 except ImportError as e:
     print(e)
@@ -65,13 +65,13 @@ def run_one(real, imag, n, repeat=10):
         d = ((time.ticks_diff(time.ticks_us(), start)) / repeat) / 1000.0 # ms
         print('ulab', n, d)
 
-    # FIXME: this causes MicroPython to crash inside emlfft on ESP32
+    # FIXME: this causes MicroPython to crash inside emlearn_fft on ESP32
     #gc.collect()
 
     # emlearn
     if emlearn:        
-        fft2 = emlfft.FFT(n)
-        emlfft.fill(fft2, n)
+        fft2 = emlearn_fft.FFT(n)
+        emlearn_fft.fill(fft2, n)
         gc.collect()
 
         start = time.ticks_us()

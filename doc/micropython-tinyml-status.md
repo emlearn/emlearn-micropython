@@ -174,7 +174,7 @@ Key part of computing frequency spectrum, or time-frequency representations (spe
 
 FFT.
 `numpy.fft.fft` available in [ulab](https://github.com/v923z/micropython-ulab).
-`emlfft` available in [emlearn-micropython](https://github.com/emlearn/emlearn-micropython).
+`emlearn_fft` available in [emlearn-micropython](https://github.com/emlearn/emlearn-micropython).
 
 DCT.
 Not available?

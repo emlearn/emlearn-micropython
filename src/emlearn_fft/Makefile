@@ -14,7 +14,7 @@ EMLEARN_DIR := $(shell python3 -c "import emlearn; print(emlearn.includedir)")
 DIST_DIR := ../../dist/$(ARCH)_$(MPY_ABI_VERSION)
 
 # Name of module
-MOD = emlfft
+MOD = emlearn_fft
 
 # Source files (.c or .py)
 SRC = fft.c fft.py
