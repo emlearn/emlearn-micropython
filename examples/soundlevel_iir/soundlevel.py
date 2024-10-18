@@ -4,7 +4,7 @@ import struct
 import array
 from collections import deque
 
-import emliir
+import emlearn_iir
 from emlearn_arrayutils import linear_map
 #import emlearn_iir_q15
 #from iir_python import IIRFilter
@@ -13,7 +13,7 @@ class IIRFilterEmlearn:
 
     def __init__(self, coefficients):
         c = array.array('f', coefficients)
-        self.iir = emliir.new(c)
+        self.iir = emlearn_iir.new(c)
     def process(self, samples):
         self.iir.run(samples)
 

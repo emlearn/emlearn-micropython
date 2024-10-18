@@ -27,8 +27,8 @@ def iir_process_file(inp, out, filters, chunksize):
         if len(reader.shape) != 1:
             raise ValueError("Input must be 1d")
         if reader.typecode == 'f':
-            import emliir
-            filter = emliir.new(coefficients)
+            import emlearn_iir
+            filter = emlearn_iir.new(coefficients)
         elif reader.typecode == 'h':
             import emlearn_iir_q15
             filter = emlearn_iir_q15.new(coefficients)

@@ -167,7 +167,7 @@ FIR filters.
 
 IIR filters.
 `scipy.signal.sosfilt` available in [ulab](https://github.com/v923z/micropython-ulab).
-`emliir` available in [emlearn-micropython](https://github.com/emlearn/emlearn-micropython).
+`emlearn_iir` available in [emlearn-micropython](https://github.com/emlearn/emlearn-micropython).
 
 ### Fast Fourier Transform (FFT)
 Key part of computing frequency spectrum, or time-frequency representations (spectrogram).

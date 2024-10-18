@@ -25,7 +25,7 @@ sound level meter used for noise measurements:
 
 The following emlearn functionality are used in the implementation:
 
-- `emliir`. IIR filters to implement the A weighting filter
+- `emlearn_iir`. IIR filters to implement the A weighting filter
 - `emlearn_arrayutils.linear_map()`. To convert array values between `float` and `int16`
 
 
@@ -83,7 +83,7 @@ pip install -r requirements.txt
 Install the emlearn modules
 ```console
 micropython -m mip install https://emlearn.github.io/emlearn-micropython/builds/master/x64_6.3/emlearn_arrayutils.mpy
-micropython -m mip install https://emlearn.github.io/emlearn-micropython/builds/master/x64_6.3/emliir.mpy
+micropython -m mip install https://emlearn.github.io/emlearn-micropython/builds/master/x64_6.3/emlearn_iir.mpy
 ```
 
 Compute soundlevels for a file
@@ -103,7 +103,7 @@ Ensure you have an I2S microphone, and that the pinout is correct in `soundlevel
 Install the emlearn modules *for your architecture*. ESP32=xtensawin
 ```console
 mpremote mip install https://emlearn.github.io/emlearn-micropython/builds/master/xtensawin_6.3/emlearn_arrayutils.mpy
-mpremote mip install https://emlearn.github.io/emlearn-micropython/builds/master/xtensawin_6.3/emliir.mpy
+mpremote mip install https://emlearn.github.io/emlearn-micropython/builds/master/xtensawin_6.3/emlearn_iir.mpy
 ```
 
 Copy example code to the device
@@ -191,7 +191,7 @@ WIFI_PASSWORD = 'MY WIFI PASSWORD'
 Install the emlearn modules *for your architecture*. ESP32=xtensawin
 ```console
 mpremote mip install https://emlearn.github.io/emlearn-micropython/builds/master/xtensawin_6.3/emlearn_arrayutils.mpy
-mpremote mip install https://emlearn.github.io/emlearn-micropython/builds/master/xtensawin_6.3/emliir.mpy
+mpremote mip install https://emlearn.github.io/emlearn-micropython/builds/master/xtensawin_6.3/emlearn_iir.mpy
 ```
 
 Copy example to the device
@@ -220,7 +220,7 @@ So the example can be adapted to other displays supported by that framework.
 Install the emlearn modules *for your architecture*. ESP32=xtensawin
 ```console
 mpremote mip install https://emlearn.github.io/emlearn-micropython/builds/master/xtensawin_6.3/emlearn_arrayutils.mpy
-mpremote mip install https://emlearn.github.io/emlearn-micropython/builds/master/xtensawin_6.3/emliir.mpy
+mpremote mip install https://emlearn.github.io/emlearn-micropython/builds/master/xtensawin_6.3/emlearn_iir.mpy
 ```
 
 Install UI framework and screen driver
