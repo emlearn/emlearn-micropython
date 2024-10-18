@@ -28,8 +28,8 @@ $(MODULES_PATH)/emlearn_cnn.mpy:
 $(MODULES_PATH)/emlearn_kmeans.mpy:
 	make -C src/emlearn_kmeans/ ARCH=$(ARCH) MPY_DIR=$(MPY_DIR_ABS) V=1 clean dist
 
-$(MODULES_PATH)/eml_iir_q15.mpy:
-	make -C src/eml_iir_q15/ ARCH=$(ARCH) MPY_DIR=$(MPY_DIR_ABS) V=1 clean dist
+$(MODULES_PATH)/emlearn_iir_q15.mpy:
+	make -C src/emlearn_iir_q15/ ARCH=$(ARCH) MPY_DIR=$(MPY_DIR_ABS) V=1 clean dist
 
 $(MODULES_PATH)/emlearn_arrayutils.mpy:
 	make -C src/emlearn_arrayutils/ ARCH=$(ARCH) MPY_DIR=$(MPY_DIR_ABS) V=1 clean dist
@@ -52,7 +52,7 @@ emlearn_cnn.results: $(MODULES_PATH)/emlearn_cnn.mpy
 emlearn_kmeans.results: $(MODULES_PATH)/emlearn_kmeans.mpy
 	MICROPYPATH=$(MODULES_PATH) $(MICROPYTHON_BIN) tests/test_kmeans.py
 
-eml_iir_q15.results: $(MODULES_PATH)/eml_iir_q15.mpy
+emlearn_iir_q15.results: $(MODULES_PATH)/emlearn_iir_q15.mpy
 	MICROPYPATH=$(MODULES_PATH) $(MICROPYTHON_BIN) tests/test_iir_q15.py
 
 emlearn_arrayutils.results: $(MODULES_PATH)/emlearn_arrayutils.mpy
@@ -74,8 +74,8 @@ release:
 	zip -r $(RELEASE_NAME).zip $(RELEASE_NAME)
 	#cp $(RELEASE_NAME).zip emlearn-micropython-latest.zip
 
-check: emlearn_trees.results emlearn_neighbors.results emliir.results eml_iir_q15.results emlearn_fft.results emlearn_kmeans.results emlearn_arrayutils.results emlearn_cnn.results
+check: emlearn_trees.results emlearn_neighbors.results emliir.results emlearn_iir_q15.results emlearn_fft.results emlearn_kmeans.results emlearn_arrayutils.results emlearn_cnn.results
 
-dist: $(MODULES_PATH)/emlearn_trees.mpy $(MODULES_PATH)/emlearn_neighbors.mpy $(MODULES_PATH)/emliir.mpy $(MODULES_PATH)/eml_iir_q15.mpy $(MODULES_PATH)/emlearn_fft.mpy $(MODULES_PATH)/emlearn_kmeans.mpy $(MODULES_PATH)/emlearn_arrayutils.mpy $(MODULES_PATH)/emlearn_cnn.mpy
+dist: $(MODULES_PATH)/emlearn_trees.mpy $(MODULES_PATH)/emlearn_neighbors.mpy $(MODULES_PATH)/emliir.mpy $(MODULES_PATH)/emlearn_iir_q15.mpy $(MODULES_PATH)/emlearn_fft.mpy $(MODULES_PATH)/emlearn_kmeans.mpy $(MODULES_PATH)/emlearn_arrayutils.mpy $(MODULES_PATH)/emlearn_cnn.mpy
 
 

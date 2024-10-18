@@ -1,6 +1,6 @@
 
 
-import eml_iir_q15
+import emlearn_iir_q15
 
 import array
 import gc
@@ -23,7 +23,7 @@ EXAMPLE_COEFFICIENTS = array.array('f', [
 def test_convert_coefficients():
     
     inp = EXAMPLE_COEFFICIENTS
-    out = eml_iir_q15.convert_coefficients(inp)
+    out = emlearn_iir_q15.convert_coefficients(inp)
 
 
 def test_iir_del():
@@ -33,11 +33,11 @@ def test_iir_del():
     gc.enable()
     gc.collect()
 
-    coefficients = eml_iir_q15.convert_coefficients(EXAMPLE_COEFFICIENTS)
+    coefficients = emlearn_iir_q15.convert_coefficients(EXAMPLE_COEFFICIENTS)
 
     before_new = gc.mem_alloc()
 
-    model = eml_iir_q15.new(coefficients)
+    model = emlearn_iir_q15.new(coefficients)
     after_new = gc.mem_alloc()
     added = after_new - before_new
 

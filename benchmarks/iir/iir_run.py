@@ -30,8 +30,8 @@ def iir_process_file(inp, out, filters, chunksize):
             import emliir
             filter = emliir.new(coefficients)
         elif reader.typecode == 'h':
-            import eml_iir_q15
-            filter = eml_iir_q15.new(coefficients)
+            import emlearn_iir_q15
+            filter = emlearn_iir_q15.new(coefficients)
         else:
             raise ValueError("Input must either be float32/f or int16/h")
 

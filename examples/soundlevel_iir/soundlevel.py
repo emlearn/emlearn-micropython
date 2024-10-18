@@ -6,7 +6,7 @@ from collections import deque
 
 import emliir
 from emlearn_arrayutils import linear_map
-#import eml_iir_q15
+#import emlearn_iir_q15
 #from iir_python import IIRFilter
 
 class IIRFilterEmlearn:
@@ -20,8 +20,8 @@ class IIRFilterEmlearn:
 class IIRFilterEmlearnFixed:
 
     def __init__(self, coefficients):
-        c = eml_iir_q15.convert_coefficients(coefficients)
-        self.iir = eml_iir_q15.new(c)
+        c = emlearn_iir_q15.convert_coefficients(coefficients)
+        self.iir = emlearn_iir_q15.new(c)
     def process(self, samples):
         self.iir.run(samples)
 

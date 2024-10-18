@@ -9,7 +9,7 @@ def convert_coefficients(c, scale=(2**13)-1):
     
     # Transposed Direct Form II / sosfilt / emliir
     # [ b0, b1, b2, 1.0, -a1, -a2 ]
-    # Direct Form I / eml_iir_q15 
+    # Direct Form I / emlearn_iir_q15 
     # [ b0, 0, b1, b2, a1, a2 ]
 
     # NOTE: CMSIS-DSP “a” coefficients are negative compared to SciPy conventions
