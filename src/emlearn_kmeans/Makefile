@@ -10,7 +10,7 @@ MPY_ABI_VERSION := 6.3
 DIST_DIR := ../../dist/$(ARCH)_$(MPY_ABI_VERSION)
 
 # Name of module
-MOD = emlkmeans
+MOD = emlearn_kmeans
 
 # Source files (.c or .py)
 SRC = kmeans.c kmeans.py

@@ -9,7 +9,7 @@ import time
 import os
 import gc
 
-import emlkmeans
+import emlearn_kmeans
 
 @micropython.native
 def quantize_image(img, quant, palette, rowstride):
@@ -55,7 +55,7 @@ def quantize_image_inner(img, quant, palette, rowstride : int, rows : int):
             #rgb = img[i:i+3]
 
             # find closest value in palette
-            palette_idx, distance = emlkmeans.euclidean_argmin(palette, rgb)
+            palette_idx, distance = emlearn_kmeans.euclidean_argmin(palette, rgb)
             #palette_idx, distance = 0, 0
 
             o = row_offset + col
@@ -103,7 +103,7 @@ def quantize_path(inp, outp, palette, n_samples=100):
 
     # Learn a palette
     start = time.ticks_us()
-    emlkmeans.cluster(samples, palette, features=3, max_iter=20)
+    emlearn_kmeans.cluster(samples, palette, features=3, max_iter=20)
     dur = (time.ticks_diff(time.ticks_us(), start) / 1000.0)
     print('cluster duration (ms)', dur)
 
