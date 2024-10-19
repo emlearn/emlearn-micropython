@@ -1,66 +1,20 @@
 {
+  "name": "emlearn",
   "version": "master",
-  "mpy": "6.3",
-  "native": {
-    "armv6m": {
-      "urls": [
-        ["eml/arrayutils.mpy",    "armv6m_6.3/emlearn_arrayutils.mpy"],
-        ["eml/iir_q15.mpy",       "armv6m_6.3/eml_iir_q15.mpy"],
-        ["eml/fft.mpy",           "armv6m_6.3/emlfft.mpy"],
-        ["eml/iir.mpy",           "armv6m_6.3/emliir.mpy"],
-        ["eml/kmeans.mpy",        "armv6m_6.3/emlkmeans.mpy"],
-        ["eml/knn.mpy",           "armv6m_6.3/emlneighbors.mpy"],
-        ["eml/trees.mpy",         "armv6m_6.3/emltrees.mpy"],
-        ["eml/tinymaix_cnn.mpy",  "armv6m_6.3/tinymaix_cnn.mpy"]
-      ]
-    },
-    "armv7m": {
-      "urls": [
-        ["eml/arrayutils.mpy",    "armv7m_6.3/emlearn_arrayutils.mpy"],
-        ["eml/iir_q15.mpy",       "armv7m_6.3/eml_iir_q15.mpy"],
-        ["eml/fft.mpy",           "armv7m_6.3/emlfft.mpy"],
-        ["eml/iir.mpy",           "armv7m_6.3/emliir.mpy"],
-        ["eml/kmeans.mpy",        "armv7m_6.3/emlkmeans.mpy"],
-        ["eml/knn.mpy",           "armv7m_6.3/emlneighbors.mpy"],
-        ["eml/trees.mpy",         "armv7m_6.3/emltrees.mpy"],
-        ["eml/tinymaix_cnn.mpy",  "armv7m_6.3/tinymaix_cnn.mpy"]
-      ]
-    },
-    "armv7emsp": {
-      "urls": [
-        ["eml/arrayutils.mpy",    "armv7emsp_6.3/emlearn_arrayutils.mpy"],
-        ["eml/iir_q15.mpy",       "armv7emsp_6.3/eml_iir_q15.mpy"],
-        ["eml/fft.mpy",           "armv7emsp_6.3/emlfft.mpy"],
-        ["eml/iir.mpy",           "armv7emsp_6.3/emliir.mpy"],
-        ["eml/kmeans.mpy",        "armv7emsp_6.3/emlkmeans.mpy"],
-        ["eml/knn.mpy",           "armv7emsp_6.3/emlneighbors.mpy"],
-        ["eml/trees.mpy",         "armv7emsp_6.3/emltrees.mpy"],
-        ["eml/tinymaix_cnn.mpy",  "armv7emsp_6.3/tinymaix_cnn.mpy"]
-      ]
-    },
-    "xtensawin": {
-      "urls": [
-        ["eml/arrayutils.mpy",    "xtensawin_6.3/emlearn_arrayutils.mpy"],
-        ["eml/iir_q15.mpy",       "xtensawin_6.3/eml_iir_q15.mpy"],
-        ["eml/fft.mpy",           "xtensawin_6.3/emlfft.mpy"],
-        ["eml/iir.mpy",           "xtensawin_6.3/emliir.mpy"],
-        ["eml/kmeans.mpy",        "xtensawin_6.3/emlkmeans.mpy"],
-        ["eml/knn.mpy",           "xtensawin_6.3/emlneighbors.mpy"],
-        ["eml/trees.mpy",         "xtensawin_6.3/emltrees.mpy"],
-        ["eml/tinymaix_cnn.mpy",  "xtensawin_6.3/tinymaix_cnn.mpy"]
-      ]
-    },
-    "x64": {
-      "urls": [
-        ["eml/arrayutils.mpy",    "x64_6.3/emlearn_arrayutils.mpy"],
-        ["eml/iir_q15.mpy",       "x64_6.3/eml_iir_q15.mpy"],
-        ["eml/fft.mpy",           "x64_6.3/emlfft.mpy"],
-        ["eml/iir.mpy",           "x64_6.3/emliir.mpy"],
-        ["eml/kmeans.mpy",        "x64_6.3/emlkmeans.mpy"],
-        ["eml/knn.mpy",           "x64_6.3/emlneighbors.mpy"],
-        ["eml/trees.mpy",         "x64_6.3/emltrees.mpy"],
-        ["eml/tinymaix_cnn.mpy",  "x64_6.3/tinymaix_cnn.mpy"]
-      ]
-    }
-  }
+  "description": "Enables MicroPython applications to run efficient Machine Learning models on microcontroller, without having to touch any C code",
+  "author": "Jon Nordby",
+  "license": "MIT",
+  "homepage": "https://emlearn.github.io/emlearn-micropython",
+  "arch": ["x64", "armv6m", "armv7m", "armv7emsp", "xtensawin"],
+  "mpy":  ["6.3"],
+  "urls": [
+    ["emlearn_arrayutils.mpy",    "{ARCH}_{MPY}/emlearn_arrayutils.mpy"],
+    ["emlearn_iir_q15.mpy",       "{ARCH}_{MPY}/emlearn_iir_q15.mpy"],
+    ["emlearn_fft.mpy",           "{ARCH}_{MPY}/emlearn_fft.mpy"],
+    ["emlearn_iir.mpy",           "{ARCH}_{MPY}/emlearn_iir.mpy"],
+    ["emlearn_kmeans.mpy",        "{ARCH}_{MPY}/emlearn_kmeans.mpy"],
+    ["emlearn_neighbors.mpy",     "{ARCH}_{MPY}/emlearn_neighbors.mpy"],
+    ["emlearn_trees.mpy",         "{ARCH}_{MPY}/emlearn_trees.mpy"],
+    ["emlearn_cnn.mpy",           "{ARCH}_{MPY}/emlearn_cnn.mpy"]
+  ]
 }
