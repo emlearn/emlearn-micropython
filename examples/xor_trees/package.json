@@ -7,8 +7,8 @@
   "readme": "github:emlearn/emlearn-micropython/blob/master/examples/xor_trees/README.md",
   "keywords": "machinelearning,randomforest,classification,decisiontree",
   "urls": [
-    ["./xor_run.py", "xor_run.py"],
-    ["./xor_model.csv", "xor_model.csv"]
+    ["fs:xor_run.py", "xor_run.py"],
+    ["fs:xor_model.csv", "xor_model.csv"]
   ],
   "deps": [["emlearn", "master"]]
 }
