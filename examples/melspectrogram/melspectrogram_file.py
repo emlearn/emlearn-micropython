@@ -10,6 +10,27 @@ import npyfile
 
 from miniwav import read_wav, get_wav_samples
 
+import emlearn_fft
+from emlearn_arrayutils import linear_map
+
+def int16_to_float(inp, out):
+    print('int16tofloat', array_typecode(inp), array_typecode(out))
+    return linear_map(inp, out, -2**15, 2**15, -1.0, 1.0)
+
+@micropython.native
+def spectrum_average_bins(spec, out):
+    binsize = len(spec) // len(out)
+
+    for bin in range(len(out)):
+        s = 0.0
+        for i in range(bin*binsize, (bin+1)*binsize):
+            s += spec[i]        
+        out[bin] = s / binsize
+    
+def array_typecode(arr):
+    typecode = str(arr)[7:8]
+    return typecode
+
 class Processor():
 
     def __init__(self, fft_length, hop_length, n_mels, fmin, fmax):
@@ -17,10 +38,53 @@ class Processor():
         self.hop_length = hop_length
         self.n_mels = n_mels
 
+        self.fft = emlearn_fft.FFT(fft_length)
+        emlearn_fft.fill(self.fft, fft_length)
+        self.fft_length = fft_length
+        self.fft_imag = array.array('f', (0.0 for _ in range(fft_length)))
+
+        self.buffer = array.array('h', (0 for _ in range(fft_length)))
+        self.buffer_valid = 0
+
+        self.fft_buffer = array.array('f', (0.0 for _ in range(fft_length)))
+
     def process(self, chunk, mels):
         assert len(chunk) == self.hop_length
         assert len(mels) == self.n_mels
 
+        # shift new data into our buffer
+        available = self.fft_length - self.buffer_valid
+        shift = max(len(chunk) - available, 0) 
+
+        print('shift', shift)
+        self.buffer[0:self.buffer_valid] = self.buffer[shift:shift+self.buffer_valid]
+        self.buffer_valid += (len(chunk) - shift)
+
+        insert = self.buffer_valid - len(chunk)
+        self.buffer[insert:] = chunk
+
+        if self.buffer_valid < self.fft_length:
+            # not enough samples to get valid output yet
+            return False
+
+        #print(chunk)
+        #print(self.buffer)
+        int16_to_float(self.buffer, self.fft_buffer)
+
+        # TODO: apply windowing (Hann)
+
+        # perform FFT
+        for i in range(len(self.fft_imag)):
+            self.fft_imag[i] = 0.0
+        self.fft.run(self.fft_buffer, self.fft_imag)
+
+        # Downscale
+        # FIXME: use mel filterbank instead
+        spectrum_average_bins(self.fft_buffer, mels)
+
+        # TODO: decibel/log scale the results
+
+        return True
 
 def process_file(audiofile,
         hop_length = 512,
@@ -83,7 +147,7 @@ def main():
 
     spec_length = samples // hop_length
 
-    out_shape = (n_mels, spec_length)
+    out_shape = (spec_length, n_mels)
     out_typecode = 'f'
 
     with open(audio_path, 'rb') as audiofile:
