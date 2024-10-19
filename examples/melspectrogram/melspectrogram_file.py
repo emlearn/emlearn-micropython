@@ -14,7 +14,7 @@ import emlearn_fft
 from emlearn_arrayutils import linear_map
 
 def int16_to_float(inp, out):
-    print('int16tofloat', array_typecode(inp), array_typecode(out))
+    #print('int16tofloat', array_typecode(inp), array_typecode(out))
     return linear_map(inp, out, -2**15, 2**15, -1.0, 1.0)
 
 @micropython.native
@@ -56,7 +56,7 @@ class Processor():
         available = self.fft_length - self.buffer_valid
         shift = max(len(chunk) - available, 0) 
 
-        print('shift', shift)
+        #print('shift', shift)
         self.buffer[0:self.buffer_valid] = self.buffer[shift:shift+self.buffer_valid]
         self.buffer_valid += (len(chunk) - shift)
 
@@ -78,9 +78,14 @@ class Processor():
             self.fft_imag[i] = 0.0
         self.fft.run(self.fft_buffer, self.fft_imag)
 
+        #if self.fft_len
+
+        for i in range(len(mels)):
+            mels[i] = self.fft_buffer[i]
+
         # Downscale
         # FIXME: use mel filterbank instead
-        spectrum_average_bins(self.fft_buffer, mels)
+        #spectrum_average_bins(self.fft_buffer, mels)
 
         # TODO: decibel/log scale the results
 
@@ -94,7 +99,7 @@ def process_file(audiofile,
         fmin = 50,
         fmax = None,
     ):
-    """Compute soundlevels for a .wav file"""
+    """Compute spectrogram for a .wav file"""
 
     if fmax is None:
         fmax = sr // 2
@@ -133,28 +138,28 @@ def main():
     if len(sys.argv) != 9:
         raise ValueError('Usage: micropython melspectrogram_file.py AUDIO.wav SPEC.npy samplerate hop fft nmels fmin fmax')
 
-    # TODO: write output to a .npy file using npyfile
-
     # Get parameters
     audio_path = sys.argv[1]
     out_path = sys.argv[2]
     params = sys.argv[3:]
     sr, hop_length, fft_length, n_mels, fmin, fmax = (int(p) for p in params)
 
-    samples = get_wav_samples(audio_path)
+    n_mels = fft_length # XXX: hack
 
-    print('ss', samples)
+    samples = get_wav_samples(audio_path)
 
     spec_length = samples // hop_length
 
     out_shape = (spec_length, n_mels)
     out_typecode = 'f'
 
+    print('ss', samples, out_shape)
+
     with open(audio_path, 'rb') as audiofile:
         with npyfile.Writer(out_path, out_shape, out_typecode) as out:
 
-            for t, mels in process_file(audiofile):
-                #print(t, len(mels))
+            for t, mels in process_file(audiofile, n_mels=n_mels):
+                print(t, len(mels))
                 out.write_values(mels)
 
 
