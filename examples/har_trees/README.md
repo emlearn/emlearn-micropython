@@ -26,3 +26,22 @@ Feature extraction takes
 - Run the training + test/evaluation in CI
 - Add instructions how to run to this README
 
+
+## Run training
+
+Install requirements
+```
+pip install -r requirements.txt
+```
+
+Download training data
+```
+python -m leaf_clustering.data.har.uci
+```
+
+Run training process
+```
+python har_train.py
+```
+
+

@@ -1,0 +1,5 @@
+pandas
+pyarrow
+git+https://github.com/jonnor/leaf-clustering
+emlearn
+scikit-learn
