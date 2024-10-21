@@ -35,7 +35,14 @@ micropython -m mip install https://emlearn.github.io/emlearn-micropython/builds/
 micropython mnist_cnn_run.py
 ```
 
-## Running on device
+## Running on device (ViperIDE)
+
+The fastest and easiest to to install on your device is to use Viper IDE.
+This will install the library and the example code:
+[<img src="https://raw.githubusercontent.com/vshymanskyy/ViperIDE/refs/heads/main/assets/btn_run.png" alt="Run using ViperIDE" height="42"/>](https://viper-ide.org/?install=github:emlearn/emlearn-micropython/examples/mnist_cnn)
+
+
+## Running on device (manually)
 
 !Make sure you have it running successfully on host first.
 

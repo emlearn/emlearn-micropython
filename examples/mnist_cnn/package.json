@@ -1,0 +1,24 @@
+{
+  "name": "emlearn-micropython MNIST CNN image classification example",
+  "version": "0.3.0",
+  "description": "Classify handwritten digits using Convolutional Neural Network",
+  "author": "Jon Nordby",
+  "license": "MIT",
+  "readme": "github:emlearn/emlearn-micropython/blob/master/examples/mnist_cnn/README.md",
+  "keywords": "machinelearning,cnn,convolutionalneuralnetwork,classification,mnist,digits",
+  "urls": [
+    ["fs:mnist_cnn.tmdl", "mnist_cnn.tmdl"],
+    ["fs:data/mnist_example_0.bin", "data/mnist_example_0.bin"],
+    ["fs:data/mnist_example_1.bin", "data/mnist_example_1.bin"],
+    ["fs:data/mnist_example_2.bin", "data/mnist_example_2.bin"],
+    ["fs:data/mnist_example_3.bin", "data/mnist_example_3.bin"],
+    ["fs:data/mnist_example_4.bin", "data/mnist_example_4.bin"],
+    ["fs:data/mnist_example_5.bin", "data/mnist_example_5.bin"],
+    ["fs:data/mnist_example_6.bin", "data/mnist_example_6.bin"],
+    ["fs:data/mnist_example_7.bin", "data/mnist_example_7.bin"],
+    ["fs:data/mnist_example_8.bin", "data/mnist_example_8.bin"],
+    ["fs:data/mnist_example_9.bin", "data/mnist_example_9.bin"],
+    ["fs:mnist_cnn_run.py", "mnist_cnn_run.py"]
+  ],
+  "deps": [["emlearn", "master"]]
+}
