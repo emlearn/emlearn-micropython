@@ -94,6 +94,15 @@ micropython soundlevel_file.py test_burst.wav
 The output is newline-delimited JSON ([NDJSON](https://github.com/ndjson/ndjson-spec)).
 If you want some other format, like CSV - modify the example code.
 
+## Running on device (ViperIDE)
+
+The fastest and easiest to to install on your device is to use Viper IDE.
+This will install the library and the example code automatically.
+[<img src="https://raw.githubusercontent.com/vshymanskyy/ViperIDE/refs/heads/main/assets/btn_run.png" alt="Run using ViperIDE" height="42"/>](https://viper-ide.org/?install=github:emlearn/emlearn-micropython/examples/soundlevel_iir)
+
+In Viper IDE, you can select which example file to run (described below),
+and hit the Play button to run it.
+
 ## Example: Compute soundlevels on device
 
 Flash your device with a standard MicroPython firmware, from the [MicroPython.org downloads](https://micropython.org/download/).

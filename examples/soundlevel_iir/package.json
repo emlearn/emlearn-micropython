@@ -1,0 +1,18 @@
+{
+  "name": "emlearn-micropython Soundlevel IIR filter example",
+  "version": "0.3.0",
+  "description": "Compute soundlevels, using IIR filters for A-weighting",
+  "author": "Jon Nordby",
+  "license": "MIT",
+  "readme": "github:emlearn/emlearn-micropython/blob/master/examples/soundlevel_iir/README.md",
+  "keywords": "digitalsignalprocessing,IIR,filters,infiniteimpulseresponsefilters,DSP",
+  "urls": [
+    ["fs:soundlevel.py", "soundlevel.py"],
+    ["fs:iot_blynk.py", "iot_blynk.py"],
+    ["fs:soundlevel_live.py", "soundlevel_live.py"],
+    ["fs:soundlevel_iot.py", "soundlevel_iot.py"],
+    ["fs:soundlevel_screen.py", "soundlevel_screen.py"],
+    ["fs:soundlevel_run.py", "soundlevel_run.py"]
+  ],
+  "deps": [["emlearn", "master"]]
+}
