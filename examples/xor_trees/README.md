@@ -36,7 +36,14 @@ micropython -m mip install https://emlearn.github.io/emlearn-micropython/builds/
 micropython xor_run.py
 ```
 
-## Running on device
+## Running on device (Viper IDE)
+
+The fastest and easiest to to install on your device is to use Viper IDE.
+This will install the library and the example code:
+[<img src="https://raw.githubusercontent.com/vshymanskyy/ViperIDE/refs/heads/main/assets/btn_run.png" alt="Run using ViperIDE" height="42"/>](https://viper-ide.org/?install=github:emlearn/emlearn-micropython/examples/xor_trees)
+
+
+## Running on device (manually)
 
 !Make sure you have it running successfully on host first.
 
@@ -45,8 +52,9 @@ For other hardware, replace the string.
 
 ```console
 mpremote mip install https://emlearn.github.io/emlearn-micropython/builds/master/xtensawin_6.3/emlearn_trees.mpy
+mpremote cp xor_model.csv :
 ```
 
-```
+```console
 mpremote run xor_run.py
 ```
