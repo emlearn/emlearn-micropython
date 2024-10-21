@@ -20,12 +20,16 @@ Feature extraction takes
 
 ## TODO
 
-- Setup train+eval pipeline. Use tools from LeafClustering repo to download data
+- Setup train+eval pipeline.
 - Setup evaluation on a small dataset. Export data as .npy file. Runnable on host and device
 - Setup end-2-end demo for a hardware device.
 - Run the training + test/evaluation in CI
 - Add instructions how to run to this README
 
+
+## Run on device
+
+`FIXME: not implemented`
 
 ## Run training
 
