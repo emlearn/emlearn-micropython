@@ -12,7 +12,7 @@
     ["fs:soundlevel_live.py", "soundlevel_live.py"],
     ["fs:soundlevel_iot.py", "soundlevel_iot.py"],
     ["fs:soundlevel_screen.py", "soundlevel_screen.py"],
-    ["fs:soundlevel_run.py", "soundlevel_run.py"]
+    ["fs:soundlevel_file.py", "soundlevel_file.py"]
   ],
   "deps": [["emlearn", "master"]]
 }
