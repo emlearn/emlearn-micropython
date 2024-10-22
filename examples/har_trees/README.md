@@ -20,9 +20,9 @@ Feature extraction takes
 
 ## TODO
 
-- Setup train+eval pipeline.
-- Setup evaluation on a small dataset. Export data as .npy file. Runnable on host and device
-- Setup end-2-end demo for a hardware device.
+- Setup conversion and export of emlearn RF model
+- Setup evaluation on a small dataset. Run on device
+- Setup end-2-end demo for a hardware device. M5StickC
 - Run the training + test/evaluation in CI
 - Add instructions how to run to this README
 
