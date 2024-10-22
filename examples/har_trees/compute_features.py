@@ -3,7 +3,7 @@ import sys
 
 import npyfile
 
-from timebased import calculate_features_xyz
+from timebased import calculate_features_xyz, DATA_TYPECODE
 
 def compute_dataset_features(data: npyfile.Reader, skip_samples=0, limit_samples=None):
 
@@ -58,19 +58,32 @@ def compute_dataset_features(data: npyfile.Reader, skip_samples=0, limit_samples
 def main():
 
     if len(sys.argv) != 3:
+        print('Usage: compute_features.py IN.npy OUT.npy')
 
-    _, inp, out = sys.argv
+    _, in_path, out_path = sys.argv
 
     skip_samples = 0
-    limit_samples = 
+    limit_samples = None
 
-    # FIXME: open and write output
-    with npyfile.Reader(path) as data:
+    out_typecode = 'f'
+    n_features = 31
 
-        generator = compute_dataset_features(data, skip_samples=skip_samples, limit_samples=limit_samples)
-        for features in generator:
-            print('features', len(features), features)
 
+    with npyfile.Reader(in_path) as data:
+        n_samples, window_length, n_axes = data.shape
+
+        out_shape = (n_samples, n_features)
+        with npyfile.Writer(out_path, out_shape, out_typecode) as out:
+
+            generator = compute_dataset_features(data,
+                skip_samples=skip_samples,
+                limit_samples=limit_samples,
+            )
+            for features in generator:
+                print('features', len(features), features)
+
+                assert features == n_features, (len(features), n_features)
+                out.write_values(features)
 
 if __name__ == '__main__':
     main()

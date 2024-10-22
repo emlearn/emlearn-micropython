@@ -3,10 +3,12 @@ import os
 import time
 import uuid
 import pickle
+import tempfile
+import subprocess
 
 import pandas
 import numpy
-#import structlog
+import structlog
 
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import f1_score, make_scorer
@@ -14,9 +16,9 @@ from sklearn.model_selection import GridSearchCV, GroupShuffleSplit
 
 import emlearn
 from emlearn.preprocessing.quantizer import Quantizer
-#from sklearn.preprocessing import LabelEncoder
+from sklearn.preprocessing import LabelEncoder
 
-#log = structlog.get_logger()
+log = structlog.get_logger()
 
 
 def evaluate(windows : pandas.DataFrame, groupby, hyperparameters,
@@ -105,14 +107,48 @@ def assign_window_label(labels, majority=0.66):
         return None
 
 
-def timebased_features(windows, columns):
+from contextlib import contextmanager
+@contextmanager
+def NotTemporaryDirectory():
 
-    data = windows[columns]
-    with tempfile.TemporaryDirectory as tempdir:
-        data_path = os.path.join(tempdir, 'data.npz')
-        numpy.save(data, data_path)
+    path = 'temp-test'
+    if not os.path.exists(path):
+        os.makedirs(path)
+    yield path
+
+
+def timebased_features(windows, columns, micropython_bin='micropython'):
+
+    print('w', len(windows), columns)
+
+    here = os.path.dirname(__file__)
+    feature_extraction_script = os.path.join(here, 'compute_features.py')
+
+    data = numpy.stack([ d[columns] for d in windows ])
+    with NotTemporaryDirectory() as tempdir:
+        data_path = os.path.join(tempdir, 'data.npy')
+        features_path = os.path.join(tempdir, 'features.npy')
+
+        # Persist output
+        numpy.save(data_path, data)
+
+        # Run MicroPython program
+        args = [
+            micropython_bin,
+            feature_extraction_script,
+            data_path,
+            features_path,
+        ]
+        cmd = ' '.join(args)
+        log.debug('run-micropython', cmd=cmd)
+        try:
+            out = subprocess.check_output(args)
+        except subprocess.CalledProcessError as e:
+            log.error('micropython-error', out=e.stdout, err=e.stderr)
+        # Load output
         
         # FIXME: run micropython compute_features.py
+        
 
     return df
 
@@ -172,7 +208,7 @@ def run_pipeline(run, hyperparameters, dataset,
         data_dir,
         out_dir,
         n_splits=5,
-        features='quant',
+        features='timebased',
     ):
 
     dataset_config = {
@@ -294,7 +330,7 @@ def parse():
     parser.add_argument('--out-dir', metavar='DIRECTORY', type=str, default='./output/results/har',
                         help='Where to store results')
 
-    parser.add_argument('--features', type=str, default='quant',
+    parser.add_argument('--features', type=str, default='timebased',
                         help='Which feature-set to use')
 
     args = parser.parse_args()
