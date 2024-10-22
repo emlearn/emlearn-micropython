@@ -1,11 +1,14 @@
 
 import sys
+import array
+import time
 
 import npyfile
 
 from timebased import calculate_features_xyz, DATA_TYPECODE
 
-def compute_dataset_features(data: npyfile.Reader, skip_samples=0, limit_samples=None):
+def compute_dataset_features(data: npyfile.Reader,
+        skip_samples=0, limit_samples=None, verbose=0):
 
     # Check that data is expected format
     shape = data.shape
@@ -47,7 +50,8 @@ def compute_dataset_features(data: npyfile.Reader, skip_samples=0, limit_samples
         feature_calc_start = time.ticks_ms()
         features = calculate_features_xyz((x_values, y_values, z_values))
         duration = time.ticks_diff(time.ticks_ms(), feature_calc_start)
-        print('feature-calc-end', duration)
+        if verbose > 2:
+            print('feature-calc-end', duration)
 
         yield features
 
@@ -66,8 +70,9 @@ def main():
     limit_samples = None
 
     out_typecode = 'f'
-    n_features = 31
-
+    n_features = 92
+    
+    features_array = array.array(out_typecode, (0 for _ in range(n_features)))
 
     with npyfile.Reader(in_path) as data:
         n_samples, window_length, n_axes = data.shape
@@ -80,10 +85,13 @@ def main():
                 limit_samples=limit_samples,
             )
             for features in generator:
-                print('features', len(features), features)
+                #print('features', len(features), features)
+                assert len(features) == n_features, (len(features), n_features)
 
-                assert features == n_features, (len(features), n_features)
-                out.write_values(features)
+                for i, f in enumerate(features):
+                    features_array[i] = f
+
+                out.write_values(features_array)
 
 if __name__ == '__main__':
     main()

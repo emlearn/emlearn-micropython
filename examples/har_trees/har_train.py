@@ -117,14 +117,24 @@ def NotTemporaryDirectory():
     yield path
 
 
-def timebased_features(windows, columns, micropython_bin='micropython'):
+def timebased_features(windows : list[pandas.DataFrame],
+        columns : list[str],
+        micropython_bin='micropython') -> pandas.DataFrame:
 
-    print('w', len(windows), columns)
+    #print('w', len(windows), columns)
 
     here = os.path.dirname(__file__)
     feature_extraction_script = os.path.join(here, 'compute_features.py')
 
+    # XXX: this scaling should go elsewhere
     data = numpy.stack([ d[columns] for d in windows ])
+    data = ((data / 4.0) * (2**15-1)).astype(numpy.int16)
+
+    #log.debug('data-range',
+    #    upper=numpy.quantile(data, 0.99),
+    #    lower=numpy.quantile(data, 0.01),
+    #)
+
     with NotTemporaryDirectory() as tempdir:
         data_path = os.path.join(tempdir, 'data.npy')
         features_path = os.path.join(tempdir, 'features.npy')
@@ -140,15 +150,18 @@ def timebased_features(windows, columns, micropython_bin='micropython'):
             features_path,
         ]
         cmd = ' '.join(args)
-        log.debug('run-micropython', cmd=cmd)
+        #log.debug('run-micropython', cmd=cmd)
         try:
             out = subprocess.check_output(args)
         except subprocess.CalledProcessError as e:
             log.error('micropython-error', out=e.stdout, err=e.stderr)
+            raise e
+
         # Load output
-        
-        # FIXME: run micropython compute_features.py
-        
+        out = numpy.load(features_path)
+        assert len(out) == len(data)
+
+        df = pandas.DataFrame(out)
 
     return df
 

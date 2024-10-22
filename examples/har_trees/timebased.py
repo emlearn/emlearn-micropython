@@ -241,8 +241,7 @@ def calculate_features_xyz(xyz):
     filter_duration = time.ticks_diff(filter_end, filter_start)
     feature_duration = time.ticks_diff(features_end, filter_end)
 
-    print('feature-calc-details', alloc_duration, filter_duration, feature_duration)
-
+    #print('feature-calc-details', alloc_duration, filter_duration, feature_duration)
     assert len(all_results) == 92, len(all_results)
 
     return all_results
