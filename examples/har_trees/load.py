@@ -12,6 +12,10 @@ def export_model(path, out):
 
         print(classifier)
 
+        classes = classifier.classes_
+        class_mapping = dict(zip(classes, range(len(classifier.classes_))))
+        print(class_mapping)
+
         cmodel = emlearn.convert(classifier)
         cmodel.save(name='harmodel', format='csv', file=out)
 

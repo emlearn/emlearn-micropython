@@ -13,7 +13,7 @@ def har_load_test_data(path,
     with zipfile.ZipFile(path) as archive:
         ext = '.npy'
         files = { f.rstrip(ext): f for f in archive.namelist() if f.endswith(ext) }
-        print('archive-files', files.keys())
+        #print('archive-files', files.keys())
 
         X_file = archive.open('X.npy')
         Y_file = archive.open('Y.npy')
@@ -41,10 +41,10 @@ def har_load_test_data(path,
 
                 for l_arr, arr in zip(label_chunks, data_chunks):
 
-                    yield arr, l_array
+                    yield arr, l_arr
 
                     sample_count += 1
-                    if limit_sample is not None and sample_count > limit_samples:
+                    if limit_samples is not None and sample_count > limit_samples:
                         break
 
 
@@ -61,16 +61,19 @@ def main():
     errors = 0
     total = 0
     data_path = 'har_uci.testdata.npz'
-    for features, label in har_load_test_data(data_path):
+    for features, labels in har_load_test_data(data_path):
 
-        result = model.predict(ex)
+        assert len(labels) == 1
+        label = labels[0]
+        result = model.predict(features)
         if result != label:
             errors += 1
         total += 1
 
-        print(result, label)
+        #print(result, label)
 
-
+    acc = 1.0 - (errors/float(total))
+    print(f'har-run-result accuracy={acc*100:.1f}%')
 
 if __name__ == '__main__':
     main()

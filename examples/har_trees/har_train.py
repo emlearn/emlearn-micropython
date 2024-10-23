@@ -305,10 +305,17 @@ def run_pipeline(run, hyperparameters, dataset,
 
     # Save testdata
     label_column = 'activity'
+    classes = estimator.classes_
+    class_mapping = dict(zip(classes, range(len(classes))))
     testdata_path = os.path.join(out_dir, f'r_{run}_{dataset}.testdata.npz')
     testdata = features.groupby(label_column, as_index=False).sample(n=10)
-    feature_columns = sorted(set(testdata.columns) - set([label_column]))
-    numpy.savez(testdata_path, X=testdata[feature_columns], Y=testdata[label_column])
+    # convert to class number/index
+    testdata['class'] = testdata[label_column].map(class_mapping)
+    feature_columns = sorted(set(testdata.columns) - set([label_column, 'class']))
+    numpy.savez(testdata_path,
+        X=numpy.ascontiguousarray(testdata[feature_columns].astype(numpy.int16)),
+        Y=numpy.ascontiguousarray(testdata['class'].astype(numpy.int8)),
+    )
 
     # Save results
     results['dataset'] = dataset
