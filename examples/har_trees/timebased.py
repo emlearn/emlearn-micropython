@@ -38,6 +38,8 @@ FEATURE_ENERGY = 8
 FEATURE_ENTROPY = 9
 ORDERED_FEATURES_N = 10
 
+N_FEATURES = 92
+
 @micropython.native
 def l2_sum(arr):
     acc = 0.0
@@ -242,7 +244,7 @@ def calculate_features_xyz(xyz):
     feature_duration = time.ticks_diff(features_end, filter_end)
 
     #print('feature-calc-details', alloc_duration, filter_duration, feature_duration)
-    assert len(all_results) == 92, len(all_results)
+    assert len(all_results) == N_FEATURES, len(all_results)
 
     return all_results
 
