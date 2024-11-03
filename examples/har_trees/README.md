@@ -1,26 +1,41 @@
 
 # Human Activity Recognition with tree-based models
 
-Human Activity Recognition (HAR) is detecting
+*Human Activity Recognition* (HAR) is the task of detecting what activities a human is performing based on motion.
+This type of activity recognition is using an Inertial Measurement Unit (IMU) carried on the person.
+The IMU consists has at least one accelerometer, gyro or magnetometer - or a combination of these.
+It can be a smartphone, smartwatch, fitness tracker, or more specialized device.
+The activities can for example be general daily activities, domestic activities, excercises, et.c.
 
+The same kind of approach can also be applied to animals (*Animal Activity Recognition*),
+which enables tracking of pets, lifestock and wild animals.
+This has been used for many kinds of animals - such as cats, dogs, diary cattle.
 
-This uses an approach based on the paper
+The same approach can be used for simple gesture recognition.
+
+## Status
+Working. Tested running on ESP32 with MicroPython 1.23.
+
+**NOTE:** This is primarily *example* code for a Human Activity Recognition,
+not a generally-useful pretrained model.
+The dataset used is rather simple, and may not reflect the data you get from your device
+- which will lead to poor classifications.
+For a real world usage you should probably replace the dataset with your own data, collected on your own device.
+
+## Machine Learning pipeline
+
+This example uses an approach based on the paper
 [Are Microcontrollers Ready for Deep Learning-Based Human Activity Recognition?](https://www.mdpi.com/2079-9292/10/21/2640).
 For each time-window, time-based statistical features are computed,
 and then classified with a RandomForest model.
 
-The example uses the [UCI-HAR dataset](https://www.archive.ics.uci.edu/dataset/341/smartphone+based+recognition+of+human+activities+and+postural+transitions),
-which is smartphone.
+## Dataset
+The example uses the [UCI-HAR dataset](https://www.archive.ics.uci.edu/dataset/341/smartphone+based+recognition+of+human+activities+and+postural+transitions).
+The classes are by default limited to the three static postures (standing, sitting, lying) plus three dynamic activities (walking, walking downstairs, walking upstairs).
+The data is from a waist-mounted smartphone.
+Samplerate is 50Hz.
+By default only the accelerometer data is used.
 
-
-## Status
-Tested running on ESP32 with MicroPython 1.23.
-
-**NOTE:** This is primarily *example* code for a Human Activity Recognition,
-not a generally-useful pretrained model.
-The dataset used is rather simple, and may not reflect the data you get
-from your device - which will lead to poor classifications.
-For a real world usage you should probably replace the dataset with your own data, collected on your own device.
 
 ## TODO
 
