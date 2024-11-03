@@ -1,0 +1,17 @@
+{
+  "name": "emlearn-micropython Human Activity Recognition example",
+  "version": "0.3.0",
+  "description": "Classify accelerometer activities using Random Forest",
+  "author": "Jon Nordby",
+  "license": "MIT",
+  "readme": "github:emlearn/emlearn-micropython/blob/master/examples/har_trees/README.md",
+  "keywords": "humanacticityrecognition,accelerometer,IMU,machinelearning,randomforest,classification,decisiontree",
+  "urls": [
+    ["fs:har_run.py", "har_run.py"],
+    ["fs:har_live.py", "har_live.py"],
+    ["fs:timebased.py", "timebased.py"],
+    ["fs:har_uci_trees.csv", "har_uci_trees.csv"],
+    ["fs:har_uci.testdata.npz", "har_uci.testdata.npz"]
+  ],
+  "deps": [["emlearn", "master"], ["npyfile", "master"], ["zipfile", "master"]]
+}
