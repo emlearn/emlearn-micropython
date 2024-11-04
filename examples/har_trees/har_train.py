@@ -108,16 +108,6 @@ def assign_window_label(labels, majority=0.66):
         return None
 
 
-from contextlib import contextmanager
-@contextmanager
-def NotTemporaryDirectory():
-
-    path = 'temp-test'
-    if not os.path.exists(path):
-        os.makedirs(path)
-    yield path
-
-
 def timebased_features(windows : list[pandas.DataFrame],
         columns : list[str],
         micropython_bin='micropython') -> pandas.DataFrame:
@@ -136,7 +126,7 @@ def timebased_features(windows : list[pandas.DataFrame],
     #    lower=numpy.quantile(data, 0.01),
     #)
 
-    with NotTemporaryDirectory() as tempdir:
+    with tempfile.TemporaryDirectory() as tempdir:
         data_path = os.path.join(tempdir, 'data.npy')
         features_path = os.path.join(tempdir, 'features.npy')
 
