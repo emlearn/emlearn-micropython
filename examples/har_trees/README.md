@@ -39,7 +39,6 @@ By default only the accelerometer data is used.
 
 ## TODO
 
-- Automate conversion and export of emlearn RF model
 - Add an illustrative image
 - Run the training + test/evaluation in CI
 - Add demonstration on LilyGo T-Watch 2020 (BMA423 accelerometer)

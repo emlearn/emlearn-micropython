@@ -217,6 +217,16 @@ def extract_features(sensordata : pandas.DataFrame,
     out = pandas.concat(features_values)
     return out
 
+def export_model(path, out):
+
+    with open(path, "rb") as f:
+        classifier = pickle.load(f)
+
+        classes = classifier.classes_
+        class_mapping = dict(zip(classes, range(len(classifier.classes_))))
+
+        cmodel = emlearn.convert(classifier)
+        cmodel.save(name='harmodel', format='csv', file=out)
 
 
 def run_pipeline(run, hyperparameters, dataset,
@@ -300,19 +310,23 @@ def run_pipeline(run, hyperparameters, dataset,
     )
 
     # Save a model
-    estimator_path = os.path.join(out_dir, f'r_{run}_{dataset}.estimator.pickle')
+    estimator_path = os.path.join(out_dir, f'{dataset}.estimator.pickle')
     with open(estimator_path, 'wb') as f:
         pickle.dump(estimator, file=f)
+
+    # Export model with emlearn
+    model_path = os.path.join(out_dir, f'{dataset}_trees.csv')
+    export_model(estimator_path, model_path)
 
     # Save testdata
     label_column = 'activity'
     classes = estimator.classes_
     class_mapping = dict(zip(classes, range(len(classes))))
-    meta_path = os.path.join(out_dir, f'r_{run}_{dataset}.meta.json')    
+    meta_path = os.path.join(out_dir, f'{dataset}.meta.json')    
     with open(meta_path, 'w') as f:
         f.write(json.dumps(class_mapping))
 
-    testdata_path = os.path.join(out_dir, f'r_{run}_{dataset}.testdata.npz')
+    testdata_path = os.path.join(out_dir, f'{dataset}.testdata.npz')
     testdata = features.groupby(label_column, as_index=False).sample(n=10)
     # convert to class number/index
     testdata['class'] = testdata[label_column].map(class_mapping)
@@ -325,7 +339,7 @@ def run_pipeline(run, hyperparameters, dataset,
     # Save results
     results['dataset'] = dataset
     results['run'] = run
-    results_path = os.path.join(out_dir, f'r_{run}_{dataset}.results.parquet')
+    results_path = os.path.join(out_dir, f'{dataset}.results.parquet')
     results.to_parquet(results_path)
     print('Results written to', results_path)
 
@@ -353,7 +367,7 @@ def parse():
                         help='Which dataset to use')
     parser.add_argument('--data-dir', metavar='DIRECTORY', type=str, default='./data/processed',
                         help='Where the input data is stored')
-    parser.add_argument('--out-dir', metavar='DIRECTORY', type=str, default='./output/results/har',
+    parser.add_argument('--out-dir', metavar='DIRECTORY', type=str, default='./',
                         help='Where to store results')
 
     parser.add_argument('--features', type=str, default='timebased',
