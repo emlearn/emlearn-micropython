@@ -16,6 +16,9 @@ def mean(arr):
 
 def main():
 
+    classname_index = {"LAYING": 0, "SITTING": 1, "STANDING": 2, "WALKING": 3, "WALKING_DOWNSTAIRS": 4, "WALKING_UPSTAIRS": 5}
+    class_index_to_name = { v: k for k, v in classname_index.items() }
+
     # Load a CSV file with the model
     model = emlearn_trees.new(10, 1000, 10)
     with open('har_uci_trees.csv', 'r') as f:
@@ -59,9 +62,10 @@ def main():
 
                 # Cun classifier
                 result = model.predict(features)
+                activity = class_index_to_name[result]
 
                 d = time.ticks_diff(time.ticks_ms(), start)
-                print('class', result, d)
+                print('class', activity, d)
 
         time.sleep_ms(1)
 

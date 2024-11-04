@@ -5,6 +5,7 @@ import uuid
 import pickle
 import tempfile
 import subprocess
+import json
 
 import pandas
 import numpy
@@ -307,6 +308,10 @@ def run_pipeline(run, hyperparameters, dataset,
     label_column = 'activity'
     classes = estimator.classes_
     class_mapping = dict(zip(classes, range(len(classes))))
+    meta_path = os.path.join(out_dir, f'r_{run}_{dataset}.meta.json')    
+    with open(meta_path, 'w') as f:
+        f.write(json.dumps(class_mapping))
+
     testdata_path = os.path.join(out_dir, f'r_{run}_{dataset}.testdata.npz')
     testdata = features.groupby(label_column, as_index=False).sample(n=10)
     # convert to class number/index
