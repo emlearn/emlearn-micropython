@@ -14,11 +14,11 @@ particularly well suited for low-compexity and low-power classification tasks.
 It can be combined with feature preprocessing, including neural networks to address more complex tasks.
 
 ## Status
-**Minimally useful, on some MicroPython ports**
+**Minimally useful**
 
-- Tested *working* on `x64` (Unix port) and `armv7emsp` (Cortex M4F/M7 / STM32).
-- **Not working** on `armv6m` (Cortex M0 / RP2040). [Issue](https://github.com/emlearn/emlearn-micropython/issues/14)
-- **Not working** on `xtensawin` (ESP32). [Issue](https://github.com/emlearn/emlearn-micropython/issues/12)
+- Tested *working* on `x64` (Unix port) and `xtensawin` (ESP32).
+
+NOTE: Building for ARM, such as `armv6m` (Cortex M0 / RP2040) requires a patch to MicroPython [(issue)](https://github.com/emlearn/emlearn-micropython/issues/19).
 
 ## Features
 
