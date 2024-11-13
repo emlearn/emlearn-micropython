@@ -11,7 +11,7 @@ Simple and an OK sanity check, but particularly useful.
 
 Make sure to have Python 3.10+ installed.
 
-Make sure to have the Unix port of MicroPython 1.23 setup.
+Make sure to have the Unix port of MicroPython setup.
 On Windows you can use Windows Subsystem for Linux (WSL), or Docker.
 
 ```console

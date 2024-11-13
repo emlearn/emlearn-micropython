@@ -68,7 +68,7 @@ Please report back if you get this running on a device not listed here.
 
 Make sure to have Python 3.10+ installed.
 
-Make sure to have the Unix port of MicroPython 1.23 setup.
+Make sure to have the Unix port of MicroPython setup.
 On Windows you can use Windows Subsystem for Linux (WSL), or Docker.
 
 Install the dependencies of this example:

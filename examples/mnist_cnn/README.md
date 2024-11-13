@@ -8,7 +8,7 @@ Make sure to have Python **3.10** installed.
 At the time TinyMaix, used for CNN, only supports Tensorflow <2.14,
 which is not supported on Python 3.12 or later.
 
-Make sure to have the Unix port of MicroPython 1.23 setup.
+Make sure to have the Unix port of MicroPython setup.
 On Windows you can use Windows Subsystem for Linux (WSL), or Docker.
 
 Install the dependencies of this example:

@@ -14,7 +14,7 @@ This has been used for many kinds of animals - such as cats, dogs, diary cattle.
 The same approach can be used for simple gesture recognition.
 
 ## Status
-Working. Tested running on ESP32 with MicroPython 1.23.
+Working. Tested running on ESP32 with MicroPython 1.24.
 
 **NOTE:** This is primarily *example* code for a Human Activity Recognition,
 not a generally-useful pretrained model.
@@ -34,7 +34,7 @@ The example uses the [UCI-HAR dataset](https://www.archive.ics.uci.edu/dataset/3
 The classes are by default limited to the three static postures (standing, sitting, lying) plus three dynamic activities (walking, walking downstairs, walking upstairs).
 The data is from a waist-mounted smartphone.
 Samplerate is 50Hz.
-By default only the accelerometer data is used.
+By default only the accelerometer data is used (not the gyro).
 
 
 ## TODO
@@ -48,7 +48,7 @@ By default only the accelerometer data is used.
 
 To run the example on your PC using Unix port of MicroPython.
 
-Make sure to have the Unix port of MicroPython 1.23 setup.
+Make sure to have the Unix port of MicroPython setup.
 On Windows you can use Windows Subsystem for Linux (WSL), or Docker.
 
 Download the files in this example directory
@@ -66,7 +66,7 @@ micropython har_run.py
 
 ## Running on device (Viper IDE)
 
-Make sure to have MicroPython 1.23 installed on device.
+Make sure to have MicroPython installed on device.
 
 The fastest and easiest to to install on your device is to use Viper IDE.
 This will install the library and the example code:
@@ -76,7 +76,7 @@ This will install the library and the example code:
 
 ## Run on device
 
-Make sure to have MicroPython 1.23 installed on device.
+Make sure to have MicroPython installed on device.
 
 Install the dependencies
 ```console
