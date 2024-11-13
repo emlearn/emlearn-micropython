@@ -62,6 +62,19 @@ git clone https://github.com/emlearn/emlearn-micropython
 Start with the instructions in [XOR example](./examples/xor_trees/).
 
 
+## Supported versions
+
+At any given point in time, emlearn-micropython only provides pre-built binaries for one MicroPython version.
+In general we strongly encourage people to use the latest version.
+There are no long-term-support or bugfix versions, at this point.
+If you build from source, the current version of emlearn-micropython might also work on a couple of MicroPython versions around the time, but this is not guaranteed.
+
+| MicroPython      | emlearn-micropython  |
+|------------------| ------------------   |
+| 1.24.x           | master               |
+| 1.24.x           | 0.7.0                |
+| 1.23.x           | 0.6.0                |
+
 #### Find architecture and .mpy version
 
 The correct .mpy files to use depend on the CPU architecture of your microcontroller,
