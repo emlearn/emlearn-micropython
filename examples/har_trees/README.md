@@ -64,6 +64,8 @@ micropython -m mip install https://emlearn.github.io/emlearn-micropython/builds/
 micropython har_run.py
 ```
 
+Results should be around 85% accuracy.
+
 ## Running on device (Viper IDE)
 
 Make sure to have MicroPython installed on device.
@@ -87,22 +89,31 @@ mpremote mip install github:jonnor/micropython-zipfile
 
 Copy example code
 ```
-mpremote cp har_uci_trees.csv har_uci.testdata.npz timebased.py:
+mpremote cp har_uci_trees.csv har_uci.testdata.npz timebased.py  :
 ```
 
 Run model evaluation on a test set
 ```
-micropython har_run.py
+mpremote run har_run.py
 ```
 
-## Run on device (with live accelerometer data)
+Results should be around 85% accuracy.
 
-FIXME: document
+## Run on device (with live accelerometer data)
 
 Requires a M5StickC PLUS 2.
 Using a MPU6886 accelerometer connected via I2C.
 
-`har_live.py`
+Install dependencies. In addition to the above
+```
+mpremote mip install github:jonnor/micropython-mpu6886
+mpremote cp windower.py :
+```
+
+Run the classification
+```
+mpremote har_live.py
+```
 
 
 ## Run training

@@ -24,8 +24,7 @@ def main():
     with open('har_uci_trees.csv', 'r') as f:
         emlearn_trees.load_model(model, f)
 
-    i2c = I2C(sda=21, scl=22, freq=100000)
-    mpu = MPU6886(i2c)
+    mpu = MPU6886(I2C(0, sda=21, scl=22, freq=100000))
 
     # Enable FIFO at a fixed samplerate
     mpu.fifo_enable(True)
