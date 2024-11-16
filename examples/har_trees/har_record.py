@@ -2,8 +2,8 @@
 
 import machine
 from machine import Pin, I2C
+
 from mpu6886 import MPU6886
-import npyfile
 
 # mpremote mip install "github:peterhinch/micropython-async/v3/primitives"
 from primitives import Pushbutton
@@ -15,13 +15,19 @@ import array
 import struct
 import gc
 
+from recorder import Recorder
+
+# for display
+# mpremote mip install "github:peterhinch/micropython-nano-gui"
+from color_setup import ssd
+from gui.core.writer import Writer
+from gui.core.nanogui import refresh
+from gui.widgets.meter import Meter
+from gui.widgets.label import Label
+import gui.fonts.courier20 as fixed
+
 # Cleanup after import frees considerable memory
 gc.collect()
-
-def format_time(secs):
-    year, month, day, hour, minute, second, _, _ = time.gmtime(secs)
-    formatted = f'{year:04d}-{month:02d}-{day:02d}T{hour:02d}:{minute:02d}:{second:02d}'
-    return formatted
 
 def decode_samples(buf : bytearray, samples : array.array, bytes_per_sample):
     """
@@ -39,80 +45,25 @@ def decode_samples(buf : bytearray, samples : array.array, bytes_per_sample):
         samples[(i*3)+1] = y
         samples[(i*3)+2] = z
 
-def file_or_dir_exists(filename):
-    try:
-        os.stat(filename)
-        return True
-    except OSError:
-        return False
 
-class Recorder():
-    """Record accelerometer data to .npy files"""
-    
-    def __init__(self, samplerate, duration, directory='recorder_data', suffix='.npy'):
-        # config      
-        self._directory = directory
-        assert directory[-1] != '/'
-        self._suffix  = suffix
-        self._recording_samples = int(duration * samplerate)
+def render_display(selected_class):
+    start_time = time.ticks_ms()
+   
+    ssd.fill(0)
 
-        # state
-        self._recording_file = None
-        self._recording = False
+    Writer.set_textpos(ssd, 0, 0)  # In case previous tests have altered it
+    wri = Writer(ssd, fixed, verbose=False)
+    wri.set_clip(False, False, False)
 
-        if not file_or_dir_exists(self._directory):
-            os.mkdir(self._directory)
+    textfield = Label(wri, 10, 20, wri.stringlen(selected_class))
+    textfield.value(selected_class)
 
-    def start(self):
-        self._recording = True
-        print('recorder-start')
+    refresh(ssd)
 
-    def stop(self):
-        self.close()
-        self._recording = False
-        print('recorder-stop')
+    duration = time.ticks_ms() - start_time
+    print('render-display-done', duration)
 
-    def process(self, data):
 
-        if not self._recording:
-            return
-
-        t = time.ticks_ms()/1000.0
-
-        if self._recording_file is None:
-            # open file
-            time_str = format_time(time.time())
-            out_path = f'{self._directory}/{time_str}_{self._suffix}'
-            out_typecode = 'h'
-            out_shape = (3, self._recording_samples)
-            self._recording_file = npyfile.Writer(open(out_path, 'w'), out_shape, out_typecode)
-            print(f'record-file-open t={t:.3f} file={out_path}')
-
-        # TODO: avoid writing too much at end of file
-        self._recording_file.write_values(data)
-        print(f'recorder-write-chunk t={t:.3f}')
-        if self._recording_file.written_bytes > 3*2*self._recording_samples:
-            # rotate file
-            self.close()
-            print(f'record-file-rotate t={t:.3f}')
-
-    def delete(self):
-        for f in os.listdir(self._directory):
-            p = self._directory + '/' + f
-            print('recorder-delete-file', p)
-            os.unlink(p)
-
-    def close(self):
-        if self._recording_file is not None:
-            self._recording_file.close()
-            self._recording_file = None
-
-    # Support working as a context manager, to automatically clean up
-    def __enter__(self):
-        pass      
-        return self
-    def __exit__(self, exc_type, exc_value, exc_tb):
-        self.close()
 
 # Configuration
 classes = [
@@ -162,6 +113,9 @@ def main():
         if class_selected >= len(classes):
             class_selected = 0
         c = classes[class_selected]
+        # FIXME: change suffix on the recorder
+        render_display(c)
+
         print(f'har-record-cycle class={c}')
 
     button_pin = machine.Pin(37, machine.Pin.IN, machine.Pin.PULL_UP) # Button A on M5StickC PLUS2
@@ -174,6 +128,7 @@ def main():
         # UNCOMMENT to clean up data_dir
         recorder.delete()
     
+        render_display(classes[class_selected])
         print('har-record-ready')
 
         while True:
@@ -191,7 +146,7 @@ def main():
             # Let LED reflect recording state        
             led_pin.value(1 if recorder._recording else 0)
 
-            await asyncio.sleep(0.050)
+            await asyncio.sleep(0.10)
 
     with Recorder(samplerate, file_duration, directory=data_dir) as recorder:
 
