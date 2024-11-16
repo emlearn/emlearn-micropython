@@ -5,27 +5,23 @@ from machine import Pin, I2C
 from mpu6886 import MPU6886
 import npyfile
 
+# mpremote mip install "github:peterhinch/micropython-async/v3/primitives"
+from primitives import Pushbutton
+
+import asyncio
 import os
 import time
 import array
 import struct
 import gc
 
+# Cleanup after import frees considerable memory
 gc.collect()
 
 def format_time(secs):
     year, month, day, hour, minute, second, _, _ = time.gmtime(secs)
     formatted = f'{year:04d}-{month:02d}-{day:02d}T{hour:02d}:{minute:02d}:{second:02d}'
     return formatted
-
-classes = [
-    'jumpingjack',
-    'lunge',
-    'squat',
-    'pushup',
-]
-
-
 
 def decode_samples(buf : bytearray, samples : array.array, bytes_per_sample):
     """
@@ -69,10 +65,12 @@ class Recorder():
 
     def start(self):
         self._recording = True
+        print('recorder-start')
 
     def stop(self):
         self.close()
         self._recording = False
+        print('recorder-stop')
 
     def process(self, data):
 
@@ -92,7 +90,7 @@ class Recorder():
 
         # TODO: avoid writing too much at end of file
         self._recording_file.write_values(data)
-        print(f'record-chunk t={t:.3f}')
+        print(f'recorder-write-chunk t={t:.3f}')
         if self._recording_file.written_bytes > 3*2*self._recording_samples:
             # rotate file
             self.close()
@@ -117,10 +115,18 @@ class Recorder():
         self.close()
 
 # Configuration
+classes = [
+    'jumpingjack',
+    'lunge',
+    'squat',
+    'pushup',
+]
+
 samplerate = 100
 chunk_length = 50
 file_duration = 5.0
 data_dir = 'har_record'
+
 
 def main():
     mpu = MPU6886(I2C(0, sda=21, scl=22, freq=100000))
@@ -132,17 +138,38 @@ def main():
     chunk = bytearray(mpu.bytes_per_sample*chunk_length) # raw bytes
     decoded = array.array('h', (0 for _ in range(3*chunk_length))) # decoded int16
 
-    # TODO: support specifying class being recorded
-    current_class = classes[0]
-
-    led_pin = machine.Pin(19, machine.Pin.OUT) # Internal LED on M5StickC PLUS2
-    button_pin = machine.Pin(37, machine.Pin.IN, machine.Pin.PULL_UP) # Button A on M5StickC PLUS2
+    # Internal LED on M5StickC PLUS2
+    led_pin = machine.Pin(19, machine.Pin.OUT)
 
     # On M5StickC we need to set HOLD pin to stay alive when on battery
     hold_pin = machine.Pin(4, machine.Pin.OUT)
     hold_pin.value(1)
 
-    with Recorder(samplerate, file_duration, directory=data_dir) as recorder:
+    # Support cycling between classes, to indicate which is being recorded
+    class_selected = 0
+
+    def on_longpress():
+        # toggle recording state
+        if recorder._recording:
+            recorder.stop()
+        else:
+            recorder.start()
+
+    def on_doubleclick():
+        # cycle between selected class
+        nonlocal class_selected
+        class_selected += 1
+        if class_selected >= len(classes):
+            class_selected = 0
+        c = classes[class_selected]
+        print(f'har-record-cycle class={c}')
+
+    button_pin = machine.Pin(37, machine.Pin.IN, machine.Pin.PULL_UP) # Button A on M5StickC PLUS2
+    button = Pushbutton(button_pin)
+    button.long_func(on_longpress, args=())
+    button.double_func(on_doubleclick, args=())
+
+    async def read_data():
 
         # UNCOMMENT to clean up data_dir
         recorder.delete()
@@ -161,22 +188,14 @@ def main():
                 # record data (if enabled)
                 recorder.process(decoded)
 
-            # check button for start/stop
-            button_pressed = button_pin.value() == 0
-            if button_pressed:
-                # toggle recording state
-                if recorder._recording:
-                    recorder.stop()
-                else:
-                    recorder.start()
-
             # Let LED reflect recording state        
             led_pin.value(1 if recorder._recording else 0)
 
+            await asyncio.sleep(0.050)
 
-            time.sleep_ms(10)
+    with Recorder(samplerate, file_duration, directory=data_dir) as recorder:
 
-
+        asyncio.run(read_data())
 
 if __name__ == '__main__':
     main()
