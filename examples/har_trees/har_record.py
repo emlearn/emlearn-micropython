@@ -46,7 +46,7 @@ def decode_samples(buf : bytearray, samples : array.array, bytes_per_sample):
         samples[(i*3)+2] = z
 
 
-def render_display(selected_class):
+def render_display(selected_class, recording : bool):
     start_time = time.ticks_ms()
    
     ssd.fill(0)
@@ -55,8 +55,16 @@ def render_display(selected_class):
     wri = Writer(ssd, fixed, verbose=False)
     wri.set_clip(False, False, False)
 
-    textfield = Label(wri, 10, 20, wri.stringlen(selected_class))
-    textfield.value(selected_class)
+    text = f'Activity:'
+    text1 = Label(wri, 10, 10, wri.stringlen(text))
+    text1.value(text)
+
+    text2 = Label(wri, 30, 10, wri.stringlen(selected_class))
+    text2.value(selected_class)
+
+    state = '[recording]' if recording else '[ready]'
+    text3 = Label(wri, 80, 10, wri.stringlen(state))
+    text3.value(state)
 
     refresh(ssd)
 
@@ -99,12 +107,17 @@ def main():
     # Support cycling between classes, to indicate which is being recorded
     class_selected = 0
 
+    def update_display():
+        c = classes[class_selected]
+        render_display(c, recorder._recording)
+
     def on_longpress():
         # toggle recording state
         if recorder._recording:
             recorder.stop()
         else:
             recorder.start()
+        update_display()
 
     def on_doubleclick():
         # cycle between selected class
@@ -113,8 +126,8 @@ def main():
         if class_selected >= len(classes):
             class_selected = 0
         c = classes[class_selected]
-        # FIXME: change suffix on the recorder
-        render_display(c)
+        recorder.set_class(c)
+        update_display()
 
         print(f'har-record-cycle class={c}')
 
@@ -128,7 +141,8 @@ def main():
         # UNCOMMENT to clean up data_dir
         recorder.delete()
     
-        render_display(classes[class_selected])
+        # FIXME: text does not show on boot
+        update_display()
         print('har-record-ready')
 
         while True:
