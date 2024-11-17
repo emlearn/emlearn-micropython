@@ -3,7 +3,7 @@
 import machine
 from machine import Pin, I2C
 
-from mpu6886 import MPU6886
+#from mpu6886 import MPU6886
 
 # mpremote mip install "github:peterhinch/micropython-async/v3/primitives"
 from primitives import Pushbutton
@@ -88,21 +88,25 @@ data_dir = 'har_record'
 
 
 def main():
-    mpu = MPU6886(I2C(0, sda=21, scl=22, freq=100000))
+    #mpu = MPU6886(I2C(0, sda=21, scl=22, freq=100000))
+
+    from axp2101 import AXP2101
+    pmu = AXP2101()
+    pmu.twatch_s3_poweron()
 
     # Enable FIFO at a fixed samplerate
-    mpu.fifo_enable(True)
-    mpu.set_odr(samplerate)
+    #mpu.fifo_enable(True)
+    #mpu.set_odr(samplerate)
 
-    chunk = bytearray(mpu.bytes_per_sample*chunk_length) # raw bytes
-    decoded = array.array('h', (0 for _ in range(3*chunk_length))) # decoded int16
+    #chunk = bytearray(mpu.bytes_per_sample*chunk_length) # raw bytes
+    #decoded = array.array('h', (0 for _ in range(3*chunk_length))) # decoded int16
 
     # Internal LED on M5StickC PLUS2
-    led_pin = machine.Pin(19, machine.Pin.OUT)
+    #led_pin = machine.Pin(19, machine.Pin.OUT)
 
     # On M5StickC we need to set HOLD pin to stay alive when on battery
-    hold_pin = machine.Pin(4, machine.Pin.OUT)
-    hold_pin.value(1)
+    #hold_pin = machine.Pin(4, machine.Pin.OUT)
+    #hold_pin.value(1)
 
     # Support cycling between classes, to indicate which is being recorded
     class_selected = 0
@@ -131,10 +135,10 @@ def main():
 
         print(f'har-record-cycle class={c}')
 
-    button_pin = machine.Pin(37, machine.Pin.IN, machine.Pin.PULL_UP) # Button A on M5StickC PLUS2
-    button = Pushbutton(button_pin)
-    button.long_func(on_longpress, args=())
-    button.double_func(on_doubleclick, args=())
+    #button_pin = machine.Pin(37, machine.Pin.IN, machine.Pin.PULL_UP) # Button A on M5StickC PLUS2
+    #button = Pushbutton(button_pin)
+    #button.long_func(on_longpress, args=())
+    #button.double_func(on_doubleclick, args=())
 
     async def read_data():
 
@@ -145,22 +149,27 @@ def main():
         update_display()
         print('har-record-ready')
 
+        on_doubleclick()
+        on_longpress()
+
         while True:
         
             # always read data from FIFO, to avoid overflow
-            count = mpu.get_fifo_count()
-            if count >= chunk_length:
-                start = time.ticks_ms()
-                mpu.read_samples_into(chunk)
-                decode_samples(chunk, decoded, mpu.bytes_per_sample)
+            #count = mpu.get_fifo_count()
+            #if count >= chunk_length:
+            #    start = time.ticks_ms()
+            #    mpu.read_samples_into(chunk)
+            #    decode_samples(chunk, decoded, mpu.bytes_per_sample)
 
                 # record data (if enabled)
-                recorder.process(decoded)
+            # recorder.process(decoded)
 
             # Let LED reflect recording state        
-            led_pin.value(1 if recorder._recording else 0)
+            #led_pin.value(1 if recorder._recording else 0)
 
-            await asyncio.sleep(0.10)
+            update_display()
+
+            await asyncio.sleep(1.00)
 
     with Recorder(samplerate, file_duration, directory=data_dir) as recorder:
 
