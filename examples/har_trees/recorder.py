@@ -27,7 +27,8 @@ def file_or_dir_exists(filename):
 class Recorder():
     """Record accelerometer data to .npy files"""
     
-    def __init__(self, samplerate, duration, directory='recorder_data', suffix='.npy'):
+    def __init__(self, samplerate, duration,
+            classname='unknown', directory='recorder_data', suffix='.npy'):
         # config      
         self._directory = directory
         assert directory[-1] != '/'
@@ -37,6 +38,7 @@ class Recorder():
         # state
         self._recording_file = None
         self._recording = False
+        self._classname = classname
 
         if not file_or_dir_exists(self._directory):
             os.mkdir(self._directory)
@@ -50,6 +52,9 @@ class Recorder():
         self._recording = False
         print('recorder-stop')
 
+    def set_class(self, name):
+        self._classname = name
+
     def process(self, data):
 
         if not self._recording:
@@ -60,7 +65,7 @@ class Recorder():
         if self._recording_file is None:
             # open file
             time_str = format_time(time.time())
-            out_path = f'{self._directory}/{time_str}_{self._suffix}'
+            out_path = f'{self._directory}/{time_str}_{self._classname}{self._suffix}'
             out_typecode = 'h'
             out_shape = (3, self._recording_samples)
             self._recording_file = npyfile.Writer(open(out_path, 'w'), out_shape, out_typecode)
