@@ -3,7 +3,7 @@
 import machine
 from machine import Pin, I2C
 
-from mpu6886 import MPU6886
+#from mpu6886 import MPU6886
 
 # mpremote mip install "github:peterhinch/micropython-async/v3/primitives"
 from primitives import Pushbutton
@@ -19,12 +19,12 @@ from recorder import Recorder
 
 # for display
 # mpremote mip install "github:peterhinch/micropython-nano-gui"
-from color_setup import ssd
-from gui.core.writer import Writer
-from gui.core.nanogui import refresh
-from gui.widgets.meter import Meter
-from gui.widgets.label import Label
-import gui.fonts.courier20 as fixed
+#from color_setup import ssd
+#from gui.core.writer import Writer
+#from gui.core.nanogui import refresh
+#from gui.widgets.meter import Meter
+#from gui.widgets.label import Label
+#import gui.fonts.courier20 as fixed
 
 # Cleanup after import frees considerable memory
 gc.collect()
@@ -88,24 +88,69 @@ data_dir = 'har_record'
 
 
 def main():
-    mpu = MPU6886(I2C(0, sda=21, scl=22, freq=100000))
+    #mpu = MPU6886(I2C(0, sda=21, scl=22, freq=100000))
+
+    from machine import SPI
+
+    # mpremote mip install https://raw.githubusercontent.com/antirez/t-watch-s3-micropython/refs/heads/main/axp2101.py
+    from axp2101 import AXP2101
+    pmu = AXP2101()
+    pmu.twatch_s3_poweron()
+
+    # mpremote mip install https://raw.githubusercontent.com/antirez/t-watch-s3-micropython/refs/heads/main/st7789_base.py
+    # mpremote mip install https://raw.githubusercontent.com/antirez/t-watch-s3-micropython/refs/heads/main/st7789_ext.py
+    import st7789_base, st7789_ext
+
+    # Setup the PMU chip & turn on the backlight.
+    bl = Pin(45,Pin.OUT)
+    bl.on()
+
+    from machine import SoftSPI
+
+    # XXX: for some reason hardware SPI does not work?
+    #spi = SPI(1, baudrate=10_000_000, phase=0, polarity=1, sck=Pin(18), mosi=Pin(13), miso=Pin(37))
+    
+    spi = SoftSPI(baudrate=10_000_000, phase=0, polarity=1, sck=Pin(18), mosi=Pin(13), miso=Pin(37))
+
+    # Setup TFT.
+    display = st7789_ext.ST7789(
+        spi,
+        240, 240,
+        reset=False,
+        dc=Pin(38, Pin.OUT, value=0),
+        cs=Pin(12, Pin.OUT, value=1),
+    )
+    display.init(landscape=False,mirror_y=True,mirror_x=True,inversion=True)
 
     # Enable FIFO at a fixed samplerate
-    mpu.fifo_enable(True)
-    mpu.set_odr(samplerate)
+    #mpu.fifo_enable(True)
+    #mpu.set_odr(samplerate)
 
-    chunk = bytearray(mpu.bytes_per_sample*chunk_length) # raw bytes
-    decoded = array.array('h', (0 for _ in range(3*chunk_length))) # decoded int16
+    #chunk = bytearray(mpu.bytes_per_sample*chunk_length) # raw bytes
+    #decoded = array.array('h', (0 for _ in range(3*chunk_length))) # decoded int16
 
     # Internal LED on M5StickC PLUS2
-    led_pin = machine.Pin(19, machine.Pin.OUT)
+    #led_pin = machine.Pin(19, machine.Pin.OUT)
 
     # On M5StickC we need to set HOLD pin to stay alive when on battery
-    hold_pin = machine.Pin(4, machine.Pin.OUT)
-    hold_pin.value(1)
+    #hold_pin = machine.Pin(4, machine.Pin.OUT)
+    #hold_pin.value(1)
 
     # Support cycling between classes, to indicate which is being recorded
     class_selected = 0
+
+    display.enable_framebuffer()
+
+    while True:
+        #display.fb.fill(display.fb_color(100,0,0))
+        display.fb.text("Hello world",50,50,display.fb_color(255,255,255))
+        display.show()
+        print('display')
+        time.sleep(1)
+
+    return
+
+
 
     def update_display():
         c = classes[class_selected]
@@ -132,10 +177,10 @@ def main():
 
         print(f'har-record-cycle class={c}')
 
-    button_pin = machine.Pin(37, machine.Pin.IN, machine.Pin.PULL_UP) # Button A on M5StickC PLUS2
-    button = Pushbutton(button_pin)
-    button.long_func(on_longpress, args=())
-    button.double_func(on_doubleclick, args=())
+    #button_pin = machine.Pin(37, machine.Pin.IN, machine.Pin.PULL_UP) # Button A on M5StickC PLUS2
+    #button = Pushbutton(button_pin)
+    #button.long_func(on_longpress, args=())
+    #button.double_func(on_doubleclick, args=())
 
     async def update_display_loop():
         # workaround for display not always updating on boot
@@ -144,21 +189,8 @@ def main():
             await asyncio.sleep(1.0)
 
     async def read_data():
-
-        while True:
-        
-            # always read data from FIFO, to avoid overflow
-            count = mpu.get_fifo_count()
-            if count >= chunk_length:
-                start = time.ticks_ms()
-                mpu.read_samples_into(chunk)
-                decode_samples(chunk, decoded, mpu.bytes_per_sample)
-                #print(decoded)
-
-                # record data (if enabled)
-                recorder.process(decoded)
-
-            await asyncio.sleep(0.10)
+        while True:        
+            await asyncio.sleep(1.00)
 
     async def run():
         await asyncio.gather(update_display_loop(), read_data())
