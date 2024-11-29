@@ -1,9 +1,6 @@
 
 import npyfile
 
-# mpremote mip install "github:peterhinch/micropython-async/v3/primitives"
-from primitives import Pushbutton
-
 import asyncio
 import os
 import time
@@ -13,7 +10,8 @@ import gc
 
 
 def format_time(secs):
-    year, month, day, hour, minute, second, _, _ = time.gmtime(secs)
+    tt = time.gmtime(secs)
+    year, month, day, hour, minute, second, _, _ = tt[0:8]
     formatted = f'{year:04d}-{month:02d}-{day:02d}T{hour:02d}:{minute:02d}:{second:02d}'
     return formatted
 
@@ -68,13 +66,15 @@ class Recorder():
             out_path = f'{self._directory}/{time_str}_{self._classname}{self._suffix}'
             out_typecode = 'h'
             out_shape = (3, self._recording_samples)
-            self._recording_file = npyfile.Writer(open(out_path, 'w'), out_shape, out_typecode)
+            self._recording_file_path = out_path
+            self._recording_file = npyfile.Writer(open(out_path, 'wb'), out_shape, out_typecode)
+            self._recording_file._write_header()
             print(f'record-file-open t={t:.3f} file={out_path}')
 
         # TODO: avoid writing too much at end of file
         self._recording_file.write_values(data)
         print(f'recorder-write-chunk t={t:.3f}')
-        if self._recording_file.written_bytes > 3*2*self._recording_samples:
+        if self._recording_file.written_bytes >= 3*2*self._recording_samples:
             # rotate file
             self.close()
             print(f'record-file-rotate t={t:.3f}')
