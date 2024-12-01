@@ -5,7 +5,7 @@ import time
 
 import npyfile
 
-from timebased import calculate_features_xyz, DATA_TYPECODE
+from timebased import calculate_features_xyz, DATA_TYPECODE, N_FEATURES
 
 def compute_dataset_features(data: npyfile.Reader,
         skip_samples=0, limit_samples=None, verbose=0):
@@ -70,7 +70,7 @@ def main():
     limit_samples = None
 
     out_typecode = 'f'
-    n_features = 92
+    n_features = N_FEATURES
     
     features_array = array.array(out_typecode, (0 for _ in range(n_features)))
 

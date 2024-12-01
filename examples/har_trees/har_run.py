@@ -4,11 +4,12 @@ import array
 import zipfile
 import npyfile
 import emlearn_trees
+import timebased
 
 def har_load_test_data(path,
         skip_samples=0, limit_samples=None):
  
-    n_features = 92
+    n_features = timebased.N_FEATURES
 
     with zipfile.ZipFile(path) as archive:
         ext = '.npy'
