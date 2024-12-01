@@ -5,7 +5,12 @@ import os
 import pandas
 import numpy
 
-def load_har_record(path, samplerate):
+def load_har_record(path,
+        samplerate=100,
+        sensitivity=2.0,
+        maxvalue=32767,
+        ):
+
     suffix = '.npy'
 
     files = []
@@ -19,13 +24,22 @@ def load_har_record(path, samplerate):
                 print(e)
                 continue
 
-            df = pandas.DataFrame(data.T, columns=['x', 'y', 'z'])
+            df = pandas.DataFrame(data, columns=['x', 'y', 'z'])
+
+            # Scale values into physical units (g)
+            df = df.astype(float) / maxvalue * sensitivity
+
+            # Add a time column, use as index
             t = numpy.arange(0, len(df)) * (1.0/samplerate)
             df['time'] = t
             df = df.set_index('time')
-            classname = f.split('_')[1].rstrip(suffix)
 
-            files.append(dict(data=df, filename=f, classname=classname))
+            classname = f.split('_')[1].rstrip(suffix)
+            
+            # Remove :, special character on Windows
+            filename = f.replace(':', '')
+
+            files.append(dict(data=df, filename=filename, classname=classname))
 
             #print(f, data.shape)
 
@@ -33,15 +47,49 @@ def load_har_record(path, samplerate):
     out = out.set_index('filename')
     return out
 
-p = '/home/jon/temp/micropython-test-esptool/har_record'
-data = load_har_record(p, samplerate=100)
+def main():
 
-print(data.head())
-print(data.shape)
+    p = './data/har_record_excercises/har_record'
+    data = load_har_record(p, samplerate=100)
 
-import plotly.express
+    print(data.head())
+    print(data.shape)
 
-for idx, f in data.iterrows():
-    d = f.data.reset_index()
-    fig = plotly.express.line(d, x='time', y=['x', 'y', 'z'])
-    fig.show()
+    import plotly.express
+
+    print(data.classname.value_counts())
+
+    out_dir = 'to_label'
+
+    for idx, f in data.iterrows():
+        d = f.data.sort_index()
+        
+        out_path = os.path.join(out_dir, idx+'.csv')
+        d.to_csv(out_path)
+        print('Wrote', out_path)
+
+        m = d.median()
+        print(list(m))
+
+        rel = (d - m)
+        diffed = d.diff(-1)
+
+        continue
+        
+        fig = plotly.express.line(rel.reset_index(),
+                x='time',
+                y=['x', 'y', 'z'],
+                title=f'{f.classname}: {idx}',
+        )
+        #fig.show()
+
+        #fig = plotly.express.scatter_3d(diffed, x='x', y='y', z='z', title=f'{f.classname}: {idx}')
+        #fig.show()
+
+        #fig = plotly.express.line(d.reset_index(), x='time', y=['x', 'y', 'z'])
+        #fig.show()
+
+if __name__ == '__main__':
+    main()
+
+
