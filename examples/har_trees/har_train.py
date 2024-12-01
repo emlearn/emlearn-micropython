@@ -222,6 +222,7 @@ def export_model(path, out):
 def run_pipeline(run, hyperparameters, dataset,
         data_dir,
         out_dir,
+        model_settings=dict(),
         n_splits=5,
         features='timebased',
     ):
@@ -252,6 +253,14 @@ def run_pipeline(run, hyperparameters, dataset,
                 'running', 'rope_jumping',
             ],
         ),
+        'har_exercise_1': dict(
+            groups=['file'],
+            data_columns = ['x', 'y', 'z'],
+            classes = [
+                #'mixed',
+                'squat', 'jumpingjack', 'lunge', 'other',
+            ],
+        ),
     }
 
     if not os.path.exists(out_dir):
@@ -272,8 +281,16 @@ def run_pipeline(run, hyperparameters, dataset,
     data_load_duration = time.time() - data_load_start
     log.info('data-loaded', dataset=dataset, samples=len(data), duration=data_load_duration)
 
+
+
     feature_extraction_start = time.time()
-    features = extract_features(data, columns=data_columns, groupby=groups, features=features)
+    features = extract_features(data,
+        columns=data_columns,
+        groupby=groups,             
+        features=features,
+        window_length=model_settings['window_length'],
+        window_hop=model_settings['window_hop'],
+    )
     labeled = numpy.count_nonzero(features['activity'].notna())
 
     feature_extraction_duration = time.time() - feature_extraction_start
@@ -293,9 +310,10 @@ def run_pipeline(run, hyperparameters, dataset,
     print('Class distribution\n', features['activity'].value_counts(dropna=False))
 
     # Run train-evaluate
+    evaluate_groupby = groups[0]
     results, estimator = evaluate(features,
         hyperparameters=hyperparameters,
-        groupby='subject',
+        groupby=evaluate_groupby,
         n_splits=n_splits,
     )
 
@@ -362,6 +380,10 @@ def parse():
 
     parser.add_argument('--features', type=str, default='timebased',
                         help='Which feature-set to use')
+    parser.add_argument('--window-length', type=int, default=128,
+                        help='Length of each window to classify (in samples)')
+    parser.add_argument('--window-hop', type=int, default=64,
+                        help='How far to hop for next window to classify (in samples)')
 
     args = parser.parse_args()
 
@@ -391,6 +413,10 @@ def main():
         data_dir=args.data_dir,
         run=run_id,
         hyperparameters=hyperparameters,
+        model_settings=dict(
+            window_hop=args.window_hop,
+            window_length=args.window_length,
+        ),
         n_splits=int(os.environ.get('FOLDS', '5')),
         features=args.features,
     )

@@ -15,7 +15,7 @@ def compute_dataset_features(data: npyfile.Reader,
     assert len(shape) == 3, shape
     n_samples, window_length, n_axes = shape
     assert n_axes == 3, shape
-    assert window_length == 128, shape
+    #assert window_length == 128, shape
 
     # We expect data to be h/int16
     assert data.typecode == DATA_TYPECODE, data.typecode
