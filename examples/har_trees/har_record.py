@@ -78,12 +78,12 @@ classes = [
     'jumpingjack',
     'lunge',
     'squat',
-    'pushup',
+    'other',
 ]
 
 samplerate = 100
 chunk_length = 50
-file_duration = 5.0
+file_duration = 10.0
 data_dir = 'har_record'
 
 
@@ -110,6 +110,7 @@ def main():
     def update_display():
         c = classes[class_selected]
         render_display(c, recorder._recording)
+        led_pin.value(1 if recorder._recording else 0)
 
     def on_longpress():
         # toggle recording state
@@ -136,14 +137,13 @@ def main():
     button.long_func(on_longpress, args=())
     button.double_func(on_doubleclick, args=())
 
-    async def read_data():
+    async def update_display_loop():
+        # workaround for display not always updating on boot
+        while True:
+            update_display()
+            await asyncio.sleep(1.0)
 
-        # UNCOMMENT to clean up data_dir
-        recorder.delete()
-    
-        # FIXME: text does not show on boot
-        update_display()
-        print('har-record-ready')
+    async def read_data():
 
         while True:
         
@@ -153,18 +153,24 @@ def main():
                 start = time.ticks_ms()
                 mpu.read_samples_into(chunk)
                 decode_samples(chunk, decoded, mpu.bytes_per_sample)
+                #print(decoded)
 
                 # record data (if enabled)
                 recorder.process(decoded)
 
-            # Let LED reflect recording state        
-            led_pin.value(1 if recorder._recording else 0)
-
             await asyncio.sleep(0.10)
 
+    async def run():
+        await asyncio.gather(update_display_loop(), read_data())
+    
     with Recorder(samplerate, file_duration, directory=data_dir) as recorder:
 
-        asyncio.run(read_data())
+        # UNCOMMENT to clean up data_dir
+        #recorder.delete()
+
+        print('har-record-ready')
+
+        asyncio.run(run())
 
 if __name__ == '__main__':
     main()
