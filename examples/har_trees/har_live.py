@@ -1,4 +1,5 @@
 
+import machine
 from machine import Pin, I2C
 from mpu6886 import MPU6886
 
@@ -13,6 +14,11 @@ import emlearn_trees
 def mean(arr):
     m = sum(arr) / float(len(arr))
     return m
+
+def copy_array_into(source, target):
+    assert len(source) == len(target)
+    for i in range(len(target)):
+        target[i] = source[i]
 
 def main():
 
@@ -50,6 +56,10 @@ def main():
     z_values = empty_array('h', hop_length)
     windower = TriaxialWindower(window_length)
 
+    x_window = empty_array('h', window_length)
+    y_window = empty_array('h', window_length)
+    z_window = empty_array('h', window_length)
+
     features_typecode = timebased.DATA_TYPECODE
     n_features = timebased.N_FEATURES
     features = array.array(features_typecode, (0 for _ in range(n_features)))
@@ -66,18 +76,24 @@ def main():
             if windower.full():
                 # compute features
                 #print('xyz', mean(x_values), mean(y_values), mean(z_values))
-                ff = timebased.calculate_features_xyz((x_values, y_values, z_values))
+
+                copy_array_into(windower.x_values, x_window)
+                copy_array_into(windower.y_values, y_window)
+                copy_array_into(windower.z_values, z_window)
+
+                ff = timebased.calculate_features_xyz((x_window, y_window, z_window))
                 for i, f in enumerate(ff):
                     features[i] = int(f)
 
                 # Cun classifier
+                #print(features)
                 result = model.predict(features)
                 activity = class_index_to_name[result]
 
                 d = time.ticks_diff(time.ticks_ms(), start)
                 print('class', activity, d)
 
-        time.sleep_ms(1)
+        machine.lightsleep(100)
 
 
 if __name__ == '__main__':
