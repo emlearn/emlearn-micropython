@@ -12,7 +12,7 @@ import gc
 def format_time(secs):
     tt = time.gmtime(secs)
     year, month, day, hour, minute, second, _, _ = tt[0:8]
-    formatted = f'{year:04d}-{month:02d}-{day:02d}T{hour:02d}:{minute:02d}:{second:02d}'
+    formatted = f'{year:04d}-{month:02d}-{day:02d}T{hour:02d}{minute:02d}{second:02d}'
     return formatted
 
 def file_or_dir_exists(filename):
@@ -65,7 +65,7 @@ class Recorder():
             time_str = format_time(time.time())
             out_path = f'{self._directory}/{time_str}_{self._classname}{self._suffix}'
             out_typecode = 'h'
-            out_shape = (3, self._recording_samples)
+            out_shape = (self._recording_samples, 3)
             self._recording_file_path = out_path
             self._recording_file = npyfile.Writer(open(out_path, 'wb'), out_shape, out_typecode)
             self._recording_file._write_header()
