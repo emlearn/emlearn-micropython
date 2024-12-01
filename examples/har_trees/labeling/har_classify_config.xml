@@ -1,0 +1,19 @@
+<!-- Configuration for Label Studio -->
+<View>
+    <TimeSeries name="ts" valueType="url" value="$timeseriesUrl" sep="," timeColumn="time" overviewWidth="100%" >
+
+        <!-- Data is expected to be in range -2G to +2G, each file 10 seconds long -->
+        <Channel column="x" displayFormat=",.1f" strokeColor="#ff7f0e" legend="X" timeRange="0,10" dataRange="-2.0,+2.0"/>
+        <Channel column="y" displayFormat=",.1f" strokeColor="#ff7f0e" legend="Y" timeRange="0,10" dataRange="-2.0,+2.0"/>
+        <Channel column="z" displayFormat=",.1f" strokeColor="#ff7f0e" legend="Z" timeRange="0,10" dataRange="-2.0,+2.0"/>
+    </TimeSeries>
+  
+    <Header value="This data consists of:"/>
+    <Choices name="trend_forecast" toName="ts">
+        <Choice value="squat"/>
+        <Choice value="lunge"/>
+        <Choice value="jumpingjack"/>
+        <Choice value="other"/>
+        <Choice value="mixed"/>
+    </Choices>
+</View>
