@@ -54,40 +54,17 @@ def main():
 
     print(data.head())
     print(data.shape)
-
-    import plotly.express
-
     print(data.classname.value_counts())
 
     out_dir = 'to_label'
 
+    # Write .CSV files, suitable for importing in Label Studio
     for idx, f in data.iterrows():
         d = f.data.sort_index()
         
         out_path = os.path.join(out_dir, idx+'.csv')
         d.to_csv(out_path)
         print('Wrote', out_path)
-
-        m = d.median()
-        print(list(m))
-
-        rel = (d - m)
-        diffed = d.diff(-1)
-
-        continue
-        
-        fig = plotly.express.line(rel.reset_index(),
-                x='time',
-                y=['x', 'y', 'z'],
-                title=f'{f.classname}: {idx}',
-        )
-        #fig.show()
-
-        #fig = plotly.express.scatter_3d(diffed, x='x', y='y', z='z', title=f'{f.classname}: {idx}')
-        #fig.show()
-
-        #fig = plotly.express.line(d.reset_index(), x='time', y=['x', 'y', 'z'])
-        #fig.show()
 
 if __name__ == '__main__':
     main()
