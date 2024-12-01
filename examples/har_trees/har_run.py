@@ -53,14 +53,20 @@ def main():
 
     model = emlearn_trees.new(10, 1000, 10)
 
+    dataset = 'har_uci'
+    dataset = 'har_exercise_1'
+
+    model_path = f'{dataset}_trees.csv'
+
     # Load a CSV file with the model
-    with open('har_uci_trees.csv', 'r') as f:
+    with open(model_path, 'r') as f:
         emlearn_trees.load_model(model, f)
 
 
     errors = 0
     total = 0
-    data_path = 'har_uci.testdata.npz'
+    data_path = f'{dataset}.testdata.npz'
+    print('har-run-load', data_path)
     for features, labels in har_load_test_data(data_path):
 
         assert len(labels) == 1

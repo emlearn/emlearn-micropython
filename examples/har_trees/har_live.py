@@ -16,12 +16,24 @@ def mean(arr):
 
 def main():
 
-    classname_index = {"LAYING": 0, "SITTING": 1, "STANDING": 2, "WALKING": 3, "WALKING_DOWNSTAIRS": 4, "WALKING_UPSTAIRS": 5}
+    dataset = 'har_exercise_1'
+    
+    if dataset == 'uci_har':
+        classname_index = {"LAYING": 0, "SITTING": 1, "STANDING": 2, "WALKING": 3, "WALKING_DOWNSTAIRS": 4, "WALKING_UPSTAIRS": 5}
+        window_length = 128
+    elif dataset == 'har_exercise_1':
+        classname_index = {"jumpingjack": 0, "lunge": 1, "other": 2, "squat": 3}
+        window_length = 256
+    else:
+        raise ValueError('Unknown dataset')
+
+    model_path = f'{dataset}_trees.csv'
     class_index_to_name = { v: k for k, v in classname_index.items() }
+
 
     # Load a CSV file with the model
     model = emlearn_trees.new(10, 1000, 10)
-    with open('har_uci_trees.csv', 'r') as f:
+    with open(model_path, 'r') as f:
         emlearn_trees.load_model(model, f)
 
     mpu = MPU6886(I2C(0, sda=21, scl=22, freq=100000))
@@ -30,8 +42,7 @@ def main():
     mpu.fifo_enable(True)
     mpu.set_odr(100)
 
-    window_length = 100
-    hop_length = 50
+    hop_length = 64
     chunk = bytearray(mpu.bytes_per_sample*hop_length)
 
     x_values = empty_array('h', hop_length)
