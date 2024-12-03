@@ -13,5 +13,5 @@
     ["fs:har_uci_trees.csv", "har_uci_trees.csv"],
     ["fs:har_uci.testdata.npz", "har_uci.testdata.npz"]
   ],
-  "deps": [["emlearn", "master"], ["https://github.com/jonnor/micropython-npyfile/", "master"], ["zipfile", "master"]]
+  "deps": [["emlearn", "master"], ["https://github.com/jonnor/micropython-npyfile", "master"], ["https://github.com/jonnor/micropython-zipfile", "master"], ["https://github.com/jonnor/micropython-mpu6886", "master"]]
 }
