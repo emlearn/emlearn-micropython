@@ -22,7 +22,7 @@ from sklearn.preprocessing import LabelEncoder
 log = structlog.get_logger()
 
 
-def evaluate(windows : pandas.DataFrame, groupby, hyperparameters,
+def evaluate(windows : pandas.DataFrame, groupby : str, hyperparameters : dict,
     random_state=1, n_splits=5, label_column='activity'):
 
     # Setup subject-based cross validation
@@ -46,9 +46,10 @@ def evaluate(windows : pandas.DataFrame, groupby, hyperparameters,
         verbose=2,
     )
 
-    feature_columns = sorted(set(windows.columns) - set([label_column]))
+    feature_columns = sorted(set(windows.columns) - set([label_column, groupby]))
     assert 'subject' not in feature_columns
     assert 'activity' not in feature_columns
+    assert 'file' not in feature_columns
     X = windows[feature_columns]
     Y = windows[label_column]
     groups = windows.index.get_level_values(groupby)
