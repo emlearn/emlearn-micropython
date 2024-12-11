@@ -27,7 +27,6 @@ def print_2d_buffer(arr, rowstride):
 def setup_camera():
 
     # Pin configuration for LilyGO TTGO LilyGO TTGO T-Camera Mic ESP32
-
     DATA_PINS = [
         34,
         13,
@@ -39,17 +38,34 @@ def setup_camera():
         36,
     ]
 
+    # FIXME: set up camera power using the PMU
+    # https://github.com/Xinyuan-LilyGO/LilyGo-Cam-ESP32S3/blob/master/examples/MinimalPowersExample/MinimalPowersExample.ino
+    # https://github.com/CDarius/CircuitPython_AXP2101/blob/main/axp2101.py
+    # https://github.com/Xinyuan-LilyGO/LilyGo-Cam-ESP32S3/tree/master
+
+    # T-Camera S3
+    DATA_PINS = [
+        14,
+        47,
+        48,
+        21,
+        13,
+        11,
+        10,
+        9,
+    ]
+
     camera = Camera(
         data_pins=DATA_PINS,
-        vsync_pin=5,
-        href_pin=27,
-        sda_pin=18, # XXX: is the I2C correct?
-        scl_pin=23,
-        pclk_pin=25,
-        xclk_pin=4,
+        vsync_pin=8,
+        href_pin=18,
+        sda_pin=5, # XXX: is the I2C correct?
+        scl_pin=4,
+        pclk_pin=12,
+        xclk_pin=38,
         xclk_freq=20000000,
         powerdown_pin=-1,
-        reset_pin=-1,
+        reset_pin=39,
         pixel_format=PixelFormat.GRAYSCALE,
         frame_size=FrameSize.R96X96,
         jpeg_quality=15,
