@@ -24,18 +24,6 @@ def downscale(inp, out, in_size : int, out_size : int):
     for row in range(out_size):
         for col in range(out_size):
             o : int = (row * out_size) + col
-
-            #acc : int = 0
-            #size : int = factor
-            #x : int = col*factor
-            #y : int = row*factor
-            #rowstride = in_size
-            #for r in range(y, y+size):
-            #    for c in range(x, x+size):
-            #        acc += inp[(r*rowstride)+c]
-            #avg = acc // (size*size)
-            #out[o] = avg
-
             out[o] = average2d(inp, in_size, col*factor, row*factor, factor)
 
 
