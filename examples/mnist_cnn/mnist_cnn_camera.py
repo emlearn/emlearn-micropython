@@ -1,10 +1,12 @@
 
 
 import time
+import array
 
 # Using https://github.com/cnadler86/micropython-camera-API for ESP32 with OV2640 camera
 from camera import Camera, GrabMode, PixelFormat, FrameSize, GainCeiling
 
+import downscale
 
 def print_2d_buffer(arr, rowstride):
 
@@ -99,6 +101,9 @@ def main():
 
     image_no = 0
 
+    process_size = 32
+    scaled = array.array('B', (0 for _ in range(process_size*process_size)))
+
     while True:
 
         capture_start = time.ticks_ms()
@@ -119,9 +124,16 @@ def main():
         print('mean', mean)
 
         path = f'img{image_no}.bmp'
-        save_image(path, buf, width, height)
+        #save_image(path, buf, width, height)
         #print_2d_buffer(buf, 96)
-        print('Saved', path)
+        #print('Saved', path)
+
+        # Downscale
+        downscale_start = time.ticks_ms()
+        downscale.downscale(buf, scaled, width, process_size)
+        downscale_duration = time.ticks_diff(time.ticks_ms(), downscale_start)
+        print('downscale', downscale_duration)
+        # TODO: run CNN inference
 
         image_no += 1
         time.sleep(5.0)
