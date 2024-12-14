@@ -118,7 +118,7 @@ static mp_obj_t mod_cnn_new(mp_obj_t model_data_obj) {
     // will set the dimensions of the input matrix
     tm_err_t load_err = tm_load(model, o->model_buffer, o->data_buffer, layer_cb, &o->input);
     if (load_err != TM_OK) {
-        mp_raise_msg(&mp_type_RuntimeError, MP_ERROR_TEXT("eml_fft_forward error"));
+        mp_raise_msg(&mp_type_RuntimeError, MP_ERROR_TEXT("tm_load error"));
     }
 
     return MP_OBJ_FROM_PTR(o);
