@@ -34,39 +34,31 @@ void NORETURN abort() {
 }
 #endif
 
+// get model output shapes
+//mdl: model handle; in: input mat; out: output mat
+int TM_WEAK tm_get_outputs(tm_mdl_t* mdl, tm_mat_t* out, int out_length)
+{
+    // NOTE: based on tm_run, but without actually executing
+    int out_idx = 0;
+    mdl->layer_body = mdl->b->layers_body;
+    for(mdl->layer_i = 0; mdl->layer_i < mdl->b->layer_cnt; mdl->layer_i++){
+        tml_head_t* h = (tml_head_t*)(mdl->layer_body);
+        if(h->is_out) {
+            if (out_idx < out_length) {
+                memcpy((void*)(&out[out_idx]), (void*)(&(h->out_dims)), sizeof(uint16_t)*4);
+                out_idx += 1;
+            } else {
+                return -1;
+            }
+        }
+        mdl->layer_body += (h->size);
+    }
+    return out_idx;
+}
 
 static tm_err_t layer_cb(tm_mdl_t* mdl, tml_head_t* lh)
-{  
-#if 0
-    //dump middle result
-    int h = lh->out_dims[1];
-    int w = lh->out_dims[2];
-    int ch= lh->out_dims[3];
-    mtype_t* output = TML_GET_OUTPUT(mdl, lh);
+{
     return TM_OK;
-    TM_PRINTF("Layer %d callback ========\n", mdl->layer_i);
-    #if 1
-    for(int y=0; y<h; y++){
-        TM_PRINTF("[");
-        for(int x=0; x<w; x++){
-            TM_PRINTF("[");
-            for(int c=0; c<ch; c++){
-            #if TM_MDL_TYPE == TM_MDL_FP32
-                TM_PRINTF("%.3f,", output[(y*w+x)*ch+c]);
-            #else
-                TM_PRINTF("%.3f,", TML_DEQUANT(lh,output[(y*w+x)*ch+c]));
-            #endif
-            }
-            TM_PRINTF("],");
-        }
-        TM_PRINTF("],\n");
-    }
-    TM_PRINTF("\n");
-    #endif
-    return TM_OK;
-#else
-    return TM_OK;
-#endif
 }
 
 #define DEBUG (1)
@@ -79,6 +71,7 @@ typedef struct _mp_obj_mod_cnn_t {
     tm_mat_t input;
     uint8_t *model_buffer;
     uint8_t *data_buffer;
+    uint16_t out_dims[4];
 } mp_obj_mod_cnn_t;
 
 mp_obj_full_type_t mod_cnn_type;
@@ -121,6 +114,25 @@ static mp_obj_t mod_cnn_new(mp_obj_t model_data_obj) {
         mp_raise_msg(&mp_type_RuntimeError, MP_ERROR_TEXT("tm_load error"));
     }
 
+    // find model output shape
+    o->out_dims[0] = 0;
+    tm_mat_t outs[1];
+    const int outputs = tm_get_outputs(model, outs, 1);
+    if (outputs != 1) {
+        mp_raise_msg(&mp_type_RuntimeError, MP_ERROR_TEXT("only 1 output supported"));
+    }
+    memcpy((void*)(o->out_dims), (void*)(&(outs[0])), sizeof(uint16_t)*4);
+
+    if ((o->out_dims[0] != 1)) {
+        mp_raise_msg(&mp_type_RuntimeError, MP_ERROR_TEXT("output must be 1d"));
+    }
+    memcpy((void*)(o->out_dims), (void*)(&(outs[0])), sizeof(uint16_t)*4);
+
+#if DEBUG
+    mp_printf(&mp_plat_print, "cnn-new-done outs=%d out.dims=(%d,%d,%d,%d) \n",
+        outputs, o->out_dims[0], o->out_dims[1], o->out_dims[2], o->out_dims[3]);
+#endif
+
     return MP_OBJ_FROM_PTR(o);
 }
 static MP_DEFINE_CONST_FUN_OBJ_1(mod_cnn_new_obj, mod_cnn_new);
@@ -141,7 +153,7 @@ static MP_DEFINE_CONST_FUN_OBJ_1(mod_cnn_del_obj, mod_cnn_del);
 
 
 // Add a node to the tree
-static mp_obj_t mod_cnn_run(mp_obj_t self_obj, mp_obj_t input_obj) {
+static mp_obj_t mod_cnn_run(mp_obj_t self_obj, mp_obj_t input_obj, mp_obj_t output_obj) {
 
     mp_obj_mod_cnn_t *o = MP_OBJ_TO_PTR(self_obj);
 
@@ -149,7 +161,7 @@ static mp_obj_t mod_cnn_run(mp_obj_t self_obj, mp_obj_t input_obj) {
     mp_buffer_info_t bufinfo;
     mp_get_buffer_raise(input_obj, &bufinfo, MP_BUFFER_RW);
     if (bufinfo.typecode != 'B') {
-        mp_raise_ValueError(MP_ERROR_TEXT("expecting float array"));
+        mp_raise_ValueError(MP_ERROR_TEXT("expecting byte array"));
     }
     uint8_t *input_buffer = bufinfo.buf;
     const int input_length = bufinfo.len / sizeof(*input_buffer);
@@ -158,6 +170,21 @@ static mp_obj_t mod_cnn_run(mp_obj_t self_obj, mp_obj_t input_obj) {
     const int expect_length = o->input.h * o->input.w * o->input.c;
     if (input_length != expect_length) {
         mp_raise_ValueError(MP_ERROR_TEXT("wrong input size"));
+    }
+
+    // Extract output
+    mp_get_buffer_raise(output_obj, &bufinfo, MP_BUFFER_RW);
+    if (bufinfo.typecode != 'f') {
+        mp_raise_ValueError(MP_ERROR_TEXT("expecting float array"));
+    }
+    float *output_buffer = bufinfo.buf;
+    const int output_length = bufinfo.len / sizeof(*output_buffer);
+
+
+    // check buffer size wrt input
+    const int expect_out_length = o->out_dims[1]*o->out_dims[2]*o->out_dims[3];
+    if (output_length != expect_out_length) {
+        mp_raise_ValueError(MP_ERROR_TEXT("wrong output size"));
     }
 
     // Preprocess data
@@ -181,27 +208,38 @@ static mp_obj_t mod_cnn_run(mp_obj_t self_obj, mp_obj_t input_obj) {
         mp_raise_ValueError(MP_ERROR_TEXT("run error"));
     }
 
+    // Copy output into
     tm_mat_t out = outs[0];
-    float* data  = out.dataf;
-    float maxp = 0;
-    int maxi = -1;
-
-    // TODO: pass the entire output vector out to Python
-    // FIXME: unhardcode output handling
-    for(int i=0; i<10; i++){
-        //printf("%d: %.3f\n", i, data[i]);
-        if (data[i] > maxp) {
-            maxi = i;
-            maxp = data[i];
-        }
+    for(int i=0; i<expect_out_length; i++){
+        output_buffer[i] = out.dataf[i];
     }
 
-    return mp_obj_new_int(maxi);
+    return mp_const_none;
 }
-static MP_DEFINE_CONST_FUN_OBJ_2(mod_cnn_run_obj, mod_cnn_run);
+static MP_DEFINE_CONST_FUN_OBJ_3(mod_cnn_run_obj, mod_cnn_run);
 
 
-mp_map_elem_t mod_locals_dict_table[2];
+// Return the shape of the output
+static mp_obj_t mod_cnn_output_dimensions(mp_obj_t self_obj) {
+
+    mp_obj_mod_cnn_t *o = MP_OBJ_TO_PTR(self_obj);
+    const int dimensions = o->out_dims[0];
+    mp_obj_tuple_t *tuple = MP_OBJ_TO_PTR(mp_obj_new_tuple(dimensions, NULL));
+
+    // A regular output should have C channels, and 1 for everything else
+    // TODO: support other shapes?
+    //dims==1, 11c
+    if (!(o->out_dims[0] == 1 && o->out_dims[1] == 1 && o->out_dims[2] == 1)) {
+        mp_raise_msg(&mp_type_RuntimeError, MP_ERROR_TEXT("wrong output shape"));
+    }
+
+    tuple->items[0] = mp_obj_new_int(o->out_dims[3]);
+    return tuple;
+}
+static MP_DEFINE_CONST_FUN_OBJ_1(mod_cnn_output_dimensions_obj, mod_cnn_output_dimensions);
+
+
+mp_map_elem_t mod_locals_dict_table[3];
 static MP_DEFINE_CONST_DICT(mod_locals_dict, mod_locals_dict_table);
 
 // This is the entry point and is called when the module is imported
@@ -217,6 +255,7 @@ mp_obj_t mpy_init(mp_obj_fun_bc_t *self, size_t n_args, size_t n_kw, mp_obj_t *a
     // methods
     mod_locals_dict_table[0] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR_run), MP_OBJ_FROM_PTR(&mod_cnn_run_obj) };
     mod_locals_dict_table[1] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR___del__), MP_OBJ_FROM_PTR(&mod_cnn_del_obj) };
+    mod_locals_dict_table[2] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR_output_dimensions), MP_OBJ_FROM_PTR(&mod_cnn_output_dimensions_obj) };
 
     MP_OBJ_TYPE_SET_SLOT(&mod_cnn_type, locals_dict, (void*)&mod_locals_dict, 2);
 
