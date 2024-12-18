@@ -34,29 +34,30 @@ void NORETURN abort() {
 }
 #endif
 
-// Global variable to capture data from layer_cb
-uint16_t *g_out_dims = NULL;
+// get model output shapes
+//mdl: model handle; in: input mat; out: output mat
+int TM_WEAK tm_get_outputs(tm_mdl_t* mdl, tm_mat_t* out, int out_length)
+{
+    // NOTE: based on tm_run, but without actually executing
+    int out_idx = 0;
+    mdl->layer_body = mdl->b->layers_body;
+    for(mdl->layer_i = 0; mdl->layer_i < mdl->b->layer_cnt; mdl->layer_i++){
+        tml_head_t* h = (tml_head_t*)(mdl->layer_body);
+        if(h->is_out) {
+            if (out_idx < out_length) {
+                memcpy((void*)(&out[out_idx]), (void*)(&(h->out_dims)), sizeof(uint16_t)*4);
+                out_idx += 1;
+            } else {
+                return -1;
+            }
+        }
+        mdl->layer_body += (h->size);
+    }
+    return out_idx;
+}
 
-// XXX: caller must set g_out_dims
 static tm_err_t layer_cb(tm_mdl_t* mdl, tml_head_t* lh)
 {
-    const int h = lh->out_dims[1];
-    const int w = lh->out_dims[2];
-    const int ch= lh->out_dims[3];
-    const bool is_out = lh->is_out;
-
-#if DEBUG
-    mp_printf(&mp_plat_print,
-        "cnn-layer-cb is_out=%d h=%d w=%d ch=%d size=%d \n",
-        (int)is_out, h, w, ch);
-#endif
-
-    if (is_out) {
-        for (int i=0; i<4; i++) {
-            g_out_dims[i] = lh->out_dims[i];
-        }
-
-    }
     return TM_OK;
 }
 
@@ -108,15 +109,28 @@ static mp_obj_t mod_cnn_new(mp_obj_t model_data_obj) {
 
     // loading model
     // will set the dimensions of the input matrix
-    o->out_dims[0] = 0;
-    g_out_dims = o->out_dims;
     tm_err_t load_err = tm_load(model, o->model_buffer, o->data_buffer, layer_cb, &o->input);
     if (load_err != TM_OK) {
         mp_raise_msg(&mp_type_RuntimeError, MP_ERROR_TEXT("tm_load error"));
     }
 
+    // find model output shape
+    o->out_dims[0] = 0;
+    tm_mat_t outs[1];
+    const int outputs = tm_get_outputs(model, outs, 1);
+    if (outputs != 1) {
+        mp_raise_msg(&mp_type_RuntimeError, MP_ERROR_TEXT("only 1 output supported"));
+    }
+    memcpy((void*)(o->out_dims), (void*)(&(outs[0])), sizeof(uint16_t)*4);
+
+    if ((o->out_dims[0] != 1)) {
+        mp_raise_msg(&mp_type_RuntimeError, MP_ERROR_TEXT("output must be 1d"));
+    }
+    memcpy((void*)(o->out_dims), (void*)(&(outs[0])), sizeof(uint16_t)*4);
+
 #if DEBUG
-    mp_printf(&mp_plat_print, "cnn-new-done out.dims=%d \n", o->out_dims[0]);
+    mp_printf(&mp_plat_print, "cnn-new-done outs=%d out.dims=(%d,%d,%d,%d) \n",
+        outputs, o->out_dims[0], o->out_dims[1], o->out_dims[2], o->out_dims[3]);
 #endif
 
     return MP_OBJ_FROM_PTR(o);
@@ -212,9 +226,14 @@ static mp_obj_t mod_cnn_output_dimensions(mp_obj_t self_obj) {
     const int dimensions = o->out_dims[0];
     mp_obj_tuple_t *tuple = MP_OBJ_TO_PTR(mp_obj_new_tuple(dimensions, NULL));
 
-    for (int i=0; i<dimensions; i++) {
-        tuple->items[i] = mp_obj_new_int(o->out_dims[i+1]);
+    // A regular output should have C channels, and 1 for everything else
+    // TODO: support other shapes?
+    //dims==1, 11c
+    if (!(o->out_dims[0] == 1 && o->out_dims[1] == 1 && o->out_dims[2] == 1)) {
+        mp_raise_msg(&mp_type_RuntimeError, MP_ERROR_TEXT("wrong output shape"));
     }
+
+    tuple->items[0] = mp_obj_new_int(o->out_dims[3]);
     return tuple;
 }
 static MP_DEFINE_CONST_FUN_OBJ_1(mod_cnn_output_dimensions_obj, mod_cnn_output_dimensions);
