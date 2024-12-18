@@ -7,6 +7,16 @@ import gc
 MODEL = 'mnist_cnn.tmdl'
 TEST_DATA_DIR = 'data/'
 
+def argmax(arr):
+    idx_max = 0
+    value_max = arr[0]
+    for i in range(1, len(arr)):
+        if arr[i] > value_max:
+            value_max = arr[i]
+            idx_max = i
+
+    return idx_max
+
 def print_2d_buffer(arr, rowstride):
 
     rows = len(arr) // rowstride
@@ -28,6 +38,9 @@ def test_cnn_mnist():
         model_data = array.array('B', f.read())
         model = emlearn_cnn.new(model_data)
 
+    out_length = model.output_dimensions()[0]
+    probabilities = array.array('f', (-1 for _ in range(out_length)))
+
     # run on some test data
     for class_no in range(0, 10):
         data_path = TEST_DATA_DIR + 'mnist_example_{0:d}.bin'.format(class_no)
@@ -38,7 +51,8 @@ def test_cnn_mnist():
             print_2d_buffer(img, 28)
 
             run_start = time.ticks_us()
-            out = model.run(img)
+            model.run(img, probabilities)
+            out = argmax(probabilities)
             run_duration = time.ticks_diff(time.ticks_us(), run_start) / 1000.0 # ms
 
             print('mnist-example-check', class_no, out, class_no == out, run_duration)
