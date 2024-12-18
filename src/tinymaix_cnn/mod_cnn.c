@@ -129,8 +129,9 @@ static mp_obj_t mod_cnn_new(mp_obj_t model_data_obj) {
     memcpy((void*)(o->out_dims), (void*)(&(outs[0])), sizeof(uint16_t)*4);
 
 #if DEBUG
-    mp_printf(&mp_plat_print, "cnn-new-done outs=%d out.dims=(%d,%d,%d,%d) \n",
-        outputs, o->out_dims[0], o->out_dims[1], o->out_dims[2], o->out_dims[3]);
+    mp_printf(&mp_plat_print, "cnn-new-done in.dims=(%d,%d,%d,%d) out.dims=(%d,%d,%d,%d) \n",
+        o->input.dims, o->input.h, o->input.w, o->input.c,
+        o->out_dims[0], o->out_dims[1], o->out_dims[2], o->out_dims[3]);
 #endif
 
     return MP_OBJ_FROM_PTR(o);
