@@ -12,6 +12,9 @@ def test_cnn_create():
         model_data = array.array('B', f.read())
         model = emlearn_cnn.new(model_data)
 
+        out_shape = model.output_dimensions()
+        assert out_shape == (10,)
+
         # TODO: enable these checks
         #wrong_type = array.array('f', [])
         #model.run(wrong_type)
