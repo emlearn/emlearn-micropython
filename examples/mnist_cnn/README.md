@@ -55,7 +55,7 @@ mpremote mip install https://emlearn.github.io/emlearn-micropython/builds/master
 
 ```console
 mpremote cp mnist_cnn.tmdl :
-mpremote cp -r data/ :
+mpremote cp -r test_data/ :
 mpremote run mnist_cnn_run.py
 ```
 
