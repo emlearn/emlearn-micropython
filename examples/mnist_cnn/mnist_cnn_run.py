@@ -1,11 +1,13 @@
 
+import os
 import array
-import emlearn_cnn
 import time
 import gc
 
+import emlearn_cnn
+
 MODEL = 'mnist_cnn.tmdl'
-TEST_DATA_DIR = 'data/'
+TEST_DATA_DIR = 'test_data'
 
 def argmax(arr):
     idx_max = 0
@@ -30,6 +32,27 @@ def print_2d_buffer(arr, rowstride):
         gc.collect()
         print('\n')
 
+def load_images_from_directory(path):
+    sep = '/'
+
+    for filename in os.listdir(path):
+        # TODO: support standard image formats, like .bmp/.png/.jpeg
+        if not filename.endswith('.bin'):
+            continue
+
+        # Find the label (if any). The last part, X_label.format
+        label = None
+        basename = filename.split('.')[0]
+        tok = basename.split('_')
+        if len(tok) > 2:
+            label = tok[-1]
+
+        data_path = path + sep + filename
+        with open(data_path, 'rb') as f:
+            img = array.array('B', f.read())
+
+            yield img, label
+
 def test_cnn_mnist():
 
     # load model
@@ -42,22 +65,28 @@ def test_cnn_mnist():
     probabilities = array.array('f', (-1 for _ in range(out_length)))
 
     # run on some test data
-    for class_no in range(0, 10):
-        data_path = TEST_DATA_DIR + 'mnist_example_{0:d}.bin'.format(class_no)
-        #print('open', data_path)
-        with open(data_path, 'rb') as f:
-            img = array.array('B', f.read())
+    n_correct = 0
+    n_total = 0
+    for img, label in load_images_from_directory(TEST_DATA_DIR):
+        class_no = int(label) # mnist class labels are digits
 
-            print_2d_buffer(img, 28)
+        #print_2d_buffer(img, 28)
 
-            run_start = time.ticks_us()
-            model.run(img, probabilities)
-            out = argmax(probabilities)
-            run_duration = time.ticks_diff(time.ticks_us(), run_start) / 1000.0 # ms
+        run_start = time.ticks_us()
+        model.run(img, probabilities)
+        out = argmax(probabilities)
+        run_duration = time.ticks_diff(time.ticks_us(), run_start) / 1000.0 # ms
+        correct = class_no == out
+        n_total += 1
+        if correct:
+            n_correct += 1
 
-            print('mnist-example-check', class_no, out, class_no == out, run_duration)
+        print('mnist-example-check', class_no, '=', out, correct, round(run_duration, 3))
         
         gc.collect()
+
+    accuracy = n_correct / n_total
+    print('mnist-example-done', n_correct, '/', n_total, round(accuracy*100, ), '%')
 
 if __name__ == '__main__':
     test_cnn_mnist()
