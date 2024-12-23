@@ -7,10 +7,13 @@
 #include <tinymaix.h>
 
 #include "tm_layers.c"
+//#include "tm_layers_O1.c"
 #include "tm_model.c"
 //#include "tm_stat.c"
 
 #include <string.h>
+
+#define DEBUG (1)
 
 
 // memset is used by some standard C constructs
@@ -58,10 +61,13 @@ int TM_WEAK tm_get_outputs(tm_mdl_t* mdl, tm_mat_t* out, int out_length)
 
 static tm_err_t layer_cb(tm_mdl_t* mdl, tml_head_t* lh)
 {
+#if DEBUG
+    mp_printf(&mp_plat_print, "cnn-layer-cb type=%d \n", lh->type);
+#endif
+
     return TM_OK;
 }
 
-#define DEBUG (1)
 
 // MicroPython type
 typedef struct _mp_obj_mod_cnn_t {
@@ -209,12 +215,22 @@ static mp_obj_t mod_cnn_run(mp_obj_t self_obj, mp_obj_t input_obj, mp_obj_t outp
         mp_raise_ValueError(MP_ERROR_TEXT("run error"));
     }
 
-    // Copy output into
+    // Copy output
     tm_mat_t out = outs[0];
+
+#if DEBUG
+    mp_printf(&mp_plat_print, "cnn-run out.dims=(%d,%d,%d,%d) out.length=%d expect_length=%d \n",
+        out.dims, out.h, out.w, out.c, expect_out_length
+    );
+#endif
+
+    if (!((out.dims == 1) && (out.h == 1) && (out.w == 1) && out.c == expect_out_length)) {   
+        mp_raise_msg(&mp_type_RuntimeError, MP_ERROR_TEXT("unexpected output dims"));
+    }
+
     for(int i=0; i<expect_out_length; i++){
         output_buffer[i] = out.dataf[i];
     }
-
     return mp_const_none;
 }
 static MP_DEFINE_CONST_FUN_OBJ_3(mod_cnn_run_obj, mod_cnn_run);

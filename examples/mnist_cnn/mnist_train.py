@@ -40,7 +40,9 @@ def train_mnist(h5_file, epochs=10):
     (x_orig_train, y_orig_train), (x_orig_test, y_orig_test) = mnist.load_data() 
     num_classes = 10
 
-    generate_test_files('test_data', x_orig_test, y_orig_test)
+    TEST_DATA_DIR = 'test_data'
+    generate_test_files(TEST_DATA_DIR, x_orig_test, y_orig_test)
+    print('Wrote test data to', TEST_DATA_DIR)
 
     x_train = x_orig_train
     x_test = x_orig_test
@@ -58,7 +60,7 @@ def train_mnist(h5_file, epochs=10):
 
     model.save(h5_file)
 
-def generate_test_files(out_dir, x, y):
+def generate_test_files(out_dir, x, y, samples_per_class=5):
 
     if not os.path.exists(out_dir):
         os.makedirs(out_dir)
@@ -71,15 +73,12 @@ def generate_test_files(out_dir, x, y):
     # select one per class
     for class_no in classes:
         matches = (Y_classes == class_no)
-        print('mm', matches.shape)
         x_matches = X_series[matches]
 
-        selected = x_matches.sample(n=1, random_state=1)
-        for s in selected:
-            print('ss', s.shape, s.dtype)
-            print(s)
-            out = os.path.join(out_dir, f'mnist_example_{class_no}.bin')
-            data = s.tobytes(order='C')
+        selected = x_matches.sample(n=samples_per_class, random_state=1)
+        for i, sample in enumerate(selected):
+            out = os.path.join(out_dir, f'mnist_example_{i}_{class_no}.bin')
+            data = sample.tobytes(order='C')
 
             assert len(data) == expect_bytes, (len(data), expect_bytes)
             with open(out, 'wb') as f:
@@ -94,8 +93,9 @@ def generate_tinymaix_model(h5_file,
         precision='fp32',
         quantize_data=None,
         quantize_type='0to1',
-        output_dequantize=False,
     ):
+
+    output_dequantize = quantize_data is not None
 
     # Convert .h5 to .tflite file
     assert h5_file.endswith('.h5'), 'Keras model HDF5 file must end with .h5'
