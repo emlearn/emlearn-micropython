@@ -156,8 +156,8 @@ def main():
     tinymaix_tools_dir = '../../dependencies/TinyMaix/tools'
     assert os.path.exists(tinymaix_tools_dir), tinymaix_tools_dir
 
-    quantize_data = None # disables quantization
     quantize_data = os.path.join(tinymaix_tools_dir, 'quant_img_mnist/')
+    quantize_data = None # disables quantization
     if quantize_data is not None:
         assert os.path.exists(quantize_data)
     precision = 'int8' if quantize_data else 'fp32'
