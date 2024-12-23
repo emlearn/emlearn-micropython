@@ -93,8 +93,9 @@ def generate_tinymaix_model(h5_file,
         precision='fp32',
         quantize_data=None,
         quantize_type='0to1',
-        output_dequantize=False,
     ):
+
+    output_dequantize = quantize_data is not None
 
     # Convert .h5 to .tflite file
     assert h5_file.endswith('.h5'), 'Keras model HDF5 file must end with .h5'
