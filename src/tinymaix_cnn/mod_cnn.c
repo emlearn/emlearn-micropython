@@ -219,7 +219,7 @@ static mp_obj_t mod_cnn_run(mp_obj_t self_obj, mp_obj_t input_obj, mp_obj_t outp
     tm_mat_t out = outs[0];
 
 #if DEBUG
-    mp_printf(&mp_plat_print, "cnn-run out.dims=(%d,%d,%d,%d) out.length=%d expect_length=%d \n",
+    mp_printf(&mp_plat_print, "cnn-run out.dims=(%d,%d,%d,%d) expect_length=%d \n",
         out.dims, out.h, out.w, out.c, expect_out_length
     );
 #endif
