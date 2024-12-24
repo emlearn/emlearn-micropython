@@ -4,6 +4,16 @@ import emlearn_trees
 import array
 import gc
 
+def argmax(arr):
+    idx_max = 0
+    value_max = arr[0]
+    for i in range(1, len(arr)):
+        if arr[i] > value_max:
+            value_max = arr[i]
+            idx_max = i
+
+    return idx_max
+
 def test_trees_del():
     """
     Deleting the model should free all the memory
@@ -45,9 +55,12 @@ def test_trees_xor():
         ( [1*s, 0], 1 ),
     ]
 
+    out = array.array('f', range(model.outputs()))
+
     for (ex, expect) in examples:
         f = array.array('h', ex)
-        result = model.predict(f)
+        model.predict(f, out)
+        result = argmax(out)
         assert result == expect, (ex, expect, result)
 
 test_trees_del()
