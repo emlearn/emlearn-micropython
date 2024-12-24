@@ -73,7 +73,7 @@ def test_cnn_mnist():
             if out == class_no:
                 correct += 1            
 
-    assert correct >= 6, correct
+    assert correct >= 9, correct
 
 
 test_cnn_create()
