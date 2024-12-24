@@ -233,7 +233,7 @@ static mp_obj_t builder_predict(mp_obj_t self_obj, mp_obj_t features_obj, mp_obj
 
 #if EMLEARN_MICROPYTHON_DEBUG
     mp_printf(&mp_plat_print,
-        "emltrees-predict n_features=%d n_classes=%d leaves=%d nodes=%d trees=%d length=%d outputs=%d \n",
+        "emltrees-predict n_features=%d n_classes=%d leaves=%d nodes=%d trees=%d length=%d \n",
         self->trees.n_features, self->trees.n_classes,
         self->trees.n_leaves, self->trees.n_nodes, self->trees.n_trees,
         n_features
