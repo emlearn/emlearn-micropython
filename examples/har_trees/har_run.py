@@ -6,6 +6,16 @@ import npyfile
 import emlearn_trees
 import timebased
 
+def argmax(arr):
+    idx_max = 0
+    value_max = arr[0]
+    for i in range(1, len(arr)):
+        if arr[i] > value_max:
+            value_max = arr[i]
+            idx_max = i
+
+    return idx_max
+
 def har_load_test_data(path,
         skip_samples=0, limit_samples=None):
  
@@ -63,6 +73,7 @@ def main():
     with open(model_path, 'r') as f:
         emlearn_trees.load_model(model, f)
 
+    out = array.array('f', range(model.outputs()))
 
     errors = 0
     total = 0
@@ -72,7 +83,8 @@ def main():
 
         assert len(labels) == 1
         label = labels[0]
-        result = model.predict(features)
+        model.predict(features, out)
+        result = argmax(out)
         if result != label:
             errors += 1
         total += 1

@@ -197,8 +197,25 @@ static mp_obj_t builder_addleaf(mp_obj_t self_obj, mp_obj_t leaf_obj) {
 static MP_DEFINE_CONST_FUN_OBJ_2(builder_addleaf_obj, builder_addleaf);
 
 
+// Return the shape of the output
+static mp_obj_t builder_get_outputs(mp_obj_t self_obj) {
+
+    mp_obj_trees_builder_t *o = MP_OBJ_TO_PTR(self_obj);
+    EmlTreesBuilder *self = &o->builder;
+
+    const int n_classes = self->trees.n_classes;
+    if (n_classes == 0) {
+        mp_raise_ValueError(MP_ERROR_TEXT("model not loaded"));
+    }
+
+    return mp_obj_new_int(n_classes);
+}
+static MP_DEFINE_CONST_FUN_OBJ_1(builder_get_outputs_obj, builder_get_outputs);
+
+
+
 // Takes a array of input data
-static mp_obj_t builder_predict(mp_obj_t self_obj, mp_obj_t features_obj) {
+static mp_obj_t builder_predict(mp_obj_t self_obj, mp_obj_t features_obj, mp_obj_t output_obj) {
 
     mp_obj_trees_builder_t *o = MP_OBJ_TO_PTR(self_obj);
     EmlTreesBuilder *self = &o->builder;    
@@ -212,28 +229,45 @@ static mp_obj_t builder_predict(mp_obj_t self_obj, mp_obj_t features_obj) {
 
     const int16_t *features = bufinfo.buf;
     const int n_features = bufinfo.len / sizeof(*features);
+    const int n_outputs = self->trees.n_classes;
 
 #if EMLEARN_MICROPYTHON_DEBUG
     mp_printf(&mp_plat_print,
-        "emltrees-predict n_features=%d n_classes=%d leaves=%d nodes=%d trees=%d length=%d \n",
+        "emltrees-predict n_features=%d n_classes=%d leaves=%d nodes=%d trees=%d length=%d outputs=%d \n",
         self->trees.n_features, self->trees.n_classes,
         self->trees.n_leaves, self->trees.n_nodes, self->trees.n_trees,
         n_features
     );
 #endif
 
-    // call model
-    const int result = eml_trees_predict(&self->trees, features, n_features);
-    if (result < 0) {
-        mp_raise_msg(&mp_type_RuntimeError, MP_ERROR_TEXT("eml_trees_predict error"));
+    if (n_features == 0 || n_outputs == 0) {        
+        mp_raise_ValueError(MP_ERROR_TEXT("model not loaded"));
     }
 
-    return mp_obj_new_int(result);
+    // Extract output
+    mp_get_buffer_raise(output_obj, &bufinfo, MP_BUFFER_RW);
+    if (bufinfo.typecode != 'f') {
+        mp_raise_ValueError(MP_ERROR_TEXT("expecting float output array"));
+    }
+    float *output_buffer = bufinfo.buf;
+    const int output_length = bufinfo.len / sizeof(*output_buffer);
+
+
+    // call model
+    // NOTE: also handles checking of input and output lengths
+    const EmlError err = \
+        eml_trees_predict_proba(&self->trees, features, n_features, output_buffer, output_length);
+
+    if (err != EmlOk) {
+        mp_raise_msg(&mp_type_RuntimeError, MP_ERROR_TEXT("eml_trees_predict_proba error"));
+    }
+
+    return mp_const_none;
 }
-static MP_DEFINE_CONST_FUN_OBJ_2(builder_predict_obj, builder_predict);
+static MP_DEFINE_CONST_FUN_OBJ_3(builder_predict_obj, builder_predict);
 
 
-mp_map_elem_t trees_locals_dict_table[6];
+mp_map_elem_t trees_locals_dict_table[7];
 static MP_DEFINE_CONST_DICT(trees_locals_dict, trees_locals_dict_table);
 
 // This is the entry point and is called when the module is imported
@@ -253,8 +287,9 @@ mp_obj_t mpy_init(mp_obj_fun_bc_t *self, size_t n_args, size_t n_kw, mp_obj_t *a
     trees_locals_dict_table[3] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR_addleaf), MP_OBJ_FROM_PTR(&builder_addleaf_obj) };
     trees_locals_dict_table[4] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR___del__), MP_OBJ_FROM_PTR(&builder_del_obj) };
     trees_locals_dict_table[5] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR_setdata), MP_OBJ_FROM_PTR(&builder_setdata_obj) };
+    trees_locals_dict_table[6] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR_outputs), MP_OBJ_FROM_PTR(&builder_get_outputs_obj) };
 
-    MP_OBJ_TYPE_SET_SLOT(&trees_builder_type, locals_dict, (void*)&trees_locals_dict, 6);
+    MP_OBJ_TYPE_SET_SLOT(&trees_builder_type, locals_dict, (void*)&trees_locals_dict, 7);
 
     // This must be last, it restores the globals dict
     MP_DYNRUNTIME_INIT_EXIT

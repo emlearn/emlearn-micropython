@@ -15,6 +15,16 @@ def mean(arr):
     m = sum(arr) / float(len(arr))
     return m
 
+def argmax(arr):
+    idx_max = 0
+    value_max = arr[0]
+    for i in range(1, len(arr)):
+        if arr[i] > value_max:
+            value_max = arr[i]
+            idx_max = i
+
+    return idx_max
+
 def copy_array_into(source, target):
     assert len(source) == len(target)
     for i in range(len(target)):
@@ -63,6 +73,7 @@ def main():
     features_typecode = timebased.DATA_TYPECODE
     n_features = timebased.N_FEATURES
     features = array.array(features_typecode, (0 for _ in range(n_features)))
+    out = array.array('f', range(model.outputs()))
 
     while True:
 
@@ -87,7 +98,8 @@ def main():
 
                 # Cun classifier
                 #print(features)
-                result = model.predict(features)
+                model.predict(features, out)
+                result = argmax(out)
                 activity = class_index_to_name[result]
 
                 d = time.ticks_diff(time.ticks_ms(), start)
