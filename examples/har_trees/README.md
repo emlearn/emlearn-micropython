@@ -18,9 +18,10 @@ Working. Tested running on ESP32 with MicroPython 1.24.
 
 **NOTE:** This is primarily *example* code for a Human Activity Recognition,
 not a generally-useful pretrained model.
-The dataset used is rather simple, and may not reflect the data you get from your device
-- which will lead to poor classifications.
-For a real world usage you should probably replace the dataset with your own data, collected on your own device.
+The dataset used is rather simple, and may not reflect the data you get from your device.
+Such data mismatch will often lead to poor classification results.
+For a real world usage you should aim to replace the dataset with your own data, collected on your own device.
+Or alternatively use a large and diverse dataset from a multiple users, devices and scenarios.
 
 At the bottom on the README there are some instructions and tools for collecting your own data,
 and training a custom model on such a dataset.
@@ -32,19 +33,24 @@ This example uses an approach based on the paper
 For each time-window, time-based statistical features are computed,
 and then classified with a RandomForest model.
 
-## Dataset
+## Dataset 1: Common activities (UCI HAR)
+
 The example uses the [UCI-HAR dataset](https://www.archive.ics.uci.edu/dataset/341/smartphone+based+recognition+of+human+activities+and+postural+transitions).
 The classes are by default limited to the three static postures (standing, sitting, lying) plus three dynamic activities (walking, walking downstairs, walking upstairs).
 The data is from a waist-mounted smartphone.
 Samplerate is 50Hz.
 By default only the accelerometer data is used (not the gyro).
 
+![UCI HAR classes](./img/UCI-HAR-dataset.png)
 
-## TODO
+## Dataset 2: Excercise detection (custom)
 
-- Add an illustrative image
-- Run the training + test/evaluation in CI
-- Add demonstration on LilyGo T-Watch 2020 (BMA423 accelerometer)
+This dataset was collected using the data recording tools described further below.
+The data contains 3 kinds of exercises, plus "other" non-exercise activity.
+The classes are: Jumping Jacks, Squats, Lunges, Other.
+The data was collected using an M5Stick C PLUS 2, mounted on the wrist like a watch (button facing forward).
+
+![Exercise detection](./img/har_exercises_classes.png)
 
 
 ## Running on host
@@ -118,6 +124,23 @@ Run the classification
 mpremote har_live.py
 ```
 
+This will continiously output the results of the classification,
+and count the time spent in each class.
+
+```
+classify other [0.0, 0.0, 1.0, 0.0] 216 ms
+
+jumpingjack:	6  seconds
+lunge:			0  seconds
+other:			34 seconds
+squat:			0  seconds
+
+ble-advertise mac=10061c172302 data=aa0100050000ff00
+```
+
+The device also sends the classifications out as Bluetooth Low Energy advertisements.
+See the code for how the data is encoded used.
+This cata can be received on a smartphone or computer, for tracking and storage.
 
 ## Run training
 
@@ -150,6 +173,13 @@ This example provides some basic tools to assist with this process.
 Recording data. Requires a M5StickC PLUS 2.
 Before you do this, make sure to **first run live classification example** (to get the dependencies).
 
+Copy additional dependencies
+```
+mpremote cp recorder.py :
+```
+
+
+Run the recording program
 ```
 mpremote run har_record.py
 ```
