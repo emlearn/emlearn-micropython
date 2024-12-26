@@ -2,6 +2,7 @@
 import machine
 from machine import Pin, I2C
 from mpu6886 import MPU6886
+import bluetooth
 
 import time
 import struct
@@ -29,6 +30,79 @@ def copy_array_into(source, target):
     assert len(source) == len(target)
     for i in range(len(target)):
         target[i] = source[i]
+
+def clamp(value, lower, upper) -> float:
+    v = value
+    v = min(v, upper)
+    v = max(v, lower)
+    return v
+
+def manufacturer_specific_advertisement(data : bytearray, manufacturer=[0xca, 0xab], limited_disc=False, br_edr=False):
+    _ADV_TYPE_FLAGS = const(0x01)
+    _ADV_TYPE_CUSTOMDATA = const(0xff)
+    _ADV_MAX_PAYLOAD = const(31)
+
+    payload = bytearray()
+
+    # Advertising payloads are repeated packets of the following form:
+    #   1 byte data length (N + 1)
+    #   1 byte type (see constants below)
+    #   N bytes type-specific data
+    def _append(adv_type, value):
+        nonlocal payload
+        payload += struct.pack("BB", len(value) + 1, adv_type) + value
+
+    # Flags
+    _append(
+        _ADV_TYPE_FLAGS,
+        struct.pack("B", (0x01 if limited_disc else 0x02) + (0x18 if br_edr else 0x04)),
+    )
+
+    # Specify manufacturer-specific data
+    manufacturer_id = bytearray(manufacturer)
+    _append(_ADV_TYPE_CUSTOMDATA, (manufacturer_id + data))
+
+    if len(payload) > _ADV_MAX_PAYLOAD:
+        raise ValueError("advertising payload too large")
+
+    return payload
+
+def send_bluetooth_le(sequence, probabilities,
+        advertisements=4,
+        advertise_interval_ms=50,
+        format=0xAA,
+        version=0x01):
+    """
+    Send data as BLE advertisements
+    Delivery of advertisements are not guaranteed. So we repeat N times to have a decent chance
+    """
+
+    # Start BLE
+    ble = bluetooth.BLE()   
+    ble.active(True)
+    mac = ble.config('mac')
+
+    # Encode data as BLE advertisement. Max 29 bytes
+    data = bytearray()
+    data += struct.pack('B', format)
+    data += struct.pack('B', version)
+    data += struct.pack('>H', sequence)
+
+    for p in probabilities:
+        q = int(clamp(p*255, 0, 255))
+        data += struct.pack('B', q)
+
+    payload = manufacturer_specific_advertisement(data)
+
+    print('ble-advertise', mac[1], data)
+
+    # send and wait until N advertisements are sent
+    advertise_us = int(1000*advertise_interval_ms)
+    ble.gap_advertise(advertise_us, adv_data=payload, connectable=False)
+    time.sleep_ms(advertisements*advertise_interval_ms)
+
+    # Turn of BLE
+    ble.active(False)
 
 def main():
 
@@ -75,6 +149,8 @@ def main():
     features = array.array(features_typecode, (0 for _ in range(n_features)))
     out = array.array('f', range(model.outputs()))
 
+    prediction_no = 0
+
     while True:
 
         count = mpu.get_fifo_count()
@@ -103,9 +179,13 @@ def main():
                 activity = class_index_to_name[result]
 
                 d = time.ticks_diff(time.ticks_ms(), start)
-                print('class', activity, d)
+                print('classify', d, activity, out)
 
-        machine.lightsleep(100)
+                send_bluetooth_le(prediction_no, out)
+                prediction_no += 1
+
+        time.sleep_ms(100)
+        #machine.lightsleep(100)
 
 
 if __name__ == '__main__':
