@@ -94,11 +94,12 @@ def send_bluetooth_le(sequence, probabilities,
 
     payload = manufacturer_specific_advertisement(data)
 
-    print('ble-advertise', mac[1], data)
+    print('ble-advertise', 'mac='+mac[1].hex(), 'data='+data.hex())
 
     # send and wait until N advertisements are sent
     advertise_us = int(1000*advertise_interval_ms)
     ble.gap_advertise(advertise_us, adv_data=payload, connectable=False)
+    # XXX: blocking wait
     time.sleep_ms(advertisements*advertise_interval_ms)
 
     # Turn of BLE
@@ -129,8 +130,9 @@ def main():
     mpu = MPU6886(I2C(0, sda=21, scl=22, freq=100000))
 
     # Enable FIFO at a fixed samplerate
+    SAMPLERATE = 100
     mpu.fifo_enable(True)
-    mpu.set_odr(100)
+    mpu.set_odr(SAMPLERATE)
 
     hop_length = 64
     chunk = bytearray(mpu.bytes_per_sample*hop_length)
@@ -150,6 +152,8 @@ def main():
     out = array.array('f', range(model.outputs()))
 
     prediction_no = 0
+    durations = { classname: 0.0 for classname in classname_index.keys() } # how long each class has been active
+    MIN_PROBABILITY = 0.5 # if no class has higher, consider as "other"
 
     while True:
 
@@ -177,9 +181,15 @@ def main():
                 model.predict(features, out)
                 result = argmax(out)
                 activity = class_index_to_name[result]
+                if max(out) < MIN_PROBABILITY:
+                    activity = 'other'
+                
+                durations[activity] += (hop_length/SAMPLERATE)
 
                 d = time.ticks_diff(time.ticks_ms(), start)
-                print('classify', d, activity, out)
+                print('classify', activity, list(out), d, 'ms')
+                for classname, duration in durations.items():
+                    print(f'{classname}:\t\t\t{duration:.0f} seconds')
 
                 send_bluetooth_le(prediction_no, out)
                 prediction_no += 1
