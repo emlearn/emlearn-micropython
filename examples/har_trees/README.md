@@ -1,6 +1,8 @@
 
 # Human Activity Recognition with tree-based models
 
+![Detecting exercise activities](./img/exercise-combined.jpg)
+
 *Human Activity Recognition* (HAR) is the task of detecting what activities a human is performing based on motion.
 This type of activity recognition is using an Inertial Measurement Unit (IMU) carried on the person.
 The IMU consists has at least one accelerometer, gyro or magnetometer - or a combination of these.
