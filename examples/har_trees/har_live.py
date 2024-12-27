@@ -12,6 +12,18 @@ from windower import TriaxialWindower, empty_array
 import timebased
 import emlearn_trees    
 
+# for display
+# mpremote mip install "github:peterhinch/micropython-nano-gui"
+from color_setup import ssd
+from gui.core.writer import Writer
+from gui.core.nanogui import refresh
+from gui.widgets.meter import Meter
+from gui.widgets.label import Label, ALIGN_RIGHT
+import gui.fonts.courier20 as fixed_font
+
+# Cleanup after import frees considerable memory
+gc.collect()
+
 def mean(arr):
     m = sum(arr) / float(len(arr))
     return m
@@ -105,6 +117,34 @@ def send_bluetooth_le(sequence, probabilities,
     # Turn of BLE
     ble.active(False)
 
+
+def render_display(durations):
+    start_time = time.ticks_ms()
+   
+    ssd.fill(0)
+
+    Writer.set_textpos(ssd, 0, 0)  # In case previous tests have altered it
+    wri = Writer(ssd, fixed_font, verbose=False)
+    wri.set_clip(False, False, False)
+
+    y = 5
+    for classname, stats in durations.items():
+        
+        key_text = classname
+        text1 = Label(wri, y, 10, wri.stringlen(key_text))
+        text1.value(key_text)
+
+        value_text = f'{stats:.0f}s'
+        text2 = Label(wri, y, 140, 50, align=ALIGN_RIGHT)
+        text2.value(value_text)
+        y += 22
+
+    refresh(ssd)
+
+    duration = time.ticks_ms() - start_time
+    print('render-display', duration, 'ms')
+
+
 def main():
 
     dataset = 'har_exercise_1'
@@ -113,7 +153,7 @@ def main():
         classname_index = {"LAYING": 0, "SITTING": 1, "STANDING": 2, "WALKING": 3, "WALKING_DOWNSTAIRS": 4, "WALKING_UPSTAIRS": 5}
         window_length = 128
     elif dataset == 'har_exercise_1':
-        classname_index = {"jumpingjack": 0, "lunge": 1, "other": 2, "squat": 3}
+        classname_index = {"jacks": 0, "lunge": 1, "other": 2, "squat": 3}
         window_length = 256
     else:
         raise ValueError('Unknown dataset')
@@ -186,12 +226,18 @@ def main():
                 
                 durations[activity] += (hop_length/SAMPLERATE)
 
+                # Print status
                 d = time.ticks_diff(time.ticks_ms(), start)
                 print('classify', activity, list(out), d, 'ms')
                 for classname, duration in durations.items():
                     print(f'{classname}:\t\t\t{duration:.0f} seconds')
 
+                # Send predictions over BLE
                 send_bluetooth_le(prediction_no, out)
+
+                # Update display
+                render_display(durations)
+        
                 prediction_no += 1
 
         time.sleep_ms(100)
