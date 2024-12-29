@@ -65,6 +65,7 @@ def extract_windows(sensordata : pandas.DataFrame,
     window_length : int,
     window_hop : int,
     groupby : list[str],
+    time_column = 'time',
     ):
 
     groups = sensordata.groupby(groupby, observed=True)
@@ -75,7 +76,7 @@ def extract_windows(sensordata : pandas.DataFrame,
         windows = []
 
         # make sure order is correct
-        group_df = group_df.reset_index().set_index('time').sort_index()
+        group_df = group_df.reset_index().set_index(time_column).sort_index()
 
         # create windows
         win_start = 0
@@ -167,6 +168,7 @@ def extract_features(sensordata : pandas.DataFrame,
     quant_div = 4,
     quant_depth = 6,
     label_column='activity',
+    time_column='time',
     ) -> pandas.DataFrame:
     """
     Convert sensor data into fixed-sized time windows and extact features
@@ -181,7 +183,7 @@ def extract_features(sensordata : pandas.DataFrame,
 
     # Split into fixed-length windows
     features_values = []
-    generator = extract_windows(sensordata, window_length, window_hop, groupby=groupby)
+    generator = extract_windows(sensordata, window_length, window_hop, groupby=groupby, time_column=time_column)
     for windows in generator:
     
         # drop invalid data
@@ -262,7 +264,20 @@ def run_pipeline(run, hyperparameters, dataset,
                 'squat', 'jumpingjack', 'lunge', 'other',
             ],
         ),
+        'toothbrush_hussain2021': dict(
+            groups=['subject'],
+            label_column = 'is_brushing',
+            time_column = 'elapsed',
+            data_columns = ['acc_x', 'acc_y', 'acc_z'],
+            classes = [
+                #'mixed',
+                'True', 'False',
+            ],
+        ),
     }
+
+    if not dataset in dataset_config.keys():
+        raise ValueError(f"Unknown dataset {dataset}")
 
     if not os.path.exists(out_dir):
         os.makedirs(out_dir)
@@ -278,11 +293,13 @@ def run_pipeline(run, hyperparameters, dataset,
     groups = dataset_config[dataset]['groups']
     data_columns = dataset_config[dataset]['data_columns']
     enabled_classes = dataset_config[dataset]['classes']
+    label_column = dataset_config[dataset].get('label_column', 'activity')
+    time_column = dataset_config[dataset].get('time_column', 'time')
+
+    data[label_column] = data[label_column].astype(str)
 
     data_load_duration = time.time() - data_load_start
     log.info('data-loaded', dataset=dataset, samples=len(data), duration=data_load_duration)
-
-
 
     feature_extraction_start = time.time()
     features = extract_features(data,
@@ -291,8 +308,10 @@ def run_pipeline(run, hyperparameters, dataset,
         features=features,
         window_length=model_settings['window_length'],
         window_hop=model_settings['window_hop'],
+        label_column=label_column,
+        time_column=time_column,
     )
-    labeled = numpy.count_nonzero(features['activity'].notna())
+    labeled = numpy.count_nonzero(features[label_column].notna())
 
     feature_extraction_duration = time.time() - feature_extraction_start
     log.info('feature-extraction-done',
@@ -303,12 +322,12 @@ def run_pipeline(run, hyperparameters, dataset,
     )
 
     # Drop windows without labels
-    features = features[features.activity.notna()]
+    features = features[features[label_column].notna()]
 
     # Keep only windows with enabled classes
-    features = features[features.activity.isin(enabled_classes)]
+    features = features[features[label_column].isin(enabled_classes)]
 
-    print('Class distribution\n', features['activity'].value_counts(dropna=False))
+    print('Class distribution\n', features[label_column].value_counts(dropna=False))
 
     # Run train-evaluate
     evaluate_groupby = groups[0]
@@ -316,6 +335,7 @@ def run_pipeline(run, hyperparameters, dataset,
         hyperparameters=hyperparameters,
         groupby=evaluate_groupby,
         n_splits=n_splits,
+        label_column=label_column,
     )
 
     # Save a model
@@ -328,7 +348,6 @@ def run_pipeline(run, hyperparameters, dataset,
     export_model(estimator_path, model_path)
 
     # Save testdata
-    label_column = 'activity'
     classes = estimator.classes_
     class_mapping = dict(zip(classes, range(len(classes))))
     meta_path = os.path.join(out_dir, f'{dataset}.meta.json')    
