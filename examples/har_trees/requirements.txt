@@ -5,3 +5,4 @@ emlearn
 scikit-learn
 setuptools
 structlog
+matplotlib

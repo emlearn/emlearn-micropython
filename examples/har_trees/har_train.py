@@ -12,8 +12,9 @@ import numpy
 import structlog
 
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import f1_score, make_scorer
+from sklearn.metrics import f1_score, make_scorer, get_scorer, PrecisionRecallDisplay
 from sklearn.model_selection import GridSearchCV, GroupShuffleSplit
+from matplotlib import pyplot as plt
 
 import emlearn
 from emlearn.preprocessing.quantizer import Quantizer
@@ -21,6 +22,18 @@ from sklearn.preprocessing import LabelEncoder
 
 log = structlog.get_logger()
 
+
+def train_test_split_grouped(X, y, groups, test_size=0.25, random_state=0):
+
+    gs = GroupShuffleSplit(n_splits=2, test_size=test_size, random_state=random_state)
+    train_ix, test_ix = next(gs.split(X, y, groups=groups))
+
+    X_train = X.iloc[train_ix]
+    X_test = X.iloc[test_ix]
+    Y_train = y.iloc[train_ix]
+    Y_test = y.iloc[test_ix]
+
+    return X_train, X_test, Y_train, Y_test
 
 def evaluate(windows : pandas.DataFrame, groupby : str, hyperparameters : dict,
     random_state=1, n_splits=5, label_column='activity'):
@@ -53,12 +66,35 @@ def evaluate(windows : pandas.DataFrame, groupby : str, hyperparameters : dict,
     X = windows[feature_columns]
     Y = windows[label_column]
     groups = windows.index.get_level_values(groupby)
-    search.fit(X, Y, groups=groups)
 
-    results = pandas.DataFrame(search.cv_results_)
+    # Split out test set
+    X_train, X_test, Y_train, Y_test = train_test_split_grouped(X, Y, groups=groups)
+    test_groups = list(X_test.index.get_level_values(groupby).unique())
+    groups_train = X_train.index.get_level_values(groupby)
+    train_groups = list(groups_train.unique())
+
+    # Run hyperparameter search using cross-validation
+    search.fit(X_train, Y_train, groups=groups_train)
+    cv_results = pandas.DataFrame(search.cv_results_)
     estimator = search.best_estimator_
 
-    return results, estimator
+    # Evaluate final estimator on train/test sets
+    scorer = get_scorer(f1_micro)
+    test_score = scorer(estimator, X_test, Y_test)
+    train_score = scorer(estimator, X_train, Y_train)
+
+    figures = dict()
+
+    if len(estimator.classes_) == 2:
+        # Binary classification, compute precision-recall curves
+        fig, ax = plt.subplots(1, figsize=(10, 10))
+        PrecisionRecallDisplay.from_estimator(estimator, X_train, Y_train, ax=ax, name='train')
+        PrecisionRecallDisplay.from_estimator(estimator, X_test, Y_test, ax=ax, name='test')
+        figures['precision_recall'] = fig
+
+    splits = (train_groups, test_groups)
+    scores = (train_score, test_score)
+    return cv_results, estimator, splits, scores, figures
 
 
 def extract_windows(sensordata : pandas.DataFrame,
@@ -269,6 +305,8 @@ def run_pipeline(run, hyperparameters, dataset,
             label_column = 'is_brushing',
             time_column = 'elapsed',
             data_columns = ['acc_x', 'acc_y', 'acc_z'],
+            #data_columns = ['gravity_x', 'gravity_y', 'gravity_z'],
+            #data_columns = ['motion_x', 'motion_y', 'motion_z'],
             classes = [
                 #'mixed',
                 'True', 'False',
@@ -331,12 +369,22 @@ def run_pipeline(run, hyperparameters, dataset,
 
     # Run train-evaluate
     evaluate_groupby = groups[0]
-    results, estimator = evaluate(features,
+    results, estimator, splits, scores, figures = evaluate(features,
         hyperparameters=hyperparameters,
         groupby=evaluate_groupby,
         n_splits=n_splits,
         label_column=label_column,
     )
+
+    print('Train-test splits')
+    for s in splits:
+        print(s)
+    
+    # Save eval plots
+    for name, fig in figures.items():
+        p = os.path.join(out_dir, f'{dataset}.{name}.png')
+        fig.savefig(p)
+        print('Figure:', p)
 
     # Save a model
     estimator_path = os.path.join(out_dir, f'{dataset}.estimator.pickle')
@@ -420,12 +468,14 @@ def main():
     run_id = uuid.uuid4().hex.upper()[0:6]
 
     min_samples_leaf = config_number_list('MIN_SAMPLES_LEAF', '1,4,16,64,256')
+    max_leaf_nodes = config_number_list('MAX_LEAF_NODES', '4,8,16,32,64,128')
     trees = config_number_list('TREES', '10')
 
     hyperparameters = {
         "max_features": [ 0.30 ],
         'n_estimators': trees,
         'min_samples_leaf': min_samples_leaf,
+        #'max_leaf_nodes': max_leaf_nodes,
     }
 
     results = run_pipeline(dataset=args.dataset,
