@@ -17,8 +17,7 @@ It can be combined with feature preprocessing, including neural networks to addr
 **Minimally useful**
 
 - Tested *working* on `x64` (Unix port) and `xtensawin` (ESP32).
-
-NOTE: Building for ARM, such as `armv6m` (Cortex M0 / RP2040) requires a patch to MicroPython [(issue)](https://github.com/emlearn/emlearn-micropython/issues/19).
+- Currently *broken* on ARM `armv6m` (Cortex M0 / RP2040). [Issue](https://github.com/emlearn/emlearn-micropython/issues/19)
 
 ## Features
 
@@ -48,7 +47,7 @@ NOTE: Building for ARM, such as `armv6m` (Cortex M0 / RP2040) requires a patch t
 Minimally you will need
 
 - Python 3.10+ on host
-- MicroPython 1.23+ running onto your device
+- MicroPython 1.24+ running onto your device
 
 #### Download repository
 
@@ -83,6 +82,7 @@ as well as the MicroPython version.
 | MicroPython version | .mpy version  |
 |---------------------| ------------- |
 | 1.23.x              | 6.3           |
+| 1.24.x              | 6.3           |
 
 
 Identify which CPU architecture your device uses.
@@ -153,7 +153,7 @@ See [MicroPython: Building native modules](https://docs.micropython.org/en/lates
 We assume that micropython is installed in the same place as this repository.
 If using another location, adjust `MPY_DIR` accordingly.
 
-You should be using the latest MicroPython 1.23 (or newer).
+You should be using MicroPython 1.24 (or newer).
 
 #### Build
 
