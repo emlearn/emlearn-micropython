@@ -318,6 +318,18 @@ def run_pipeline(run, hyperparameters, dataset,
                 'True', 'False',
             ],
         ),
+        'toothbrush_jonnor': dict(
+            groups=['session'],
+            label_column = 'is_brushing',
+            time_column = 'time',
+            data_columns = ['x', 'y', 'z'],
+            #data_columns = ['gravity_x', 'gravity_y', 'gravity_z'],
+            #data_columns = ['motion_x', 'motion_y', 'motion_z'],
+            classes = [
+                #'mixed',
+                'True', 'False',
+            ],
+        ),
     }
 
     if not dataset in dataset_config.keys():
