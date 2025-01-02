@@ -68,7 +68,7 @@ def evaluate(windows : pandas.DataFrame, groupby : str, hyperparameters : dict,
     groups = windows.index.get_level_values(groupby)
 
     # Split out test set
-    X_train, X_test, Y_train, Y_test = train_test_split_grouped(X, Y, groups=groups)
+    X_train, X_test, Y_train, Y_test = train_test_split_grouped(X, Y, groups=groups, random_state=random_state)
     test_groups = list(X_test.index.get_level_values(groupby).unique())
     groups_train = X_train.index.get_level_values(groupby)
     train_groups = list(groups_train.unique())
@@ -155,9 +155,9 @@ def timebased_features(windows : list[pandas.DataFrame],
     here = os.path.dirname(__file__)
     feature_extraction_script = os.path.join(here, 'compute_features.py')
 
-    # XXX: this scaling should go elsewhere
     data = numpy.stack([ d[columns] for d in windows ])
-    data = ((data / 4.0) * (2**15-1)).astype(numpy.int16)
+    assert data.dtype == numpy.int16
+    assert data.shape[2] == 3, data.shape
 
     #log.debug('data-range',
     #    upper=numpy.quantile(data, 0.99),
@@ -203,6 +203,7 @@ def extract_features(sensordata : pandas.DataFrame,
     features='timebased',
     quant_div = 4,
     quant_depth = 6,
+    sensitivity = 2.0, # how many g range the int16 sensor data has
     label_column='activity',
     time_column='time',
     ) -> pandas.DataFrame:
@@ -225,11 +226,16 @@ def extract_features(sensordata : pandas.DataFrame,
         # drop invalid data
         windows = [ w for w in windows if not w[columns].isnull().values.any() ]
 
+        # Convert from floats in "g" to the sensor scaling in int16
+        data_windows = [ ((w[columns] / sensitivity) * (2**15-1)).astype(numpy.int16) for w in windows ]
+
         # Extract features
-        df = feature_extractor(windows)
+        df = feature_extractor(data_windows)
 
         # Convert features to 16-bit integers
-        quant = Quantizer().fit_transform(df.values)
+        # XXX: Assuming that they are already in resonable scale
+        # TODO: consider moving the quantization to inside timebased
+        quant = df.values.astype(numpy.int16)
         df.loc[:,:] = quant
 
         # Attach labels
@@ -333,6 +339,7 @@ def run_pipeline(run, hyperparameters, dataset,
     enabled_classes = dataset_config[dataset]['classes']
     label_column = dataset_config[dataset].get('label_column', 'activity')
     time_column = dataset_config[dataset].get('time_column', 'time')
+    sensitivity = dataset_config[dataset].get('sensitivity', 2.0)
 
     data[label_column] = data[label_column].astype(str)
 
@@ -344,6 +351,7 @@ def run_pipeline(run, hyperparameters, dataset,
         columns=data_columns,
         groupby=groups,             
         features=features,
+        sensitivity=sensitivity,
         window_length=model_settings['window_length'],
         window_hop=model_settings['window_hop'],
         label_column=label_column,
@@ -377,8 +385,8 @@ def run_pipeline(run, hyperparameters, dataset,
     )
 
     print('Train-test splits')
-    for s in splits:
-        print(s)
+    for split, score, groups in zip(['train', 'test'], scores, splits):
+        print(split, score, groups)
     
     # Save eval plots
     for name, fig in figures.items():
