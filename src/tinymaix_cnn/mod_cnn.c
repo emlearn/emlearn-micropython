@@ -13,7 +13,7 @@
 
 #include <string.h>
 
-#define DEBUG (1)
+#define DEBUG (0)
 
 
 // memset is used by some standard C constructs
