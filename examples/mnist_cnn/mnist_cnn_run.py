@@ -4,9 +4,9 @@ import array
 import time
 import gc
 
-import emlearn_cnn
+import emlearn_cnn_int8
 
-MODEL = 'mnist_cnn.tmdl'
+MODEL = 'mnist_cnn_int8.tmdl'
 TEST_DATA_DIR = 'test_data'
 
 def argmax(arr):

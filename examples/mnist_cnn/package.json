@@ -7,7 +7,8 @@
   "readme": "github:emlearn/emlearn-micropython/blob/master/examples/mnist_cnn/README.md",
   "keywords": "machinelearning,cnn,convolutionalneuralnetwork,classification,mnist,digits",
   "urls": [
-    ["fs:mnist_cnn.tmdl", "mnist_cnn.tmdl"],
+    ["fs:mnist_cnn_int8.tmdl", "mnist_cnn_int8.tmdl"],
+    ["fs:mnist_cnn_fp32.tmdl", "mnist_cnn_fp32.tmdl"],
     ["fs:data/mnist_example_0.bin", "data/mnist_example_0.bin"],
     ["fs:data/mnist_example_1.bin", "data/mnist_example_1.bin"],
     ["fs:data/mnist_example_2.bin", "data/mnist_example_2.bin"],
