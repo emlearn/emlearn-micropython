@@ -4,6 +4,8 @@ MPY_DIR = ../../micropython
 # Architecture to build for (x86, x64, armv6m, armv7m, xtensa, xtensawin)
 ARCH = x64
 
+CONFIG := int8
+
 # The ABI version for .mpy files
 MPY_ABI_VERSION := 6.3
 
@@ -11,6 +13,8 @@ MPY_ABI_VERSION := 6.3
 TINYMAIX_DIR := ../../dependencies/TinyMaix
 
 DIST_DIR := ../../dist/$(ARCH)_$(MPY_ABI_VERSION)
+
+CONFIG_DIR := ./$(CONFIG)
 
 # Name of module
 MOD = emlearn_cnn
@@ -45,7 +49,7 @@ ifeq ($(SOFTFP_ENABLE), 1)
 endif
 
 # Releases
-DIST_FILE = $(DIST_DIR)/$(MOD).mpy
+DIST_FILE = $(DIST_DIR)/$(MOD)_$(CONFIG).mpy
 $(DIST_DIR):
 	mkdir -p $@
 
@@ -68,6 +72,6 @@ _addsubdf3.o:
 _arm_addsubdf3.o:
 	$(CROSS)ar -x $(LIBGCC_FILENAME) $(SOFTFP_O)
 
-CFLAGS += -I$(TINYMAIX_DIR)/include -I$(TINYMAIX_DIR)/src -Wno-error=unused-variable -Wno-error=multichar
+CFLAGS += -I$(CONFIG_DIR) -I$(TINYMAIX_DIR)/include -I$(TINYMAIX_DIR)/src -Wno-error=unused-variable -Wno-error=multichar
 
 dist: $(DIST_FILE)
