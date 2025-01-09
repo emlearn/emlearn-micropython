@@ -30,7 +30,7 @@ python mnist_train.py
 ## Running on host
 
 ```console
-micropython -m mip install https://emlearn.github.io/emlearn-micropython/builds/master/x64_6.3/emlearn_cnn.mpy
+micropython -m mip install https://emlearn.github.io/emlearn-micropython/builds/master/x64_6.3/emlearn_cnn_int8.mpy
 
 micropython mnist_cnn_run.py
 ```
@@ -50,11 +50,11 @@ Flash your device with a standard MicroPython firmware,
 from the MicroPython.org downloads page.
 
 ```console
-mpremote mip install https://emlearn.github.io/emlearn-micropython/builds/master/xtensawin_6.3/emlearn_cnn.mpy
+mpremote mip install https://emlearn.github.io/emlearn-micropython/builds/master/xtensawin_6.3/emlearn_cnn_int8.mpy
 ```
 
 ```console
-mpremote cp mnist_cnn.tmdl :
+mpremote cp mnist_cnn_int8.tmdl :
 mpremote cp -r test_data/ :
 mpremote run mnist_cnn_run.py
 ```

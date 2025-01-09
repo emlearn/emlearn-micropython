@@ -1,16 +1,18 @@
 
 import array
-import emlearn_cnn
+import emlearn_cnn_int8
+import emlearn_cnn_fp32
 
-MNIST_MODEL = 'examples/mnist_cnn/mnist_cnn.tmdl'
+MNIST_MODEL_INT8 = 'examples/mnist_cnn/mnist_cnn_int8.tmdl'
+MNIST_MODEL_FP32 = 'examples/mnist_cnn/mnist_cnn_fp32.tmdl'
 MNIST_DATA_DIR = 'examples/mnist_cnn/data/'
 
 def test_cnn_create():
 
     model = None
-    with open(MNIST_MODEL, 'rb') as f:
+    with open(MNIST_MODEL_FP32, 'rb') as f:
         model_data = array.array('B', f.read())
-        model = emlearn_cnn.new(model_data)
+        model = emlearn_cnn_fp32.new(model_data)
 
         out_shape = model.output_dimensions()
         assert out_shape == (10,), (out_shape)
@@ -48,12 +50,12 @@ def argmax(arr):
 
     return idx_max
 
-def test_cnn_mnist():
+def check_cnn_mnist(cnn_module, model_path):
 
     model = None
-    with open(MNIST_MODEL, 'rb') as f:
+    with open(model_path, 'rb') as f:
         model_data = array.array('B', f.read())
-        model = emlearn_cnn.new(model_data)
+        model = cnn_module.new(model_data)
 
     probabilities = array.array('f', (-1 for _ in range(10)))
 
@@ -75,6 +77,14 @@ def test_cnn_mnist():
 
     assert correct >= 9, correct
 
+def test_cnn_mnist_int8():
+    check_cnn_mnist(emlearn_cnn_int8, MNIST_MODEL_INT8)
+
+
+def test_cnn_mnist_fp32():
+    check_cnn_mnist(emlearn_cnn_fp32, MNIST_MODEL_FP32)
+    
 
 test_cnn_create()
-test_cnn_mnist()
+test_cnn_mnist_int8()
+test_cnn_mnist_fp32()

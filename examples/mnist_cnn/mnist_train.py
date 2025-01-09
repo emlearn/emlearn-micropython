@@ -86,6 +86,7 @@ def generate_test_files(out_dir, x, y, samples_per_class=5):
 
 
 def generate_tinymaix_model(h5_file,
+        out_file : str,
         input_shape : tuple[int],
         output_shape : tuple[int],
         tools_dir,
@@ -99,7 +100,7 @@ def generate_tinymaix_model(h5_file,
 
     # Convert .h5 to .tflite file
     assert h5_file.endswith('.h5'), 'Keras model HDF5 file must end with .h5'
-    tflite_file = h5_file.replace('.h5', '.tflite')
+    tflite_file = out_file + '.tflite'
 
     args = [
         python_bin,
@@ -157,26 +158,26 @@ def main():
     tinymaix_tools_dir = '../../dependencies/TinyMaix/tools'
     assert os.path.exists(tinymaix_tools_dir), tinymaix_tools_dir
 
-    quantize_data = None # disables quantization
-    quantize_data = os.path.join(tinymaix_tools_dir, 'quant_img_mnist/')
-    if quantize_data is not None:
-        assert os.path.exists(quantize_data)
-    precision = 'int8' if quantize_data else 'fp32'
-
     # Run training
     train_mnist(h5_file)
 
-    #data = x_test[1]
-
     # Export the model using TinyMaix
-    out = generate_tinymaix_model(h5_file,
-        input_shape=(28,28,1),
-        output_shape=(1,),
-        tools_dir=tinymaix_tools_dir,
-        precision=precision,
-        quantize_data=quantize_data,
-    )
-    print('Wrote model to', out)
+    # both with quantization and without
+    for config in ('int8', 'fp32'):
+        if config == 'int8':
+            quantize_data = os.path.join(tinymaix_tools_dir, 'quant_img_mnist/')
+        else:
+            quantize_data = None # disables quantization
+
+        out = generate_tinymaix_model(h5_file,
+            out_file=h5_file.replace('.h5', '')+f'_{config}',
+            input_shape=(28,28,1),
+            output_shape=(1,),
+            tools_dir=tinymaix_tools_dir,
+            precision=config,
+            quantize_data=quantize_data,
+        )
+        print('Wrote model to', out)
 
 if __name__ == '__main__':
     main()
