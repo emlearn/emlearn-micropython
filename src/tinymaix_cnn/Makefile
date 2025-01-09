@@ -72,6 +72,6 @@ _addsubdf3.o:
 _arm_addsubdf3.o:
 	$(CROSS)ar -x $(LIBGCC_FILENAME) $(SOFTFP_O)
 
-CFLAGS += -I$(CONFIG_DIR) -I$(TINYMAIX_DIR)/include -I$(TINYMAIX_DIR)/src -Wno-error=unused-variable -Wno-error=multichar
+CFLAGS += -I$(CONFIG_DIR) -I$(TINYMAIX_DIR)/include -I$(TINYMAIX_DIR)/src -Wno-error=unused-variable -Wno-error=multichar -Wdouble-promotion
 
 dist: $(DIST_FILE)
