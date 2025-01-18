@@ -46,21 +46,15 @@ extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.doctest',
     'sphinx.ext.coverage',
-    #'sphinx.ext.autosectionlabel',
+    'sphinx.ext.autosectionlabel',
     #'sphinx_gallery.gen_gallery',
-    'm2r2',
+    'myst_parser',
 ]
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
 
 # The suffix(es) of source filenames.
-from recommonmark.parser import CommonMarkParser
-
-source_parsers = {
-    '.md': CommonMarkParser,
-}
-
 source_suffix = {
     '.rst': 'restructuredtext',
     '.md': 'markdown',
