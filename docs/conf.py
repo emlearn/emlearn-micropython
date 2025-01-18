@@ -60,7 +60,11 @@ from recommonmark.parser import CommonMarkParser
 source_parsers = {
     '.md': CommonMarkParser,
 }
-source_suffix = ['.rst', '.md']
+
+source_suffix = {
+    '.rst': 'restructuredtext',
+    '.md': 'markdown',
+}
 
 # The master toctree document.
 master_doc = 'index'
@@ -106,7 +110,7 @@ html_css_files = [
     'css/emlearn.css',
 ]
 
-html_logo = '../brand/emlearn-logo-wordmark-wide-600px.png'
+html_logo = './images/emlearn-logo-wordmark-wide-600px.png'
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,

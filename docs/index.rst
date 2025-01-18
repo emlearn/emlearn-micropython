@@ -1,6 +1,6 @@
 .. emlearn-micropython documentation master file
 
-Welcome to emlearn's documentation!
+Welcome to emlearn-micropython's documentation!
 ===================================
 
 .. toctree::
