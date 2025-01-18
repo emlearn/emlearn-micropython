@@ -14,5 +14,6 @@ User Guide
    :numbered:
    :maxdepth: 3
 
-   getting_started_micropython.rst
+   getting_started_host.rst
+   getting_started_device.rst
 

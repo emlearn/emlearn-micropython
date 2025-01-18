@@ -9,7 +9,9 @@ Welcome to emlearn-micropython's documentation!
 
    source/README.md
    user_guide
+   examples
    api_reference
+   more
    source/LICENSE.md
 
 
