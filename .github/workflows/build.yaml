@@ -95,9 +95,6 @@ jobs:
           pip install flake8 pytest
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
           if [ -f requirements.dev.txt ]; then pip install -r requirements.dev.txt; fi
-      - name: Build package
-        run: |
-          python setup.py build
       - name: Build documentation using Sphinx
         working-directory: ./docs
         env:
