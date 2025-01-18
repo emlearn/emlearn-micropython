@@ -49,6 +49,7 @@ extensions = [
     'sphinx.ext.autosectionlabel',
     #'sphinx_gallery.gen_gallery',
     'myst_parser',
+    "sphinx.ext.intersphinx",
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -204,6 +205,12 @@ sphinx_gallery_conf = {
     'examples_dirs': '../examples',   # path to your example scripts
     'gallery_dirs': 'auto_examples',  # path to where to save gallery generated output
     'filename_pattern': '/', # execute all .py files, not just those with plot_ prefix
+}
+
+
+
+intersphinx_mapping = {
+    "emlearn": ("https://emlearn.readthedocs.io/en/latest/", None),
 }
 
 
