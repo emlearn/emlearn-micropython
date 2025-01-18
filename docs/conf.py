@@ -105,7 +105,7 @@ html_css_files = [
     'css/emlearn.css',
 ]
 
-html_logo = './images/emlearn-logo-wordmark-wide-600px.png'
+html_logo = '../brand/emlearn-micropython-logo-wordmark-wide-600px.png'
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
