@@ -28,8 +28,8 @@ class Model():
         """
         Add an item into the model
 
-        :param inputs: the data/features of this item. Typecode 'h' (int16)
-        :param inputs: the label/class to associate with this item
+        :param values: the data/features of this item. Typecode 'h' (int16)
+        :param label: the label/class to associate with this item
         """
         pass
 

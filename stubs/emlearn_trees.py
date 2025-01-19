@@ -4,7 +4,7 @@
 """
 Tree-based models (Random Forest et.c.)
 
-Implemented using emlearn C library (https://github.com/emlearn/emlearn).
+Implemented using *eml_trees* from the emlearn C library (https://github.com/emlearn/emlearn).
 """
 
 import array
