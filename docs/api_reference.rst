@@ -37,3 +37,9 @@ emlearn_neighbors
 .. automodule:: emlearn_neighbors
    :members:
 
+
+emlearn_fft
+------------------
+
+.. automodule:: emlearn_fft
+   :members:
