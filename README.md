@@ -2,16 +2,17 @@
 
 # emlearn-micropython
 
-[Micropython](https://micropython.org) integration for the [emlearn](https://emlearn.org) Machine Learning library for microcontrollers.
-
-It enables MicroPython applications to run efficient Machine Learning models on microcontroller,
-without having to touch any C code.
-
-> scikit-learn for Microcontrollers
+Machine Learning and Digital Signal Processing for [MicroPython](https://micropython.org).
+Provides convenient and efficient MicroPython modules, and enables MicroPython application developers
+to run efficient Machine Learning models on microcontroller, without having to touch any C code.
 
 This is a [TinyML](https://www.tinyml.org/) library,
 particularly well suited for low-compexity and low-power classification tasks.
 It can be combined with feature preprocessing, including neural networks to address more complex tasks.
+
+Builds on [emlearn](https://emlearn.org), a C99 library for Machine Learning on microcontrollers and embedded system.
+
+> scikit-learn for Microcontrollers
 
 ## Status
 **Minimally useful**
@@ -24,7 +25,7 @@ It can be combined with feature preprocessing, including neural networks to addr
 - Classification with [RandomForest](https://en.wikipedia.org/wiki/Random_forest)/DecisionTree models
 - Classification and on-device learning with [K-Nearest Neighbors (KNN)](https://en.wikipedia.org/wiki/K-nearest_neighbors_algorithm)
 - Classification with Convolutional Neural Network (CNN), using [TinyMaix](https://github.com/sipeed/TinyMaix/) library.
-- Fast Fourier Transform (FFT) for feature preprocessing, or general DSP
+- [Fast Fourier Transform (FFT)](https://en.wikipedia.org/wiki/Fast_Fourier_transform) for feature preprocessing, or general DSP
 - Infinite Impulse Response (IIR) filters for feature preprocessing, or general DSP
 - Clustering using K-means
 - Scaling and data type transformations for `array`, using `emlearn_arrayutils`.
@@ -41,6 +42,10 @@ It can be combined with feature preprocessing, including neural networks to addr
 - [mnist_cnn](./examples/mnist_cnn/). Basic image classification, using Convolutional Neural Network.
 - [har_trees](./examples/har_trees/). Accelerometer-based Human Activity Recognition, using Random Forest
 - [soundlevel_iir](./examples/soundlevel_iir/). Sound Level Meter, using Infinite Impulse Response (IIR) filters.
+
+## Documentation
+
+Complete [documentation on ReadTheDocs](https://emlearn-micropython.readthedocs.io/en/latest/user_guide.htmls).
 
 ## Prerequisites
 
