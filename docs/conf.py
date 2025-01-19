@@ -17,7 +17,8 @@ import os
 import sys
 import subprocess
 
-sys.path.insert(0, os.path.abspath('..'))
+# Adjust path so we can find the .py files with API documentation
+sys.path.insert(0, os.path.abspath('../stubs'))
 
 # -- Project information -----------------------------------------------------
 
@@ -44,6 +45,7 @@ extensions = [
     'sphinx.ext.mathjax',
     'sphinx.ext.viewcode',
     'sphinx.ext.autodoc',
+    'sphinx_autodoc_typehints',
     'sphinx.ext.doctest',
     'sphinx.ext.coverage',
     'sphinx.ext.autosectionlabel',
@@ -200,15 +202,7 @@ epub_exclude_files = ['search.html']
 
 # -- Extension configuration -------------------------------------------------
 
-
-sphinx_gallery_conf = {
-    'examples_dirs': '../examples',   # path to your example scripts
-    'gallery_dirs': 'auto_examples',  # path to where to save gallery generated output
-    'filename_pattern': '/', # execute all .py files, not just those with plot_ prefix
-}
-
-
-
+# -- Intersphinx
 intersphinx_mapping = {
     "emlearn": ("https://emlearn.readthedocs.io/en/latest/", None),
 }
@@ -218,4 +212,10 @@ intersphinx_mapping = {
 # suddenly resolve to an external location. See also:
 # https://www.sphinx-doc.org/en/master/usage/extensions/intersphinx.html#confval-intersphinx_disabled_reftypes
 intersphinx_disabled_reftypes = ["*"]
+
+# -- autodoc typehints
+always_document_param_types = True
+typehints_fully_qualified = True
+always_use_bars_union = True
+
 
