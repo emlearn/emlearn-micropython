@@ -57,3 +57,10 @@ emlearn_iir - Infinite Impulse Reponse filters
    :members:
 
 
+.. _emlearn_arrayutils:
+emlearn_arrayutils - Efficient utilities for array.array
+---------------------------------------------------------
+
+.. automodule:: emlearn_arrayutils
+   :members:
+
