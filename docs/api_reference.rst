@@ -18,16 +18,22 @@ API reference
 
 
 emlearn_trees
-------------
+-------------
 
 .. automodule:: emlearn_trees
    :members:
 
 
 emlearn_cnn
-------------
+-----------
 
 .. automodule:: emlearn_cnn
    :members:
 
+
+emlearn_neighbors
+------------------
+
+.. automodule:: emlearn_neighbors
+   :members:
 
