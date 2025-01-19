@@ -20,11 +20,6 @@ bibliography: paper.bib
 
 ---
 
-- Summary. 1-3 paragraphs. Max 1/2 page
-- Statement of need. Up to 1/2 page
-- Package contents. Table of the modules?
-- Usage example. Short but illustrative. One attractive plot
-
 # Summary
 
 ```
@@ -38,7 +33,7 @@ bibliography: paper.bib
 Up to 1/2 page
 ```
 
-[@scikit_learn]
+[@scikit-learn]
 [@keras]
 [@tensorflow]
 
@@ -46,14 +41,15 @@ scipy.signal iir
 [@scipy]
 
 
-[@TinyMaix]
 [@micropython]
 
 [@tflite_micro] 
 
 [@OpenMV]
 
+[@karavaev2024tinydecisiontreeclassifier]
 
+[@emlearn]
 
 Use in
 research. Application oriented
@@ -64,38 +60,31 @@ This can both be applied research, and application oriented. Data collection and
 Along with research in methods. By providing an example approach for developing ML methods for deployment on microcontrollers with MicroPython
 
 
-[ulab]
+[@TinyMaix]
+[@ulab]
 
 
 Generating Python code. Using
-[m2cgen]
-
-
-@misc{micropython,
-  author = {George, Damien P and MicroPython contributors},
-  title = {MicroPython - Python for Microcontrollers},
-  year = {2014},
-  publisher = {GitHub},
-  journal = {GitHub repository},
-  howpublished = {\url{https://github.com/micropython/micropython}}
-}
-
+[@m2cgen]
 
 
 # Package contents
 
 
-| Module             | Typing          | Garbage Collected | Evaluation | Created |
-|--------------------|:---------------:|:-----------------:|------------|---------|
-| emlearn_cnn        | static, strong  | yes               | non-strict | 1990    |
-| Lua                | dynamic, strong | yes               | strict     | 1993    |
-| C                  | static, weak    | no                | strict     | 1972    |
+| Module             | Description |
+|--------------------|:---------------:|
+| emlearn_trees      | Decision tree ensembles | 
+| emlearn_neighbors  | Nearest Neighbors    | 
+| emlearn_cnn        | Convolutional Neural Network  | 
+| emlearn_iir        | Infinite Impulse Response filters | 
+| emlearn_fft        | Fast Fourier Transform  | 
 
 
 # Usage example
 
 ```
-Short but illustrative. One attractive plot
+Short but illustrative example
+One attractive plot
 ```
 
 
