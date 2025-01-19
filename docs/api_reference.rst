@@ -17,29 +17,43 @@ API reference
    :titlesonly:
 
 
-emlearn_trees
--------------
+.. _emlearn_trees:
+emlearn_trees - Decision tree ensembles
+----------------------------------------------------
 
 .. automodule:: emlearn_trees
    :members:
 
 
-emlearn_cnn
------------
+.. _emlearn_cnn:
+emlearn_cnn - Convolutional Neural Networks
+----------------------------------------------------------
 
 .. automodule:: emlearn_cnn
    :members:
 
 
-emlearn_neighbors
-------------------
+.. _emlearn_neighbors:
+emlearn_neighbors - K Nearest Neighbors (KNN)
+---------------------------------------------------------
 
 .. automodule:: emlearn_neighbors
    :members:
 
 
-emlearn_fft
-------------------
+.. _emlearn_fft:
+emlearn_fft - Fast Fourier Transform
+---------------------------------------------------------
 
 .. automodule:: emlearn_fft
    :members:
+
+
+.. _emlearn_iir:
+emlearn_iir - Infinite Impulse Reponse filters
+---------------------------------------------------------
+
+.. automodule:: emlearn_iir
+   :members:
+
+
