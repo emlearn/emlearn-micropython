@@ -11,11 +11,13 @@
 
 # Milestones
 
-- Can run example in browser
-- Can run on-device training example
-- First demo video published
-- First test by other users
+- First demo video published. DONE, toothbrush
+- First test by other users. DONE, Cornell university
+- Complete example for full flow. Data collect, train, deploy. DONE, HAR
 - First course held
+- Can run on-device training example
+- Can run example in browser
+
 
 # TODO
 
@@ -42,8 +44,10 @@ sequence. On-device training demo
 - Add a couple of different sized models to benchmark?
 - Add another application/dataset for benchmark
 
-In-browser demo
+#### In-browser demo
 
-- Test MicroPython build for WASM/browser
+- Test MicroPython build for WASM/browser.
+Requires user/external C module build support.
+https://github.com/emlearn/emlearn-micropython/issues/18
 - Test getting audio input into MicroPython Webassembly
 - Test getting IMU data (ie on phone), in browser

@@ -14,10 +14,10 @@ and that it has many of the key properties needed to be highly suitable for this
 
 ## Native modules
 
-FIXED. Completely broken on at least one port, due to module functions being garbage collected.
+**FIXED.** Was completely broken on at least one port, due to module functions being garbage collected.
 https://github.com/micropython/micropython/issues/6769
 
-Using floating point / math operations is difficult / very tedious.
+**FIXED.** Using floating point / math operations is difficult / was very tedious.
 Need to manually resolve all symbols.
 https://github.com/micropython/micropython/issues/5629 
 
@@ -58,6 +58,8 @@ Would want to initialize empty / with unspecified values, or initialized filled 
 
 Inefficient copies of `array.array`.
 
+Missing efficient sorting function for `array.array`. 
+
 ## Data formats
 
 #### Binary encoding into strings
@@ -84,6 +86,9 @@ Ideally would be compatible with that.
 ### Image files
 
 !No mip-installable library for JPEG files.
+
+[cnadler86/micropython-camera-API](https://github.com/cnadler86/micropython-camera-API?tab=readme-ov-file#convert-image-to-another-format)
+has support for JPEG decode/encode, as a function in the camera module (ESP32 only).
 
 !No mip installable library for PNG files.
 
