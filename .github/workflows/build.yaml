@@ -47,14 +47,14 @@ jobs:
     - name: Build module xtensawin
       run: source micropython/esp-idf/export.sh && pip install -r requirements.txt && make dist ARCH=xtensawin V=1
     - name: Archive dist artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: dist
         path: dist
     - name: Prepare release
       run: make release
     - name: Archive release artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: release
         path: emlearn-micropython-*.zip
