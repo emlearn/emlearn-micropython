@@ -10,7 +10,8 @@ MPY_ABI_VERSION := 6.3
 # Location of emlearn library
 EMLEARN_DIR := $(shell python3 -c "import emlearn; print(emlearn.includedir)")
 
-LINK_RUNTIME = 1 # enable linking of libm etc
+# enable linking of libm etc
+LINK_RUNTIME=1
 
 DIST_DIR := ../../dist/$(ARCH)_$(MPY_ABI_VERSION)
 
