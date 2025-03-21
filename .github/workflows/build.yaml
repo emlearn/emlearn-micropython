@@ -25,6 +25,10 @@ jobs:
         repository: jonnor/micropython
         path: micropython
         ref: v1.25preview-linking
+    - name: Install Arm GNU Toolchain (arm-none-eabi-gcc)
+      uses: carlosperate/arm-none-eabi-gcc-action@v1
+      with:
+        release: '14.2.Rel1'
     - name: Install Python dependencies
       run: pip install -r requirements.txt
     - name: Setup MicroPython X86
