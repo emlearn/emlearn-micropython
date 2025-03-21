@@ -10,6 +10,8 @@ MPY_ABI_VERSION := 6.3
 # Location of emlearn library
 EMLEARN_DIR := $(shell python3 -c "import emlearn; print(emlearn.includedir)")
 
+# enable linking of libm etc
+LINK_RUNTIME=1
 
 DIST_DIR := ../../dist/$(ARCH)_$(MPY_ABI_VERSION)
 
@@ -18,47 +20,6 @@ MOD = emlearn_fft
 
 # Source files (.c or .py)
 SRC = fft.c fft.py
-
-
-# Stuff to make soft-float work
-# If symbols are undefined, use tools/find_symbols.py to locate object files to add
-ifeq ($(ARCH), armv7emsp)
-	SOFTFP_O := _arm_addsubdf3.o _arm_muldivdf3.o _arm_muldivdf3.o _arm_truncdfsf2.o
-endif
-
-
-ifeq ($(ARCH), xtensawin)
-	SOFTFP_O := _floatsidf.o _muldf3.o _divdf3.o _truncdfsf2.o
-endif
-
-ifeq ($(ARCH), armv6m)
-	SOFTFP_O := mulsf3.o addsf3.o subsf3.o _clzsi2.o _udivsi3.o
-endif
-ifeq ($(ARCH), armv7m)
-	SOFTFP_O := _arm_addsubsf3.o _arm_muldivsf3.o mulsf3.o addsf3.o subsf3.o _clzsi2.o _udivsi3.o
-endif
-
-
-SOFTFP_ENABLE := 0
-ifeq ($(ARCH), armv6m)
-	SOFTFP_ENABLE=1
-endif
-ifeq ($(ARCH), armv7m)
-	SOFTFP_ENABLE=1
-endif
-
-ifeq ($(ARCH), xtensawin)
-	SOFTFP_ENABLE=1
-endif
-ifeq ($(ARCH), armv7emsp)
-	SOFTFP_ENABLE=1
-endif
-
-ifeq ($(SOFTFP_ENABLE), 1)
-	SRC_O += $(SOFTFP_O)
-	SRC_O += $(LIBM_O)
-	#CLEAN_EXTRA += $(SOFTFP_O)
-endif
 
 # Releases
 DIST_FILE = $(DIST_DIR)/$(MOD).mpy
@@ -70,37 +31,6 @@ $(DIST_FILE): $(MOD).mpy $(DIST_DIR)
 
 # Include to get the rules for compiling and linking the module
 include $(MPY_DIR)/py/dynruntime.mk
-
-# CROSS is defined by the included
-LIBGCC_FILENAME = $(shell $(CROSS)gcc $(CFLAGS) -print-libgcc-file-name)
-$(info $(LIBGCC_FILENAME))
-
-# FIXME: unhardcode these libm
-ifeq ($(ARCH), xtensawin)
-LIBM_FILENAME = /home/jon/.espressif/tools/xtensa-esp32-elf/esp-2022r1-11.2.0/xtensa-esp32-elf/xtensa-esp32-elf/lib/esp32-psram/no-rtti/libm.a
-endif
-
-ifeq ($(ARCH), armv7emsp)
-	LIBM_FILENAME = /usr/arm-none-eabi/lib/thumb/v7e-m+fp/hard/libm.a
-endif
-
-libm_a-sf_cos.o:
-	$(CROSS)ar -x $(LIBM_FILENAME) $(LIBM_O)
-
-lib_a-sf_cos.o:
-	$(CROSS)ar -x $(LIBM_FILENAME) $(LIBM_O)
-
-_arm_truncdfsf2.o:
-	$(CROSS)ar -x $(LIBGCC_FILENAME) $(SOFTFP_O)
-
-_truncdfsf2.o:
-	$(CROSS)ar -x $(LIBGCC_FILENAME) $(SOFTFP_O)
-
-_udivsi3.o:
-	$(CROSS)ar -x $(LIBGCC_FILENAME) $(SOFTFP_O)
-
-_arm_addsubsf3.o:
-	$(CROSS)ar -x $(LIBGCC_FILENAME) $(SOFTFP_O)
 
 
 CFLAGS += -I$(EMLEARN_DIR)

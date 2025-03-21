@@ -19,17 +19,6 @@ void NORETURN abort() {
         ;
     }
 }
-
-int
-__aeabi_idiv0(int return_value) {
-  return return_value;
-}
-
-long long
-__aeabi_ldiv0(long long return_value) {
-  return return_value;
-}
-
 #endif
 
 

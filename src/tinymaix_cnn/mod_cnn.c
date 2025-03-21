@@ -24,17 +24,6 @@ void *memcpy(void *dst, const void *src, size_t n) {
 void *memset(void *s, int c, size_t n) {
     return mp_fun_table.memset_(s, c, n);
 }
-
-int
-__aeabi_idiv0(int return_value) {
-  return return_value;
-}
-
-void NORETURN abort() {
-    while (1) {
-        ;
-    }
-}
 #endif
 
 // get model output shapes
