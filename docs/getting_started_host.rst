@@ -11,19 +11,19 @@ Getting started on PC (Linux/MacOS/Windows)
 
 .. currentmodule:: emlearn-micropython
 
-emlearn models work anywhere there is a C99 compiler available.
-This includes common desktop platforms such as Linux, Mac OS, Windows, etc.
+emlearn-micropython runs on most platforms that MicroPython does.
+This includes common desktop platforms such as Linux, Mac OS, Windows, et.c.
 Since you need such a host platform to develop the Python machine-learning,
 it is convenient also to do the first tests of the model on the host.
+
 
 Prerequisites
 ===========================
 
-You need to have installed **Python** (version 3.6+),
+You need to have installed **Python** (version 3.10+),
 and a **C99 compiler** for your platform (GCC/Clang/MSVC).
 
-On Windows, the Windows Subsystem for Linux (WSL) is recommended,
-but MSCV and cmd.exe/Powershell can also be used.
+On Windows, the **Windows Subsystem for Linux (WSL)** is recommended.
 
 Install scikit-learn 
 ===========================
@@ -37,12 +37,32 @@ In this example, **scikit-learn** is used to train the models.
 Install emlearn
 ===========================
 
-**emlearn** will be used to convert the scikit-learn models to C code.
+The **emlearn** Python package will be used to convert the scikit-learn models
+to something that can be loaded with emlearn-micropython.
 
 .. code-block:: console
 
     pip install emlearn
 
+
+Install MicroPython Unix port
+==================================
+
+We need to have the ``micropython`` interpreter installed.
+
+Install the Unix port of MicroPython by following the `unix port documentation <https://github.com/micropython/micropython/tree/master/ports/unix#micropython-unix-port>`_
+
+
+Install emlearn-micropython modules
+====================================
+
+emlearn-micropython is distributed as a set of MicroPython native modules.
+These are .npy file with native code, that can be installed at runtime using **mip**.
+This example uses the ``emlearn_trees`` module, so that is what we will install.
+
+.. code-block:: console
+
+    micropython -m mip install https://emlearn.github.io/emlearn-micropython/builds/master/x64_6.3/emlearn_trees.mpy
 
 Create model in Python
 ===========================
@@ -53,7 +73,7 @@ Copy and save this as file ``xor_train.py``.
 
 .. literalinclude:: helloworld_xor/xor_train.py
    :language: python
-   :emphasize-lines: 1,21-24
+   :emphasize-lines: 3-4,26,30
    :linenos:
 
 Run the script
@@ -62,58 +82,45 @@ Run the script
 
     python xor_train.py
 
-It will generate a file ``xor_model.h`` containing the C code for our model.
+It will generate a file ``xor_model.csv`` containing the C code for our model.
 
-Use in C code 
+
+Use in MicroPython code 
 ========================
 
-To run our model we use a simple C program that
-takes data on the commandline, and prints out the detected class.
+To run our model we use a simple MicroPython program.
 
-Copy and save this as file ``xor_host.c``.
+Copy and save this as file ``xor_run.py``.
 
-.. literalinclude:: helloworld_xor/xor_host.c
-   :language: c
-   :emphasize-lines: 1,18-19
+.. literalinclude:: helloworld_xor/xor_run.py
+   :language: python
+   :emphasize-lines: 3,10,23
    :linenos:
 
 
-On Linux / MacOS / WSL with GCC
-
-.. code-block:: console
-
-    export EMLEARN_INCLUDE_DIR=`python -c 'import emlearn; print(emlearn.includedir)'`
-    gcc -o xor_host xor_host.c -I${EMLEARN_INCLUDE_DIR}
-
-On Windows with cmd.exe
-
-.. code-block:: console
-
-    python -c "import emlearn; print(emlearn.includedir)"
-    
-    set EMLEARN_INCLUDE_DIR=    output from above command
-    
-    cl xor_host.c /I %EMLEARN_INCLUDE_DIR% /link /out:xor_host.exe
 
 Try it out 
 ========================
 
-In our training data input values above ``0.5`` is considered "true".
-So for the XOR function, if **one and only one** of the values is above ``0.5``, should get class **1** as output - else class **0**. 
+In our training data input values above ``2**14`` is considered "true".
+So for the XOR function, if **one and only one** of the values is above this limit, should get class **1** as output - else class **0**. 
 
-The following should output 1
-
-.. code-block:: console
-
-    ./xor_host 0.6 0.0
-    ./xor_host 0.1 0.7
-
-The following should output 0
+Run the program using `micropython`:
 
 .. code-block:: console
 
-    ./xor_host 0.8 0.7
-    ./xor_host 0.0 0.0
+    micropython xor_host.py
+
+
+The output should be something like:
+
+.. code-block:: console
+
+    [0, 0] -> [1.0, 0.0] : False
+    [32767, 32767] -> [0.666, 0.333] : False
+    [0, 32767] -> [0.0, 1.0] : True
+    [32767, 0] -> [0.0, 1.0] : True
+
 
 Next
 ========

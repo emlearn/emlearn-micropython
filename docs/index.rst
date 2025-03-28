@@ -4,8 +4,8 @@ Welcome to emlearn-micropython's documentation!
 ===================================
 
 .. toctree::
-   :maxdepth: 3
-   :caption: Contents:
+   :maxdepth: 2
+   :caption: Contents
 
    source/README.md
    user_guide
