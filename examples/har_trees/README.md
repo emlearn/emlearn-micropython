@@ -189,7 +189,7 @@ mpremote run har_record.py
 Alternatively: Copy the program to device.
 This way it will run even if there is no USB device connected.
 ```
-mpremote cp har_record.py main.py
+mpremote cp har_record.py :main.py
 mpremote reset
 ```
 
