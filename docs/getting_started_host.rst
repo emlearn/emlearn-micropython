@@ -98,7 +98,6 @@ Copy and save this as file ``xor_run.py``.
    :linenos:
 
 
-
 Try it out 
 ========================
 
