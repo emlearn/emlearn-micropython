@@ -57,8 +57,11 @@ educational
 
 emlearn-micropython makes research in Machine Learning for embedded systems easier.
 This can both be applied research, and application oriented. Data collection and prototyping
-Along with research in methods. By providing an example approach for developing ML methods for deployment on microcontrollers with MicroPython
+Along with research in methods.
+By providing an example approach for developing ML methods for deployment on microcontrollers with MicroPython
 
+Can do high-level parts of algorithm in Python.
+And then use optimization of critical sections as C modules.
 
 [@TinyMaix]
 [@ulab]
@@ -69,6 +72,13 @@ Generating Python code. Using
 
 
 # Package contents
+
+The emlearn-micropython software is distributes as MicroPython native modules[@micropython_native_module].
+A MicroPython native module contains a combination of machine code (compiled from C) and MicroPython interpret byte-code (compiled from Python).
+The module can installed at runtime using the `mip` package manager.
+
+
+The modules are small (typically a few kilobytes), independent,  .
 
 
 | Module             | Description |
@@ -100,7 +110,7 @@ Figure sizes can be customized by adding an optional second parameter:
 We would like to thank
 Volodymyr Shymanskyy for his work on improving native module support in MicroPython,
 Damien P. George for fixes to native modules (and generally for MicroPython maintenance),
-and Jeremy Meyer for user-testing the CNN sub-module.
+and Jeremy Meyer for user-testing of the emlearn_cnn sub-module.
 
 
 # References
