@@ -24,6 +24,10 @@ bibliography: paper.bib
 
 ```
 1-3 paragraphs. Max 1/2 page
+
+A summary describing the high-level functionality
+and purpose of the software =
+or a diverse, non-specialist audience.
 ```
 
 
@@ -89,7 +93,7 @@ Generating Python code. Using
 The emlearn-micropython software package provides a selection of machine learning inference algorithms,
 along with some Digital Signal Processing functions.
 They have been selected based on what is useful and commonly used in embedded systems.
-Table 1. provides an listing of the provided functionality.
+Table \ref{identifier} provides an listing of the provided functionality.
 
 The software is distributes as MicroPython native modules[@micropython_native_module].
 A MicroPython native module contains a combination of machine code (compiled from C) and MicroPython interpret byte-code (compiled from Python).
@@ -99,15 +103,16 @@ The modules provided by emlearn-micropython are independent of eachother, and ty
 This makes it easy to install just what is needed for a particular application.
 
 
-| Module             | Description | Corresponds to |
-|--------------------|:---------------:|-----------------|
-| emlearn_trees      | Decision tree ensembles | sklearn RandomForestClassifier |
-| emlearn_neighbors  | Nearest Neighbors    | sklearn KNeighborsClassifier |
-| emlearn_cnn        | Convolutional Neural Network  | keras Model+Conv2D |
-| emlearn_fft        | Fast Fourier Transform  | scipy.fft.fft |
-| emlearn_iir        | Infinite Impulse Response filters | scipy.signal.sosfilt |
-| emlearn_arrayutils | Fast utilities for array.array  | N/A |
-
+| Module             | Description                          | Corresponds to |
+|:-------------------|:-------------------------------------|:----------------------------------|
+| emlearn_trees      | Decision tree ensembles              | sklearn RandomForestClassifier    |
+| emlearn_neighbors  | Nearest Neighbors                    | sklearn KNeighborsClassifier      |
+| emlearn_cnn        | Convolutional Neural Network         | keras Model+Conv2D                |
+| emlearn_fft        | Fast Fourier Transform               | scipy.fft.fft                     |
+| emlearn_iir        | Infinite Impulse Response filters    | scipy.signal.sosfilt              |
+| emlearn_arrayutils | Fast utilities for array.array       | N/A                               |
+ 
+Table: Overview of modules provided by emlearn-micropython \label{modules}
 
 Most of the modules are implemented as wrappers of functionality provided in the emlearn C library[@emlearn].
 However, the emlearn_cnn module is implemented using the TinyMaix library[@TinyMaix].

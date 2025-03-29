@@ -26,6 +26,7 @@ Non-critical
 
 WIP in joss-paper branch of emlearn-micropython
 
+
 ## Examples
 https://joss.readthedocs.io/en/latest/example_paper.html
 
@@ -37,6 +38,22 @@ Scope. Max 2 pages plus references
 - Package contents. Table of the modules?
 - Usage example. Short but illustrative. One attractive plot
 - References
+
+## What they ask for
+
+
+    A list of the authors of the software and their affiliations, using the correct format (see the example below).
+
+    A summary describing the high-level functionality and purpose of the software for a diverse, non-specialist audience.
+
+    A Statement of need section that clearly illustrates the research purpose of the software and places it in the context of related work.
+
+    A list of key references, including to other software addressing related needs. Note that the references should include full names of venues, e.g., journals and conferences, not abbreviations only understood in the context of a specific discipline.
+
+    Mention (if applicable) a representative set of past or ongoing research projects using the software and recent scholarly publications enabled by it.
+
+    Acknowledgement of any financial support.
+s
 
 ## Focus
 + Make it clear that it is relevant *for research* (eg in TinyML applications)
