@@ -2,6 +2,10 @@
 
 https://joss.readthedocs.io/en/latest/submitting.html
 
+## Building PDF from paper
+
+docker run --rm --volume $PWD/paper:/data --user $(id -u):$(id -g) --env JOURNAL=joss openjournals/inara
+
 # TODO
 
 Critical
@@ -22,10 +26,17 @@ Non-critical
 + Respond to review comments
 
 
+## Usage example
+
+Ideally show 2 modules?
+Can be in a composite example.
+
+For plot would need to output data. npyfile?
+Point out that the same code runs on microcontroller (such as ESP32, RP2350, STM32 etc)
+
 # Paper
 
 WIP in joss-paper branch of emlearn-micropython
-
 
 ## Examples
 https://joss.readthedocs.io/en/latest/example_paper.html
