@@ -10,7 +10,7 @@ def butterworth_poles(n):
     poles = []
     for k in range(n):
         theta = PI * (2 * k + 1) / (2 * n)
-        s = -math.sin(theta) + 1j * math.cos(theta)
+        s = -cmath.exp(1j * theta)  # unit circle, reflected to LHP
         poles.append(s)
     return poles
 
