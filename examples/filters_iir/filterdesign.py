@@ -53,6 +53,12 @@ def sos_from_poles_zeros(poles, zeros, gain=1.0):
         # Ensure 3 coefficients
         while len(b) < 3: b.append(0.0)
         while len(a) < 3: a.append(0.0)
+        
+        # Normalize by a0
+        a0 = a[0]
+        b = [bi / a0 for bi in b]
+        a = [ai / a0 for ai in a]
+
         sos.append([b[0], b[1], b[2], a[0], a[1], a[2]])
     return sos
 
