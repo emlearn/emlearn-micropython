@@ -1,4 +1,3 @@
-
 import math
 import cmath
 
@@ -33,64 +32,77 @@ def s_to_z_bilinear(s_poles, s_zeros, fs, fc):
         Tuple of (z_poles, z_zeros)
     """
     # Prewarp cutoff frequency
-    omega_c = 2 * math.pi * fc
+    if isinstance(fc, tuple):
+        # For bandpass, use geometric mean of cutoffs
+        omega_c = 2 * math.pi * math.sqrt(fc[0] * fc[1])
+    else:
+        omega_c = 2 * math.pi * fc
+    
     omega_d = 2 * fs * math.tan(omega_c / (2 * fs))
     
     # Scale poles and zeros by prewarped frequency
     scaled_poles = [p * omega_d for p in s_poles]
-    scaled_zeros = [z * omega_d for z in s_zeros]
+    scaled_zeros = [z * omega_d if z != float('inf') else z for z in s_zeros]
     
     # Apply bilinear transform
     z_poles = [(1 + p/(2*fs)) / (1 - p/(2*fs)) for p in scaled_poles]
-    z_zeros = [(1 + z/(2*fs)) / (1 - z/(2*fs)) for z in scaled_zeros]
+    
+    z_zeros = []
+    for z in scaled_zeros:
+        if z == float('inf'):
+            z_zeros.append(-1.0)  # Infinity maps to -1
+        elif z == 0:
+            z_zeros.append(1.0)   # Zero maps to 1
+        else:
+            z_zeros.append((1 + z/(2*fs)) / (1 - z/(2*fs)))
     
     return z_poles, z_zeros
 
-def normalize_gain(z_poles, z_zeros, filter_type, fc, fs):
+def calculate_dc_gain(sos):
     """
-    Calculate the gain to normalize the filter response at DC or Nyquist.
+    Calculate the DC gain (z=1) or Nyquist gain (z=-1) of SOS filter.
     
     Args:
-        z_poles: Z-plane poles
-        z_zeros: Z-plane zeros
-        filter_type: 'lowpass', 'highpass', or 'bandpass'
-        fc: Cutoff frequency
-        fs: Sampling frequency
+        sos: List of second-order sections
         
     Returns:
-        Gain factor
+        DC gain value
     """
-    # Evaluate the gain at the appropriate frequency
-    if filter_type == 'lowpass':
-        z = 1.0  # DC (z = 1)
-    elif filter_type == 'highpass':
-        z = -1.0  # Nyquist (z = -1)
-    else:  # bandpass
-        # For bandpass, we'll evaluate at the center frequency
-        z = complex(math.cos(2 * math.pi * fc[0] / fs), math.sin(2 * math.pi * fc[0] / fs))
-    
-    # Calculate gain
-    numerator = 1.0
-    for zero in z_zeros:
-        numerator *= abs(z - zero)
-    
-    denominator = 1.0
-    for pole in z_poles:
-        denominator *= abs(z - pole)
-    
-    if numerator == 0:
-        return 1.0
-    
-    return denominator / numerator
+    gain = 1.0
+    for section in sos:
+        b0, b1, b2, a0, a1, a2 = section
+        # Evaluate at z=1 (DC)
+        numerator = b0 + b1 + b2
+        denominator = a0 + a1 + a2
+        gain *= numerator / denominator
+    return gain
 
-def group_into_sos(poles, zeros, gain):
+def calculate_nyquist_gain(sos):
+    """
+    Calculate the Nyquist gain (z=-1) of SOS filter.
+    
+    Args:
+        sos: List of second-order sections
+        
+    Returns:
+        Nyquist gain value
+    """
+    gain = 1.0
+    for section in sos:
+        b0, b1, b2, a0, a1, a2 = section
+        # Evaluate at z=-1 (Nyquist)
+        numerator = b0 - b1 + b2
+        denominator = a0 - a1 + a2
+        gain *= numerator / denominator
+    return gain
+
+def group_into_sos(poles, zeros):
     """
     Group poles and zeros into second-order sections.
     
     Args:
         poles: List of poles
         zeros: List of zeros
-        gain: Overall gain
         
     Returns:
         List of SOS coefficients [b0, b1, b2, a0, a1, a2]
@@ -112,9 +124,6 @@ def group_into_sos(poles, zeros, gain):
     sos_list = []
     i = 0
     
-    # Apply gain to the first section
-    section_gain = gain ** (1 / ((n_poles + 1) // 2))
-    
     while i < n_poles:
         if i + 1 < n_poles and isinstance(poles[i], complex) and poles[i].imag != 0:
             # Complex conjugate pair
@@ -132,20 +141,17 @@ def group_into_sos(poles, zeros, gain):
             # Second-order section numerator coefficients
             if isinstance(z1, complex) and z1.imag != 0:
                 # Complex conjugate zeros
-                b0 = section_gain
-                b1 = -2 * z1.real * b0  # Sum of conjugate pair
-                b2 = (abs(z1) ** 2) * b0  # Product of conjugate pair
+                b0 = 1.0
+                b1 = -2 * z1.real  # Sum of conjugate pair
+                b2 = abs(z1) ** 2  # Product of conjugate pair
             else:
                 # Real zeros
-                b0 = section_gain
-                b1 = -(z1 + z2) * b0
-                b2 = (z1 * z2) * b0
+                b0 = 1.0
+                b1 = -(z1 + z2)
+                b2 = z1 * z2
             
             sos_list.append([b0, b1, b2, a0, a1, a2])
             i += 2
-            
-            # Reset gain for the remaining sections
-            section_gain = 1.0
         else:
             # Real pole
             p = poles[i]
@@ -156,17 +162,46 @@ def group_into_sos(poles, zeros, gain):
             a1 = -p
             a2 = 0.0
             
-            b0 = section_gain
-            b1 = -z * b0
+            b0 = 1.0
+            b1 = -z
             b2 = 0.0
             
             sos_list.append([b0, b1, b2, a0, a1, a2])
             i += 1
-            
-            # Reset gain for the remaining sections
-            section_gain = 1.0
     
     return sos_list
+
+def normalize_sos(sos, filter_type):
+    """
+    Normalize SOS filter to have unit gain at the appropriate frequency.
+    
+    Args:
+        sos: List of second-order sections
+        filter_type: 'lowpass', 'highpass', or 'bandpass'
+        
+    Returns:
+        Normalized SOS coefficients
+    """
+    if filter_type == 'lowpass':
+        # Normalize to have unity gain at DC (z=1)
+        dc_gain = calculate_dc_gain(sos)
+        gain_factor = 1.0 / dc_gain
+    elif filter_type == 'highpass':
+        # Normalize to have unity gain at Nyquist (z=-1)
+        nyquist_gain = calculate_nyquist_gain(sos)
+        gain_factor = 1.0 / nyquist_gain
+    else:  # bandpass
+        # For bandpass, we'll normalize the gain at DC to be 0,
+        # and the peak gain to be 1.0
+        # This is done in the butter_bandpass function itself
+        return sos
+    
+    # Apply gain normalization to the first section
+    normalized_sos = sos.copy()
+    b0, b1, b2, a0, a1, a2 = normalized_sos[0]
+    normalized_sos[0] = [b0 * gain_factor, b1 * gain_factor, b2 * gain_factor, a0, a1, a2]
+    
+    return normalized_sos
 
 def butter_lowpass(order, cutoff, fs):
     """
@@ -189,14 +224,11 @@ def butter_lowpass(order, cutoff, fs):
     # Convert to digital filter via bilinear transform
     z_poles, z_zeros = s_to_z_bilinear(s_poles, s_zeros, fs, cutoff)
     
-    # For lowpass filters, zeros that were at infinity in s-plane map to z=-1
-    z_zeros = [-1.0] * order
-    
-    # Calculate gain for normalization
-    gain = normalize_gain(z_poles, z_zeros, 'lowpass', cutoff, fs)
-    
     # Group into second-order sections
-    sos = group_into_sos(z_poles, z_zeros, gain)
+    sos = group_into_sos(z_poles, z_zeros)
+    
+    # Normalize to have unity gain at DC
+    sos = normalize_sos(sos, 'lowpass')
     
     return sos
 
@@ -224,14 +256,11 @@ def butter_highpass(order, cutoff, fs):
     # Convert to digital filter via bilinear transform
     z_poles, z_zeros = s_to_z_bilinear(s_poles, s_zeros, fs, cutoff)
     
-    # For highpass filters, zeros at s=0 map to z=1
-    z_zeros = [1.0] * order
-    
-    # Calculate gain for normalization
-    gain = normalize_gain(z_poles, z_zeros, 'highpass', cutoff, fs)
-    
     # Group into second-order sections
-    sos = group_into_sos(z_poles, z_zeros, gain)
+    sos = group_into_sos(z_poles, z_zeros)
+    
+    # Normalize to have unity gain at Nyquist
+    sos = normalize_sos(sos, 'highpass')
     
     return sos
 
@@ -268,16 +297,28 @@ def butter_bandpass(order, cutoff, fs):
     bp_s_zeros = [0.0] * order + [float('inf')] * order
     
     # Convert to digital filter via bilinear transform
-    z_poles, z_zeros = s_to_z_bilinear(bp_s_poles, bp_s_zeros, fs, (cutoff[0] + cutoff[1])/2)
-    
-    # For bandpass filters, zeros at s=0 map to z=1 and zeros at s=inf map to z=-1
-    z_zeros = [1.0] * order + [-1.0] * order
-    
-    # Calculate gain for normalization
-    gain = normalize_gain(z_poles, z_zeros, 'bandpass', cutoff, fs)
+    z_poles, z_zeros = s_to_z_bilinear(bp_s_poles, bp_s_zeros, fs, cutoff)
     
     # Group into second-order sections
-    sos = group_into_sos(z_poles, z_zeros, gain)
+    sos = group_into_sos(z_poles, z_zeros)
+    
+    # For bandpass, we need to handle normalization differently
+    # Let's find the frequency response at the center frequency
+    center_freq = math.sqrt(cutoff[0] * cutoff[1])
+    z_center = cmath.rect(1.0, 2 * math.pi * center_freq / fs)
+    
+    # Calculate gain at center frequency
+    gain = 1.0
+    for section in sos:
+        b0, b1, b2, a0, a1, a2 = section
+        numerator = b0 + b1 * z_center**-1 + b2 * z_center**-2
+        denominator = a0 + a1 * z_center**-1 + a2 * z_center**-2
+        gain *= abs(numerator / denominator)
+    
+    # Apply gain normalization to the first section
+    gain_factor = 1.0 / gain
+    b0, b1, b2, a0, a1, a2 = sos[0]
+    sos[0] = [b0 * gain_factor, b1 * gain_factor, b2 * gain_factor, a0, a1, a2]
     
     return sos
 
