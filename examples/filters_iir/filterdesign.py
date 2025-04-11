@@ -62,22 +62,22 @@ def sos_from_poles_zeros(poles, zeros, gain=1.0):
         sos.append([b[0], b[1], b[2], a[0], a[1], a[2]])
     return sos
 
-def compute_gain(poles_z, zeros_z, ftype):
-    """Normalizes gain at DC (for lowpass) or Nyquist (for highpass)."""
-    if ftype == 'lowpass':
-        z_eval = 1.0
-    elif ftype == 'highpass':
-        z_eval = -1.0
-    else:
-        return 1.0  # For bandpass or general cases, skip normalization
 
-    num = 1.0
-    den = 1.0
-    for z in zeros_z:
-        num *= abs(z_eval - z)
-    for p in poles_z:
-        den *= abs(z_eval - p)
-    return num / den if den != 0 else 1.0
+def evaluate_transfer_function(b, a, z):
+    """Evaluate H(z) = B(z) / A(z) at a specific z (complex)."""
+    num = sum(b[i] * (z**(-i)) for i in range(len(b)))
+    den = sum(a[i] * (z**(-i)) for i in range(len(a)))
+    return num / den if den != 0 else 0.0
+
+def compute_dc_gain(sos):
+    """Compute the overall gain of the SOS filter at z=1 (DC)."""
+    z = 1.0  # DC
+    h = 1.0
+    for section in sos:
+        b = section[0:3]
+        a = section[3:6]
+        h *= evaluate_transfer_function(b, a, z)
+    return abs(h)
 
 def design_butterworth(order, ftype, fs, f1, f2=None, gain=1.0):
     analog_poles = butterworth_poles(order)
@@ -111,9 +111,29 @@ def design_butterworth(order, ftype, fs, f1, f2=None, gain=1.0):
     # Bilinear transform
     poles_z, zeros_z = bilinear(poles, zeros, fs)
 
-    # Normalize gain
-    norm_gain = compute_gain(poles_z, zeros_z, ftype)
-    final_gain = gain / norm_gain
+    # Initial SOS (gain will be corrected below)
+    sos = sos_from_poles_zeros(poles_z, zeros_z, gain=1.0)
 
-    return sos_from_poles_zeros(poles_z, zeros_z, final_gain)
+    # Normalize DC or Nyquist gain based on filter type
+    if ftype == 'lowpass':
+        target_z = 1.0
+    elif ftype == 'highpass':
+        target_z = -1.0
+    else:
+        target_z = None  # Skip gain normalization for bandpass
+
+    if target_z is not None:
+        actual_gain = 1.0
+        for section in sos:
+            b = section[0:3]
+            a = section[3:6]
+            actual_gain *= evaluate_transfer_function(b, a, target_z)
+        if actual_gain != 0:
+            scale = gain / abs(actual_gain)
+            # Apply scale to first section only
+            sos[0][0] *= scale
+            sos[0][1] *= scale
+            sos[0][2] *= scale
+
+    return sos
 
