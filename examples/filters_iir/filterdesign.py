@@ -8,9 +8,9 @@ def prewarp(f, fs):
 
 def butterworth_poles(n):
     poles = []
-    for k in range(1, n + 1):
-        angle = PI * (2 * k - 1) / (2 * n)
-        s = -cmath.exp(1j * angle)  # Correct pole location
+    for k in range(n):
+        theta = PI * (2 * k + 1) / (2 * n)
+        s = -math.sin(theta) + 1j * math.cos(theta)
         poles.append(s)
     return poles
 
@@ -22,16 +22,22 @@ def bilinear(poles, zeros, fs):
     zeros_z = [bilinear_map(z) if z != float('inf') else -1.0 for z in zeros]
     return poles_z, zeros_z
 
+
 def poly(roots):
-    """Computes polynomial coefficients from given roots."""
+    """Return real-valued coefficients of polynomial from complex conjugate roots."""
     coeffs = [1.0]
     for r in roots:
-        new_coeffs = [0.0] * (len(coeffs) + 1)
-        for i in range(len(coeffs)):
-            new_coeffs[i]     -= coeffs[i] * r
-            new_coeffs[i + 1] += coeffs[i]
-        coeffs = new_coeffs
-    return [c.real if isinstance(c, complex) else c for c in coeffs]
+        coeffs = convolve(coeffs, [1, -r])
+    return [c.real for c in coeffs]
+
+
+def convolve(a, b):
+    """Manual convolution of two lists."""
+    result = [0.0] * (len(a) + len(b) - 1)
+    for i in range(len(a)):
+        for j in range(len(b)):
+            result[i + j] += a[i] * b[j]
+    return result
 
 def sos_from_poles_zeros(poles, zeros, gain=1.0):
     sos = []
