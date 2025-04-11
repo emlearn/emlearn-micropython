@@ -270,53 +270,72 @@ def butter_bandpass(order, cutoff, fs):
     
     Args:
         order: Filter order (will be doubled internally)
-        cutoff: Tuple of (low_cutoff, high_cutoff)
-        fs: Sampling frequency
+        cutoff: Tuple of (low_cutoff, high_cutoff) in Hz
+        fs: Sampling frequency in Hz
         
     Returns:
         SOS coefficients
     """
-    # For bandpass filter, the order will be doubled
-    bp_order = 2 * order
+    # Bandpass filter is created by transforming a lowpass prototype
+    # using the bilinear transform with frequency prewarping
     
-    # Get analog filter poles
+    # Calculate center frequency (geometric mean) and bandwidth
+    f_low, f_high = cutoff
+    f_center = math.sqrt(f_low * f_high)
+    bandwidth = f_high - f_low
+    
+    # Prewarp frequencies
+    omega_c = 2 * math.pi * f_center
+    omega_l = 2 * math.pi * f_low
+    omega_h = 2 * math.pi * f_high
+    
+    # Convert to digital frequencies
+    omega_c_digital = 2 * fs * math.tan(omega_c / (2 * fs))
+    omega_l_digital = 2 * fs * math.tan(omega_l / (2 * fs))
+    omega_h_digital = 2 * fs * math.tan(omega_h / (2 * fs))
+    
+    # Calculate Q-factor and prewarped bandwidth
+    Q = omega_c_digital / (omega_h_digital - omega_l_digital)
+    BW = omega_h_digital - omega_l_digital
+    
+    # Get the analog lowpass prototype poles
     s_poles = butter_poles(order)
     
-    # Calculate center frequency and bandwidth in radians/sec
-    w0 = 2 * math.pi * math.sqrt(cutoff[0] * cutoff[1])
-    bw = 2 * math.pi * (cutoff[1] - cutoff[0])
-    
-    # Transform poles for bandpass filter
+    # Transform lowpass poles to bandpass poles
     bp_s_poles = []
     for p in s_poles:
-        # Each pole generates two new poles
-        bp_s_poles.append(0.5 * bw * p + cmath.sqrt(0.25 * (bw * p)**2 - w0**2))
-        bp_s_poles.append(0.5 * bw * p - cmath.sqrt(0.25 * (bw * p)**2 - w0**2))
+        # Scale pole by bandwidth and shift to center frequency
+        # For bandpass, each pole from the lowpass prototype creates two poles
+        p_scaled = p * BW / 2
+        bp_s_poles.append(p_scaled + cmath.sqrt(p_scaled**2 - omega_c_digital**2))
+        bp_s_poles.append(p_scaled - cmath.sqrt(p_scaled**2 - omega_c_digital**2))
     
-    # Bandpass filter has zeros at s=0 and s=infinity
+    # Bandpass filter has zeros at s=0 (dc) and s=infinity
     bp_s_zeros = [0.0] * order + [float('inf')] * order
     
-    # Convert to digital filter via bilinear transform
-    z_poles, z_zeros = s_to_z_bilinear(bp_s_poles, bp_s_zeros, fs, cutoff)
+    # Apply bilinear transform to get digital poles and zeros
+    z_poles = []
+    for p in bp_s_poles:
+        z_poles.append((1 + p/(2*fs)) / (1 - p/(2*fs)))
+    
+    # For bandpass filters, zeros at s=0 map to z=1 and zeros at s=inf map to z=-1
+    z_zeros = [1.0] * order + [-1.0] * order
     
     # Group into second-order sections
     sos = group_into_sos(z_poles, z_zeros)
     
-    # For bandpass, we need to handle normalization differently
-    # Let's find the frequency response at the center frequency
-    center_freq = math.sqrt(cutoff[0] * cutoff[1])
-    z_center = cmath.rect(1.0, 2 * math.pi * center_freq / fs)
+    # Calculate gain at center frequency to normalize
+    z_center = cmath.rect(1.0, 2 * math.pi * f_center / fs)
+    gain_at_center = 1.0
     
-    # Calculate gain at center frequency
-    gain = 1.0
     for section in sos:
         b0, b1, b2, a0, a1, a2 = section
         numerator = b0 + b1 * z_center**-1 + b2 * z_center**-2
         denominator = a0 + a1 * z_center**-1 + a2 * z_center**-2
-        gain *= abs(numerator / denominator)
+        gain_at_center *= abs(numerator / denominator)
     
-    # Apply gain normalization to the first section
-    gain_factor = 1.0 / gain
+    # Apply gain normalization to first section
+    gain_factor = 1.0 / gain_at_center
     b0, b1, b2, a0, a1, a2 = sos[0]
     sos[0] = [b0 * gain_factor, b1 * gain_factor, b2 * gain_factor, a0, a1, a2]
     
