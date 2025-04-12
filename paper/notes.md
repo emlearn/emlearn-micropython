@@ -10,8 +10,7 @@ docker run --rm --volume $PWD/paper:/data --user $(id -u):$(id -g) --env JOURNAL
 
 Critical
 
-- Write Statement of need
-- Create a usage example. Including a nice plot
+- Finish usage example and plot
 
 Non-critical
 
@@ -42,6 +41,7 @@ WIP in joss-paper branch of emlearn-micropython
 https://joss.readthedocs.io/en/latest/example_paper.html
 
 ## Outline
+Should be 250-1000 words.
 Scope. Max 2 pages plus references
 
 - Summary. 1-3 paragraphs. Max 1/2 page
