@@ -45,7 +45,7 @@ Builds on [emlearn](https://emlearn.org), a C99 library for Machine Learning on 
 
 ## Documentation
 
-Complete [documentation on ReadTheDocs](https://emlearn-micropython.readthedocs.io/en/latest/user_guide.htmls).
+Complete [documentation on ReadTheDocs](https://emlearn-micropython.readthedocs.io/en/latest/user_guide.html).
 
 ## Prerequisites
 
