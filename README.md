@@ -17,8 +17,9 @@ Builds on [emlearn](https://emlearn.org), a C99 library for Machine Learning on 
 ## Status
 **Minimally useful**
 
-- Tested *working* on `x64` (Unix port) and `xtensawin` (ESP32).
-- Currently *broken* on ARM `armv6m` (Cortex M0 / RP2040). [Issue](https://github.com/emlearn/emlearn-micropython/issues/19)
+- Tested *working* on `x64` (Unix port) and `xtensawin` (ESP32/ESP32-S3/etc).
+- Currently not supported: [armv6m/Cortex-M0/RP2040](https://github.com/emlearn/emlearn-micropython/issues/19)
+and [RISC-V/ESP32-C3/ESP32-C6](https://github.com/emlearn/emlearn-micropython/issues/35)
 
 ## Features
 
