@@ -1,5 +1,10 @@
 // Include the header file to get access to the MicroPython API
+
+#ifdef MICROPY_ENABLE_DYNRUNTIME
 #include "py/dynruntime.h"
+#else
+#include "py/runtime.h"
+#endif
 
 #define EML_TREES_REGRESSION_ENABLE 0
 #include <eml_trees.h>
@@ -33,7 +38,11 @@ typedef struct _mp_obj_trees_builder_t {
     EmlTreesBuilder builder;
 } mp_obj_trees_builder_t;
 
+#if MICROPY_ENABLE_DYNRUNTIME
 mp_obj_full_type_t trees_builder_type;
+#else
+static const mp_obj_type_t trees_builder_type;
+#endif
 
 // Create a new tree builder
 static mp_obj_t builder_new(mp_obj_t trees_obj, mp_obj_t nodes_obj, mp_obj_t leaves_obj) {
@@ -58,9 +67,9 @@ static mp_obj_t builder_new(mp_obj_t trees_obj, mp_obj_t nodes_obj, mp_obj_t lea
     self->max_leaves = max_leaves;
 
     // create storage for trees
-    EmlTreesNode *nodes = (EmlTreesNode *)m_malloc(sizeof(EmlTreesNode)*max_nodes);
-    int32_t *roots = (int32_t *)m_malloc(sizeof(int32_t)*max_trees);
-    uint8_t *leaves = (uint8_t *)m_malloc(sizeof(uint8_t)*max_leaves);
+    EmlTreesNode *nodes = m_new(EmlTreesNode, self->max_nodes);
+    int32_t *roots = m_new(int32_t, self->max_trees);
+    uint8_t *leaves = m_new(uint8_t, self->max_leaves);
 
 #if EMLEARN_MICROPYTHON_DEBUG
     mp_printf(&mp_plat_print, "emltrees nodes=%p roots=%p builder=%p\n", nodes, roots, self);
@@ -91,9 +100,9 @@ static mp_obj_t builder_del(mp_obj_t trees_obj) {
     EmlTreesBuilder *self = &o->builder;
 
     // free allocated data
-    m_free(self->trees.nodes);
-    m_free(self->trees.tree_roots);
-    m_free(self->trees.leaves);
+    m_del(EmlTreesNode, self->trees.nodes, self->max_nodes);
+    m_del(int32_t, self->trees.tree_roots, self->max_nodes);
+    m_del(uint8_t, self->trees.leaves, self->max_leaves);
 
 #if EMLEARN_MICROPYTHON_DEBUG
     mp_printf(&mp_plat_print, "emltrees del \n");
@@ -261,6 +270,7 @@ static mp_obj_t builder_predict(mp_obj_t self_obj, mp_obj_t features_obj, mp_obj
 static MP_DEFINE_CONST_FUN_OBJ_3(builder_predict_obj, builder_predict);
 
 
+#ifdef MICROPY_ENABLE_DYNRUNTIME
 mp_map_elem_t trees_locals_dict_table[7];
 static MP_DEFINE_CONST_DICT(trees_locals_dict, trees_locals_dict_table);
 
@@ -288,4 +298,41 @@ mp_obj_t mpy_init(mp_obj_fun_bc_t *self, size_t n_args, size_t n_kw, mp_obj_t *a
     // This must be last, it restores the globals dict
     MP_DYNRUNTIME_INIT_EXIT
 }
+
+#else
+
+
+// Define the tree builder class
+static const mp_rom_map_elem_t emlearn_trees_builder_locals_dict_table[] = {
+    { MP_ROM_QSTR(MP_QSTR_predict), MP_ROM_PTR(&builder_predict_obj) },
+    { MP_ROM_QSTR(MP_QSTR_addnode), MP_ROM_PTR(&builder_addnode_obj) },
+    { MP_ROM_QSTR(MP_QSTR_addroot), MP_ROM_PTR(&builder_addroot_obj) },
+    { MP_ROM_QSTR(MP_QSTR_addleaf), MP_ROM_PTR(&builder_addleaf_obj) },
+    { MP_ROM_QSTR(MP_QSTR___del__), MP_ROM_PTR(&builder_del_obj) },
+    { MP_ROM_QSTR(MP_QSTR_setdata), MP_ROM_PTR(&builder_setdata_obj) },
+    { MP_ROM_QSTR(MP_QSTR_outputs), MP_ROM_PTR(&builder_get_outputs_obj) },
+};
+static MP_DEFINE_CONST_DICT(emlearn_trees_builder_locals_dict, emlearn_trees_builder_locals_dict_table);
+
+static MP_DEFINE_CONST_OBJ_TYPE(
+    trees_builder_type,
+    MP_QSTR_emltrees,
+    MP_TYPE_FLAG_NONE,
+    locals_dict, &emlearn_trees_builder_locals_dict
+);
+
+// Define module object.
+static const mp_rom_map_elem_t emlearn_trees_globals_table[] = {
+    { MP_ROM_QSTR(MP_QSTR_new), MP_ROM_PTR(&builder_new_obj) },
+};
+static MP_DEFINE_CONST_DICT(emlearn_trees_globals, emlearn_trees_globals_table);
+
+const mp_obj_module_t emlearn_trees_cmodule = {
+    .base = { &mp_type_module },
+    .globals = (mp_obj_dict_t *)&emlearn_trees_globals,
+};
+
+MP_REGISTER_MODULE(MP_QSTR_emlearn_trees, emlearn_trees_cmodule);
+
+#endif
 
