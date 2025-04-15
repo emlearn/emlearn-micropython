@@ -1,5 +1,9 @@
 // Include the header file to get access to the MicroPython API
+#ifdef MICROPY_ENABLE_DYNRUNTIME
 #include "py/dynruntime.h"
+#else
+#include "py/runtime.h"
+#endif
 
 #include <eml_iir.h>
 
@@ -29,7 +33,11 @@ typedef struct _mp_obj_iir_filter_t {
     EmlIIR filter;
 } mp_obj_iir_filter_t;
 
+#if MICROPY_ENABLE_DYNRUNTIME
 mp_obj_full_type_t iir_filter_type;
+#else
+static const mp_obj_type_t iir_filter_type;
+#endif
 
 // Create a new instance
 static mp_obj_t iir_filter_new(mp_obj_t array_obj) {
@@ -55,17 +63,17 @@ static mp_obj_t iir_filter_new(mp_obj_t array_obj) {
     self->n_stages = n_values / 6;
 
     self->states_length = self->n_stages * 4;
-    self->states = (float *)m_malloc(sizeof(float)*self->states_length);
+    self->states = m_new(float, self->states_length);
 
     self->coefficients_length = n_values;
-    self->coefficients = (float *)m_malloc(sizeof(float)*self->coefficients_length);
+    self->coefficients = m_new(float, self->coefficients_length);
     memcpy((float *)self->coefficients, values, sizeof(float)*self->coefficients_length);
 
 
     const EmlError err = eml_iir_check(*self);
     if (err != EmlOk) {
-        m_free(self->states);
-        m_free((float *)self->coefficients);
+        m_del(float, self->states, self->states_length);
+        m_del(float, (float *)self->coefficients, self->coefficients_length);
         mp_raise_ValueError(MP_ERROR_TEXT("EmlError"));
     }
 
@@ -80,9 +88,8 @@ static mp_obj_t iir_filter_del(mp_obj_t self_obj) {
     EmlIIR *self = &o->filter;
 
     // free allocated data
-    m_free(self->states);
-    m_free((float *)self->coefficients);
-
+    m_del(float, self->states, self->states_length);
+    m_del(float, (float *)self->coefficients, self->coefficients_length);
 
     return mp_const_none;
 }
@@ -114,6 +121,7 @@ static mp_obj_t iir_filter_run(mp_obj_t self_obj, mp_obj_t array_obj) {
 static MP_DEFINE_CONST_FUN_OBJ_2(iir_filter_run_obj, iir_filter_run);
 
 
+#ifdef MICROPY_ENABLE_DYNRUNTIME
 mp_map_elem_t iir_locals_dict_table[2];
 static MP_DEFINE_CONST_DICT(iir_locals_dict, iir_locals_dict_table);
 
@@ -136,4 +144,35 @@ mp_obj_t mpy_init(mp_obj_fun_bc_t *self, size_t n_args, size_t n_kw, mp_obj_t *a
     // This must be last, it restores the globals dict
     MP_DYNRUNTIME_INIT_EXIT
 }
+#else
 
+
+// Define a class
+static const mp_rom_map_elem_t emlearn_iir_filter_locals_dict_table[] = {
+    { MP_ROM_QSTR(MP_QSTR_run), MP_ROM_PTR(&iir_filter_run_obj) },
+    { MP_ROM_QSTR(MP_QSTR___del__), MP_ROM_PTR(&iir_filter_del_obj) }
+};
+static MP_DEFINE_CONST_DICT(emlearn_iir_filter_locals_dict, emlearn_iir_filter_locals_dict_table);
+
+static MP_DEFINE_CONST_OBJ_TYPE(
+    iir_filter_type,
+    MP_QSTR_emliir,
+    MP_TYPE_FLAG_NONE,
+    locals_dict, &emlearn_iir_filter_locals_dict
+);
+
+// Define module object.
+static const mp_rom_map_elem_t emlearn_iir_globals_table[] = {
+    { MP_ROM_QSTR(MP_QSTR_new), MP_ROM_PTR(&iir_filter_new_obj) },
+};
+static MP_DEFINE_CONST_DICT(emlearn_iir_globals, emlearn_iir_globals_table);
+
+const mp_obj_module_t emlearn_iir_cmodule = {
+    .base = { &mp_type_module },
+    .globals = (mp_obj_dict_t *)&emlearn_iir_globals,
+};
+
+MP_REGISTER_MODULE(MP_QSTR_emlearn_iir, emlearn_iir_cmodule);
+
+
+#endif
