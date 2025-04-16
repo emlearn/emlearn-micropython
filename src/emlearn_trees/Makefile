@@ -32,6 +32,6 @@ $(DIST_FILE): $(MOD).mpy $(DIST_DIR)
 # Include to get the rules for compiling and linking the module
 include $(MPY_DIR)/py/dynruntime.mk
 
-CFLAGS += -I$(EMLEARN_DIR)
+CFLAGS += -I$(EMLEARN_DIR) -DDYNAMIC_RUNTIME=1
 
 dist: $(DIST_FILE)
