@@ -83,6 +83,11 @@ check_unix: $(UNIX_MICROPYTHON)
 	$(UNIX_MICROPYTHON) tests/test_arrayutils.py
 	echo SKIP $(UNIX_MICROPYTHON) tests/test_cnn.py
 
+rp2: $(PORT_DIR)
+	make -C $(MPY_DIR)/ports/rp2 V=1 USER_C_MODULES=$(C_MODULES_SRC_PATH)/micropython.cmake FROZEN_MANIFEST=$(MANIFEST_PATH) CFLAGS_EXTRA='-Wno-unused-function -Wno-unused-function' -j4
+	mkdir -p ./dist/ports/rp2/RPI_PICO
+	cp -r $(MPY_DIR)/ports/rp2/build-RPI_PICO/firmware* ./dist/ports/rp2/RPI_PICO/
+
 .PHONY: clean unix
 
 clean:
