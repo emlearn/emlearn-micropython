@@ -19,7 +19,7 @@ DIST_DIR := ../../dist/$(ARCH)_$(MPY_ABI_VERSION)
 MOD = emlearn_trees
 
 # Source files (.c or .py)
-SRC = trees.c trees.py
+SRC = trees.c emlearn_trees.py
 
 # Releases
 DIST_FILE = $(DIST_DIR)/$(MOD).mpy
@@ -32,6 +32,6 @@ $(DIST_FILE): $(MOD).mpy $(DIST_DIR)
 # Include to get the rules for compiling and linking the module
 include $(MPY_DIR)/py/dynruntime.mk
 
-CFLAGS += -I$(EMLEARN_DIR) -DDYNAMIC_RUNTIME=1
+CFLAGS += -I$(EMLEARN_DIR) -Wno-unused-function
 
 dist: $(DIST_FILE)

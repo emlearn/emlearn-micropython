@@ -33,6 +33,6 @@ $(DIST_FILE): $(MOD).mpy $(DIST_DIR)
 include $(MPY_DIR)/py/dynruntime.mk
 
 
-CFLAGS += -I$(EMLEARN_DIR)
+CFLAGS += -I$(EMLEARN_DIR) -Wno-unused-function
 
 dist: $(DIST_FILE)

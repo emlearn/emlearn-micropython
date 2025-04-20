@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-24.04
     env:
       MPY_DIR: ./micropython
-      MICROPYTHON_BIN: ./micropython/ports/unix/build-standard/micropython
+      MICROPYTHON_BIN: ./micropython/ports/unix/build-nomodules/micropython
     steps:
     - uses: actions/checkout@v4
       with:
@@ -29,8 +29,12 @@ jobs:
       run: pip install -r requirements.txt
     - name: Setup MicroPython X86
       working-directory: micropython
-      run: source tools/ci.sh && ci_unix_32bit_setup && ci_unix_standard_build
-    - name: Run test and build module x64
+      run: |
+        source tools/ci.sh && ci_unix_32bit_setup && ci_unix_standard_build
+        mv ./ports/unix/build-standard/ ./ports/unix/build-nomodules/
+    - name: Build custom firmware with user modules, and tests. Unix/x64
+      run: make check_unix V=1
+    - name: Build .mpy modules and run tests Unix/x64
       run: make check ARCH=x64 V=1
     - name: Setup MicroPython ARM
       working-directory: micropython

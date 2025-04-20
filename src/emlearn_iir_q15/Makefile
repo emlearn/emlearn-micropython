@@ -41,6 +41,7 @@ LIBGCC_FILENAME = $(shell $(CROSS)gcc $(CFLAGS) -print-libgcc-file-name)
 $(info $(LIBGCC_FILENAME))
 
 CFLAGS += -I$(CMSIS_DSP_DIR)/Include
+CFLAGS += -Wno-unused-function
 
 $(CMSIS_DSP_DIR)/iir_q15.patched:
 	cd $(CMSIS_DSP_DIR) && git apply -v ../df1_q15_disable_dsp.patch

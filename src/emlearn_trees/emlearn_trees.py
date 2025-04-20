@@ -1,4 +1,11 @@
 
+# When used as external C module, the .py is the top-level import,
+# and we need to merge the native module symbols at import time
+# When used as dynamic native modules (.mpy), .py and native code is merged at build time
+try:
+    from emlearn_trees_c import *
+except ImportError as e:
+    pass
 
 def load_model(builder, f):
 
