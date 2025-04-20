@@ -39,6 +39,9 @@ jobs:
     - name: Setup MicroPython ARM
       working-directory: micropython
       run: source tools/ci.sh && ci_rp2_setup
+    - name: Setup MicroPython RP2 port
+      working-directory: micropython/ports/rp2
+      run: make submodules
     - name: Build custom firmware with extmod, RP2
       run: make rp2 V=1
     - name: Build module armv6m
