@@ -71,7 +71,7 @@ $(PORT_DIR):
 	mkdir -p $@
 
 $(UNIX_MICROPYTHON): $(PORT_DIR)
-	make -C $(MPY_DIR)/ports/unix V=1 USER_C_MODULES=$(C_MODULES_SRC_PATH) FROZEN_MANIFEST=$(MANIFEST_PATH) CFLAGS_EXTRA='-Wno-unused-function' -j4
+	make -C $(MPY_DIR)/ports/unix V=1 USER_C_MODULES=$(C_MODULES_SRC_PATH) FROZEN_MANIFEST=$(MANIFEST_PATH) CFLAGS_EXTRA='-Wno-unused-function -Wno-unused-function' -j4
 	cp $(MPY_DIR)/ports/unix/build-standard/micropython $@
 
 unix: $(UNIX_MICROPYTHON)
