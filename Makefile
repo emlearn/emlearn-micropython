@@ -80,6 +80,7 @@ check_unix: $(UNIX_MICROPYTHON)
 	$(UNIX_MICROPYTHON) tests/test_trees.py
 	$(UNIX_MICROPYTHON) tests/test_iir.py
 	$(UNIX_MICROPYTHON) tests/test_fft.py
+	$(UNIX_MICROPYTHON) tests/test_arrayutils.py
 
 .PHONY: clean unix
 
