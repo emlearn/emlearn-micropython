@@ -19,7 +19,7 @@ DIST_DIR := ../../dist/$(ARCH)_$(MPY_ABI_VERSION)
 MOD = emlearn_fft
 
 # Source files (.c or .py)
-SRC = fft.c fft.py
+SRC = fft.c emlearn_fft.py
 
 # Releases
 DIST_FILE = $(DIST_DIR)/$(MOD).mpy

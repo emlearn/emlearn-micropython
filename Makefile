@@ -79,6 +79,7 @@ unix: $(UNIX_MICROPYTHON)
 check_unix: $(UNIX_MICROPYTHON)
 	$(UNIX_MICROPYTHON) tests/test_trees.py
 	$(UNIX_MICROPYTHON) tests/test_iir.py
+	$(UNIX_MICROPYTHON) tests/test_fft.py
 
 .PHONY: clean unix
 
