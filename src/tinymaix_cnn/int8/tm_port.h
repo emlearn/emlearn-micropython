@@ -48,7 +48,7 @@ limitations under the License.
 
 // Use MicroPython for dynamic allocation
 #define tm_malloc(x)   m_malloc(x)
-#define tm_free(x)     m_free(x)
+#define tm_free(x)     mod_cnn_free(x)
 
 // FIXME: set theese to use MicroPython primitives
 

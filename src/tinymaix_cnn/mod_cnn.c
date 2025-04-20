@@ -1,5 +1,12 @@
 // Include the header file to get access to the MicroPython API
+#ifdef MICROPY_ENABLE_DYNRUNTIME
 #include "py/dynruntime.h"
+#else
+#include "py/runtime.h"
+#endif
+
+
+void mod_cnn_free(void *ptr);
 
 // TinyMaix config
 #include "./tm_port.h"
@@ -65,11 +72,27 @@ typedef struct _mp_obj_mod_cnn_t {
     tm_mdl_t model;
     tm_mat_t input;
     uint8_t *model_buffer;
+    size_t model_buffer_length;
     uint8_t *data_buffer;
+    size_t data_buffer_length;
     uint16_t out_dims[4];
 } mp_obj_mod_cnn_t;
 
+#if MICROPY_ENABLE_DYNRUNTIME
 mp_obj_full_type_t mod_cnn_type;
+#else
+static const mp_obj_type_t mod_cnn_type;
+#endif
+
+
+void mod_cnn_free(void *ptr)
+{
+#if MICROPY_ENABLE_DYNRUNTIME
+    return m_free(ptr);
+#else
+    return m_del(void *, ptr, 0); // XXX: not sure if safe
+#endif
+}
 
 // TODO: add function for getting the shape of expected input. As a tuple
 
@@ -95,12 +118,14 @@ static mp_obj_t mod_cnn_new(mp_obj_t model_data_obj) {
     tm_mdl_t *model = &o->model;
 
     // Copy the model data
-    o->model_buffer = m_malloc(model_data_length);
+    o->model_buffer_length = model_data_length;
+    o->model_buffer = m_new(uint8_t, o->model_buffer_length);
     memcpy(o->model_buffer, model_data_buffer, model_data_length);
 
     // Allocate temporary buffer
     // TODO: this can possibly be smaller? Might want to use TinyMaix internal alloc
-    o->data_buffer = m_malloc(model_data_length);
+    o->data_buffer_length = model_data_length;
+    o->data_buffer = m_new(uint8_t, o->data_buffer_length);
 
     // loading model
     // will set the dimensions of the input matrix
@@ -139,8 +164,8 @@ static mp_obj_t mod_cnn_del(mp_obj_t self_obj) {
     mp_obj_mod_cnn_t *o = MP_OBJ_TO_PTR(self_obj);
     tm_mdl_t *model = &o->model;
 
-    m_free(o->model_buffer);
-    m_free(o->data_buffer);
+    m_del(uint8_t, o->model_buffer, o->model_buffer_length);
+    m_del(uint8_t, o->data_buffer, o->data_buffer_length);
     tm_unload(model);
 
     return mp_const_none;
@@ -245,6 +270,7 @@ static mp_obj_t mod_cnn_output_dimensions(mp_obj_t self_obj) {
 static MP_DEFINE_CONST_FUN_OBJ_1(mod_cnn_output_dimensions_obj, mod_cnn_output_dimensions);
 
 
+#ifdef MICROPY_ENABLE_DYNRUNTIME // natmod
 mp_map_elem_t mod_locals_dict_table[3];
 static MP_DEFINE_CONST_DICT(mod_locals_dict, mod_locals_dict_table);
 
@@ -268,4 +294,37 @@ mp_obj_t mpy_init(mp_obj_fun_bc_t *self, size_t n_args, size_t n_kw, mp_obj_t *a
     // This must be last, it restores the globals dict
     MP_DYNRUNTIME_INIT_EXIT
 }
+#else // extmod
+
+// Define a class
+static const mp_rom_map_elem_t mod_cnn_locals_dict_table[] = {
+    { MP_ROM_QSTR(MP_QSTR_run), MP_ROM_PTR(&mod_cnn_run_obj) },
+    { MP_ROM_QSTR(MP_QSTR_output_dimensions), MP_ROM_PTR(&mod_cnn_del_obj) },
+    { MP_ROM_QSTR(MP_QSTR___del__), MP_ROM_PTR(&mod_cnn_output_dimensions_obj) }
+};
+static MP_DEFINE_CONST_DICT(mod_cnn_locals_dict, mod_cnn_locals_dict_table);
+
+
+static MP_DEFINE_CONST_OBJ_TYPE(
+    mod_cnn_type,
+    MP_QSTR_tinymaix_cnn,
+    MP_TYPE_FLAG_NONE,
+    locals_dict, &mod_cnn_locals_dict
+);
+
+// Define module object.
+static const mp_rom_map_elem_t mod_cnn_globals_table[] = {
+    { MP_ROM_QSTR(MP_QSTR_new), MP_ROM_PTR(&mod_cnn_new_obj) }
+};
+static MP_DEFINE_CONST_DICT(mod_cnn_globals, mod_cnn_globals_table);
+
+const mp_obj_module_t mod_cnn_cmodule = {
+    .base = { &mp_type_module },
+    .globals = (mp_obj_dict_t *)&mod_cnn_globals,
+};
+
+// FIXME: unhardcode config part of module name
+MP_REGISTER_MODULE(MP_QSTR_emlearn_cnn_int8, mod_cnn_cmodule);
+#endif
+
 
