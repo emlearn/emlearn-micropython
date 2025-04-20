@@ -8,7 +8,13 @@ VERSION := $(shell git describe --tags --always)
 
 MPY_DIR_ABS = $(abspath $(MPY_DIR)) 
 
+C_MODULES_SRC_PATH = $(abspath ./src)
+MANIFEST_PATH = $(abspath ./src/manifest.py)
+
+PORT=unix
 MODULES_PATH = ./dist/$(ARCH)_$(MPY_ABI_VERSION)
+PORT_DIR = ./dist/ports/$(PORT)
+UNIX_MICROPYTHON = ./dist/ports/unix/micropython
 
 $(MODULES_PATH)/emlearn_trees.mpy:
 	make -C src/emlearn_trees/ ARCH=$(ARCH) MPY_DIR=$(MPY_DIR_ABS) V=1 clean dist
@@ -61,7 +67,19 @@ emlearn_iir_q15.results: $(MODULES_PATH)/emlearn_iir_q15.mpy
 emlearn_arrayutils.results: $(MODULES_PATH)/emlearn_arrayutils.mpy
 	MICROPYPATH=$(MODULES_PATH) $(MICROPYTHON_BIN) tests/test_arrayutils.py
 
-.PHONY: clean
+$(PORT_DIR):
+	mkdir -p $@
+
+$(UNIX_MICROPYTHON): $(PORT_DIR)
+	make -C $(MPY_DIR)/ports/unix USER_C_MODULES=$(C_MODULES_SRC_PATH) FROZEN_MANIFEST=$(MANIFEST_PATH) EXTRA_CFLAGS='-Wno-unused-function' -j4
+	cp $(MPY_DIR)/ports/unix/build-standard/micropython $@
+
+unix: $(UNIX_MICROPYTHON)
+
+check_unix: $(UNIX_MICROPYTHON)
+	$(UNIX_MICROPYTHON) tests/test_trees.py
+
+.PHONY: clean unix
 
 clean:
 	make -C src/emlearn_trees/ ARCH=$(ARCH) MPY_DIR=$(MPY_DIR_ABS) V=1 clean

@@ -332,7 +332,8 @@ const mp_obj_module_t emlearn_trees_cmodule = {
     .globals = (mp_obj_dict_t *)&emlearn_trees_globals,
 };
 
-MP_REGISTER_MODULE(MP_QSTR_emlearn_trees, emlearn_trees_cmodule);
+// External module name is XXX_c to allow .py file to be the entrypoint
+MP_REGISTER_MODULE(MP_QSTR_emlearn_trees_c, emlearn_trees_cmodule);
 
 #endif
 

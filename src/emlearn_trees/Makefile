@@ -19,7 +19,7 @@ DIST_DIR := ../../dist/$(ARCH)_$(MPY_ABI_VERSION)
 MOD = emlearn_trees
 
 # Source files (.c or .py)
-SRC = trees.c trees.py
+SRC = trees.c emlearn_trees.py
 
 # Releases
 DIST_FILE = $(DIST_DIR)/$(MOD).mpy
