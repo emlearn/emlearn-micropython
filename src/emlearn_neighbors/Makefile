@@ -33,6 +33,6 @@ $(DIST_DIR):
 $(DIST_FILE): $(MOD).mpy $(DIST_DIR)
 	cp $< $@
 
-CFLAGS += -I$(EMLEARN_DIR)
+CFLAGS += -I$(EMLEARN_DIR) -Wno-unused-function
 
 dist: $(DIST_FILE)
