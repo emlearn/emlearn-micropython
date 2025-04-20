@@ -1,5 +1,9 @@
 // Include the header file to get access to the MicroPython API
+#ifdef MICROPY_ENABLE_DYNRUNTIME
 #include "py/dynruntime.h"
+#else
+#include "py/runtime.h"
+#endif
 
 #include <eml_common.h>
 
@@ -72,9 +76,12 @@ fft_forward(float *table_sin, float *table_cos, float real[], float imag[], size
 }
 
 
-
 // MicroPython type for EmlFFT
-mp_obj_full_type_t mp_fft_type;
+#if MICROPY_ENABLE_DYNRUNTIME
+mp_obj_full_type_t fft_type;
+#else
+static const mp_obj_type_t fft_type;
+#endif
 
 typedef struct _mp_obj_fft_t {
     mp_obj_base_t base;
@@ -228,6 +235,8 @@ static mp_obj_t fft_run(mp_obj_t self_obj, mp_obj_t real_obj, mp_obj_t imag_obj)
 static MP_DEFINE_CONST_FUN_OBJ_3(fft_run_obj, fft_run);
 
 
+
+#ifdef MICROPY_ENABLE_DYNRUNTIME
 mp_map_elem_t mod_locals_dit_table[3];
 static MP_DEFINE_CONST_DICT(mod_locals_dit, mod_locals_dit_table);
 
@@ -240,21 +249,54 @@ mp_obj_t mpy_init(mp_obj_fun_bc_t *self, size_t n_args, size_t n_kw, mp_obj_t *a
     mp_printf(&mp_plat_print, "fft-mpy-init\n");
 #endif
 
-    mp_fft_type.base.type = (void*)&mp_type_type;
-    mp_fft_type.flags = MP_TYPE_FLAG_NONE;
-    mp_fft_type.name = MP_QSTR_FFT;
-    MP_OBJ_TYPE_SET_SLOT(&mp_fft_type, make_new, fft_new, 0);
+    fft_type.base.type = (void*)&mp_type_type;
+    fft_type.flags = MP_TYPE_FLAG_NONE;
+    fft_type.name = MP_QSTR_FFT;
+    MP_OBJ_TYPE_SET_SLOT(&fft_type, make_new, fft_new, 0);
 
     // methods
     mod_locals_dit_table[0] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR_run), MP_OBJ_FROM_PTR(&fft_run_obj) };
     mod_locals_dit_table[1] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR___del__), MP_OBJ_FROM_PTR(&fft_del_obj) };
     mod_locals_dit_table[2] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR_fill), MP_OBJ_FROM_PTR(&fft_fill_obj) };
-    MP_OBJ_TYPE_SET_SLOT(&mp_fft_type, locals_dict, (void*)&mod_locals_dit, 3);
+    MP_OBJ_TYPE_SET_SLOT(&fft_type, locals_dict, (void*)&mod_locals_dit, 3);
 
     // Make the Factorial type available on the module.
-    mp_store_global(MP_QSTR_FFT, MP_OBJ_FROM_PTR(&mp_fft_type));
+    mp_store_global(MP_QSTR_FFT, MP_OBJ_FROM_PTR(&fft_type));
 
     // This must be last, it restores the globals dict
     MP_DYNRUNTIME_INIT_EXIT
 }
+#else // extmod
+
+// Define a class
+static const mp_rom_map_elem_t emlearn_fft_locals_dict_table[] = {
+    { MP_ROM_QSTR(MP_QSTR_run), MP_ROM_PTR(&fft_run_obj) },
+    { MP_ROM_QSTR(MP_QSTR_fill), MP_ROM_PTR(&fft_fill_obj) },
+    { MP_ROM_QSTR(MP_QSTR___del__), MP_ROM_PTR(&fft_del_obj) }
+};
+static MP_DEFINE_CONST_DICT(emlearn_fft_locals_dict, emlearn_fft_locals_dict_table);
+
+
+static MP_DEFINE_CONST_OBJ_TYPE(
+    fft_type,
+    MP_QSTR_emlfft,
+    MP_TYPE_FLAG_NONE,
+    make_new, fft_new,
+    locals_dict, &emlearn_fft_locals_dict
+);
+
+// Define module object.
+static const mp_rom_map_elem_t emlearn_fft_globals_table[] = {
+    { MP_ROM_QSTR(MP_QSTR_FFT), MP_ROM_PTR(&fft_type) }
+};
+static MP_DEFINE_CONST_DICT(emlearn_fft_globals, emlearn_fft_globals_table);
+
+const mp_obj_module_t emlearn_fft_cmodule = {
+    .base = { &mp_type_module },
+    .globals = (mp_obj_dict_t *)&emlearn_fft_globals,
+};
+
+MP_REGISTER_MODULE(MP_QSTR_emlearn_fft_c, emlearn_fft_cmodule);
+#endif
+
 

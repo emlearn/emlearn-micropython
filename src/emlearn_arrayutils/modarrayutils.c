@@ -1,5 +1,9 @@
 // Include the header file to get access to the MicroPython API
+#ifdef MICROPY_ENABLE_DYNRUNTIME
 #include "py/dynruntime.h"
+#else
+#include "py/runtime.h"
+#endif
 
 #include <string.h>
 
@@ -98,7 +102,7 @@ arrayutils_linear_map(size_t n_args, const mp_obj_t *args) {
         const float *in = in_bufinfo.buf; 
         int16_t *out = out_bufinfo.buf;
         for (int i=0; i<in_length; i++) {
-            out[i] = map_linear(in[i], in_min, in_max, out_min, out_max);
+            out[i] = (int16_t)map_linear(in[i], in_min, in_max, out_min, out_max);
         }
     } else {
         mp_raise_ValueError(MP_ERROR_TEXT("unsupported array types"));
@@ -109,6 +113,8 @@ arrayutils_linear_map(size_t n_args, const mp_obj_t *args) {
 static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(arrayutils_linear_map_obj, 6, 6, arrayutils_linear_map);
 
 
+
+#ifdef MICROPY_ENABLE_DYNRUNTIME
 // This is the entry point and is called when the module is imported
 mp_obj_t mpy_init(mp_obj_fun_bc_t *self, size_t n_args, size_t n_kw, mp_obj_t *args) {
     // This must be first, it sets up the globals dict and other things
@@ -119,4 +125,23 @@ mp_obj_t mpy_init(mp_obj_fun_bc_t *self, size_t n_args, size_t n_kw, mp_obj_t *a
     // This must be last, it restores the globals dict
     MP_DYNRUNTIME_INIT_EXIT
 }
+#else // extmod
+
+// Define module object.
+static const mp_rom_map_elem_t arrayutils_globals_table[] = {
+    { MP_ROM_QSTR(MP_QSTR_linear_map), MP_ROM_PTR(&arrayutils_linear_map_obj) }
+};
+static MP_DEFINE_CONST_DICT(arrayutils_globals, arrayutils_globals_table);
+
+const mp_obj_module_t arrayutils_cmodule = {
+    .base = { &mp_type_module },
+    .globals = (mp_obj_dict_t *)&arrayutils_globals,
+};
+
+MP_REGISTER_MODULE(MP_QSTR_emlearn_arrayutils, arrayutils_cmodule);
+#endif
+
+
+
+
 

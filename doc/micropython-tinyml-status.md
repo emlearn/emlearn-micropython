@@ -21,6 +21,30 @@ https://github.com/micropython/micropython/issues/6769
 Need to manually resolve all symbols.
 https://github.com/micropython/micropython/issues/5629 
 
+Supporting both natmod and extmod builds requires duplicating class and module definitions,
+because they are slightly different.
+Maybe an "unified API" could be introduced using some C macros?
+
+Supporting both natmod and extmod builds requires 3 build systems setup.
+natmod requires a `Makefile` which includes `dynruntime.mk`,
+whereas extmod requires `micropython.mk` for Makefile-based ports,
+and also `micropython.cmake` for cmake-based ports.
+
+Native modules with relocations does not work on armv6m/RP2040.
+
+Native modules with relocations do not work on RISC-V/ESP32-C3/ESP32-C6.
+
+Native modules does not work on Webassembly target.
+
+To install native modules with
+
+Question. Does native modules work on Zephyr port?
+
+Question. Can native modules be distributed in a ROMFS?
+
+Native modules do not support Execute-in-Place, consuming RAM for all the code.
+Questiion. Can this be solved using ROMFS?
+
 ## Efficient data processing
 
 #### Using specialized code emitters
@@ -153,6 +177,12 @@ https://github.com/micropython/micropython/pull/8318
 
 Missing! Support for Bluetooth Audio.
 Useful for collecting raw data by sending to a phone or computer.
+
+#### USB
+Good support for USB device on many targets.
+USB devices can be created dynamically at runtime, without needing to rebuild firmware.
+
+USB host not supported on any target.
 
 #### LoRa
 Unknown/not investigated.

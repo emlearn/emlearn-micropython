@@ -11,10 +11,9 @@ MPY_ABI_VERSION := 6.3
 
 # Location of deps
 TINYMAIX_DIR := ../../dependencies/TinyMaix
+CONFIG_DIR := ./$(CONFIG)
 
 DIST_DIR := ../../dist/$(ARCH)_$(MPY_ABI_VERSION)
-
-CONFIG_DIR := ./$(CONFIG)
 
 # enable linking of libm etc
 LINK_RUNTIME=1
