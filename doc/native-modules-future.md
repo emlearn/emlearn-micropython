@@ -52,11 +52,12 @@ TODO: file issues around these things, at least the most obvious/clear ones
 
 Ideas
 
-- Support for natmod in micropython-lib
-- Distribute the natmods in micropython. btree
+- Support for natmod in micropython-lib. Automatically built in CI and published.
+- Build and publish the natmods that are part of MicroPython. btree, deflate
 - mpremote. Resolve correct architecture for native .mpy files
 - awesome-micropython. Include standard marker for native modules?
-- mpbuild. Support for natmod building
+- mpbuild. Support for natmod building.
+https://github.com/mattytrentini/mpbuild/issues/76
 - docs. Document better how to support both extmod and natmod with same codebase
 
 
