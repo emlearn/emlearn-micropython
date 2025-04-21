@@ -16,4 +16,7 @@ User Guide
 
    getting_started_host.rst
    getting_started_device.rst
+   support.rst
+   native_modules.rst
+   external_modules.rst
 
