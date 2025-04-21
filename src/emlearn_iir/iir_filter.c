@@ -9,6 +9,7 @@
 
 #include <string.h>
 
+#ifdef MICROPY_ENABLE_DYNRUNTIME
 // memset is used by some standard C constructs
 #if !defined(__linux__)
 void *memcpy(void *dst, const void *src, size_t n) {
@@ -24,7 +25,7 @@ void NORETURN abort() {
     }
 }
 #endif
-
+#endif
 
 
 // MicroPython type for EmlIIR
