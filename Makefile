@@ -4,15 +4,22 @@ MPY_ABI_VERSION ?= 6.3
 MPY_DIR ?= ../micropython
 MICROPYTHON_BIN ?= micropython
 
+# extmod settings
+PORT=unix
+BOARD=ESP32_GENERIC_S3
+
 VERSION := $(shell git describe --tags --always)
 
 MPY_DIR_ABS = $(abspath $(MPY_DIR)) 
 
 C_MODULES_SRC_PATH = $(abspath ./src)
-MANIFEST_PATH = $(abspath ./src/manifest.py)
 
-PORT=unix
-BOARD=ESP32_GENERIC_S3
+ifeq ($(PORT),unix)
+    MANIFEST_PATH=$(abspath ./src/manifest_unix.py)
+else
+    MANIFEST_PATH=$(abspath ./src/manifest.py)
+endif
+
 
 MODULES_PATH = ./dist/$(ARCH)_$(MPY_ABI_VERSION)
 PORT_DIR = ./dist/ports/$(PORT)
