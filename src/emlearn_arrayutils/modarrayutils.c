@@ -7,6 +7,7 @@
 
 #include <string.h>
 
+#ifdef MICROPY_ENABLE_DYNRUNTIME
 // memset is used by some standard C constructs
 #if !defined(__linux__)
 void *memcpy(void *dst, const void *src, size_t n) {
@@ -16,7 +17,7 @@ void *memset(void *s, int c, size_t n) {
     return mp_fun_table.memset_(s, c, n);
 }
 #endif
-
+#endif
 
 
 #define MAP_LINEAR(x, in_min, in_max, out_min, out_max) do { \

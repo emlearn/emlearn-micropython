@@ -23,6 +23,7 @@ void mod_cnn_free(void *ptr);
 #define DEBUG (0)
 
 
+#ifdef MICROPY_ENABLE_DYNRUNTIME
 // memset is used by some standard C constructs
 #if !defined(__linux__)
 void *memcpy(void *dst, const void *src, size_t n) {
@@ -31,6 +32,7 @@ void *memcpy(void *dst, const void *src, size_t n) {
 void *memset(void *s, int c, size_t n) {
     return mp_fun_table.memset_(s, c, n);
 }
+#endif
 #endif
 
 // get model output shapes

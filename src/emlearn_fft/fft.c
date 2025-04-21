@@ -11,6 +11,7 @@
 
 #define DEBUG (0)
 
+#ifdef MICROPY_ENABLE_DYNRUNTIME
 // memset is used by some standard C constructs
 #if !defined(__linux__)
 void *memcpy(void *dst, const void *src, size_t n) {
@@ -20,7 +21,7 @@ void *memset(void *s, int c, size_t n) {
     return mp_fun_table.memset_(s, c, n);
 }
 #endif
-
+#endif
 
 // Copy of eml_fft.h, without eml_fft_fill
 // - contains sin/cos that trips up mpy_ld.py (even if the function is not used)
