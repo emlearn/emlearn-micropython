@@ -24,7 +24,7 @@ jobs:
       with:
         repository: jonnor/micropython
         path: micropython
-        ref: v1.25preview-linking
+        ref: v1.25.0
     - name: Install Python dependencies
       run: pip install -r requirements.txt
     - name: Setup MicroPython X86
@@ -39,6 +39,11 @@ jobs:
     - name: Setup MicroPython ARM
       working-directory: micropython
       run: source tools/ci.sh && ci_rp2_setup
+    - name: Setup MicroPython RP2 port
+      working-directory: micropython/ports/rp2
+      run: make submodules
+    - name: Build custom firmware with extmod, RP2
+      run: make rp2 V=1
     - name: Build module armv6m
       run: echo make dist ARCH=armv6m V=1
     - name: Build module armv7m
@@ -48,6 +53,11 @@ jobs:
     - name: Setup MicroPython ESP32
       working-directory: micropython
       run: source tools/ci.sh && ci_esp32_idf_setup
+    - name: Build custom firmware with extmod, RP2
+      run: |
+        source micropython/esp-idf/export.sh && pip install -r requirements.txt
+        make extmod PORT=esp32 BOARD=ESP32_GENERIC_S3
+        make extmod PORT=esp32 BOARD=ESP32_GENERIC
     - name: Build module xtensawin
       run: source micropython/esp-idf/export.sh && pip install -r requirements.txt && make dist ARCH=xtensawin V=1
     - name: Archive dist artifacts

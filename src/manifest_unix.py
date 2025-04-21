@@ -5,4 +5,4 @@
 module("emlearn_trees.py", base_path='./emlearn_trees')
 module("emlearn_fft.py", base_path='./emlearn_fft')
 
-include("$(PORT_DIR)/boards/manifest.py")
+#include("$(PORT_DIR)/boards/manifest.py")

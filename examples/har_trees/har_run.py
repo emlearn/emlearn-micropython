@@ -65,7 +65,7 @@ def main():
     model = emlearn_trees.new(10, 1000, 10)
 
     dataset = 'har_uci'
-    dataset = 'har_exercise_1'
+    #dataset = 'har_exercise_1'
 
     model_path = f'{dataset}_trees.csv'
 

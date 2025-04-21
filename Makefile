@@ -4,16 +4,28 @@ MPY_ABI_VERSION ?= 6.3
 MPY_DIR ?= ../micropython
 MICROPYTHON_BIN ?= micropython
 
+# extmod settings
+PORT=unix
+BOARD=ESP32_GENERIC_S3
+
 VERSION := $(shell git describe --tags --always)
 
 MPY_DIR_ABS = $(abspath $(MPY_DIR)) 
 
 C_MODULES_SRC_PATH = $(abspath ./src)
-MANIFEST_PATH = $(abspath ./src/manifest.py)
 
-PORT=unix
+ifeq ($(PORT),unix)
+    MANIFEST_PATH=$(abspath ./src/manifest_unix.py)
+else
+    MANIFEST_PATH=$(abspath ./src/manifest.py)
+endif
+
+
 MODULES_PATH = ./dist/$(ARCH)_$(MPY_ABI_VERSION)
 PORT_DIR = ./dist/ports/$(PORT)
+PORT_BUILD_DIR=$(MPY_DIR)/ports/$(PORT)/build-$(BOARD)
+PORT_DIST_DIR=./dist/ports/$(PORT)/$(BOARD)
+
 UNIX_MICROPYTHON = ./dist/ports/unix/micropython
 
 $(MODULES_PATH)/emlearn_trees.mpy:
@@ -82,6 +94,19 @@ check_unix: $(UNIX_MICROPYTHON)
 	$(UNIX_MICROPYTHON) tests/test_fft.py
 	$(UNIX_MICROPYTHON) tests/test_arrayutils.py
 	echo SKIP $(UNIX_MICROPYTHON) tests/test_cnn.py
+
+rp2: $(PORT_DIR)
+	make -C $(MPY_DIR)/ports/rp2 V=1 USER_C_MODULES=$(C_MODULES_SRC_PATH)/micropython.cmake FROZEN_MANIFEST=$(MANIFEST_PATH) CFLAGS_EXTRA='-Wno-unused-function -Wno-unused-function' -j4
+	mkdir -p ./dist/ports/rp2/RPI_PICO
+	cp -r $(MPY_DIR)/ports/rp2/build-RPI_PICO/firmware* ./dist/ports/rp2/RPI_PICO/
+
+
+extmod:
+	make -C $(MPY_DIR)/ports/esp32 V=1 BOARD=$(BOARD) USER_C_MODULES=$(C_MODULES_SRC_PATH)/micropython.cmake FROZEN_MANIFEST=$(MANIFEST_PATH) CFLAGS_EXTRA='-Wno-unused-function -Wno-unused-function' -j4
+	mkdir -p $(PORT_DIST_DIR)
+	cp -r $(PORT_BUILD_DIR)/firmware* $(PORT_DIST_DIR)
+	cp -r $(PORT_BUILD_DIR)/micropython* $(PORT_DIST_DIR)
+	
 
 .PHONY: clean unix
 
