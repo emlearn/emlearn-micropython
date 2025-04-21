@@ -1,6 +1,5 @@
 
-
-https://joss.readthedocs.io/en/latest/submitting.html
+# Howto
 
 ## Building PDF from paper
 
@@ -10,12 +9,14 @@ docker run --rm --volume $PWD/paper:/data --user $(id -u):$(id -g) --env JOURNAL
 
 Critical
 
-- Finish usage example and plot
+- Add FFT/frequency feature extraction to har_trees.py
+- Run preprocessing code to get spectrograms out
+- Add some feature selection on some bands
+- Finish a plot illustrating HAR over time
 
 Non-critical
 
 - Add a documentation page about the wider Data Science ecosystem?
-- Tag newer version of emlearn-micropython ?
 - Donate another 100 USD to JOSS
 
 # Process
@@ -24,6 +25,7 @@ Non-critical
 + Submit
 + Respond to review comments
 
+https://joss.readthedocs.io/en/latest/submitting.html
 
 ## Usage example
 
