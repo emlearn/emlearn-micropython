@@ -3,10 +3,9 @@ name: Build modules
 
 on: [push, pull_request]
 
+
 jobs:
-  test:
-    permissions:
-      contents: write
+  build-linux:
     runs-on: ubuntu-24.04
     env:
       MPY_DIR: ./micropython
@@ -39,6 +38,33 @@ jobs:
         mv ./dist/ports/unix/micropython ./dist/ports/linux/micropython
     - name: Build .mpy modules and run tests Unix/x64
       run: make check ARCH=x64 V=1
+    - name: Archive dist artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: emlearn-micropython-build-linux
+        path: dist
+
+  build-arm:
+    runs-on: ubuntu-24.04
+    env:
+      MPY_DIR: ./micropython
+      MICROPYTHON_BIN: ./micropython/ports/unix/build-nomodules/micropython
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: true
+    - name: Install OS dependencies
+      run: sudo add-apt-repository universe
+    - uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
+    - uses: actions/checkout@v4
+      with:
+        repository: jonnor/micropython
+        path: micropython
+        ref: v1.25.0
+    - name: Install Python dependencies
+      run: pip install -r requirements.txt
     - name: Setup MicroPython ARM
       working-directory: micropython
       run: source tools/ci.sh && ci_rp2_setup
@@ -53,11 +79,40 @@ jobs:
       run: make dist ARCH=armv7m V=1
     - name: Build module armv7emsp
       run: make dist ARCH=armv7emsp V=1
+    - name: Archive dist artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: emlearn-micropython-build-arm
+        path: dist
+
+  build-esp32:
+    runs-on: ubuntu-24.04
+    env:
+      MPY_DIR: ./micropython
+      MICROPYTHON_BIN: ./micropython/ports/unix/build-nomodules/micropython
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: true
+    - name: Install OS dependencies
+      run: sudo add-apt-repository universe
+    - uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
+    - uses: actions/checkout@v4
+      with:
+        repository: jonnor/micropython
+        path: micropython
+        ref: v1.25.0
+    - name: Install Python dependencies
+      run: pip install -r requirements.txt
+
     - name: Setup MicroPython ESP32
       working-directory: micropython
       run: source tools/ci.sh && ci_esp32_idf_setup
-    - name: Build custom firmware with extmod, RP2
+    - name: Build custom firmware with extmod, ESP32
       run: |
+        make submodules
         source micropython/esp-idf/export.sh && pip install -r requirements.txt
         make extmod PORT=esp32 BOARD=ESP32_GENERIC_S3
         make extmod PORT=esp32 BOARD=ESP32_GENERIC
@@ -66,15 +121,9 @@ jobs:
     - name: Archive dist artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: emlearn-micropython-test
+        name: emlearn-micropython-build-esp32
         path: dist
-    - name: Prepare release
-      run: make release
-    - name: Archive release artifacts
-      uses: actions/upload-artifact@v4
-      with:
-        name: release
-        path: emlearn-micropython-*.zip
+
 
   build-macos:
     runs-on: macos-latest
@@ -119,7 +168,7 @@ jobs:
         path: dist
 
   deploy-pages:
-    needs: [test, build-macos]
+    needs: [build-linux, build-arm, build-esp32, build-macos]
     runs-on: ubuntu-latest
     environment:
       name: github-pages
