@@ -33,7 +33,10 @@ jobs:
         source tools/ci.sh && ci_unix_32bit_setup && ci_unix_standard_build
         mv ./ports/unix/build-standard/ ./ports/unix/build-nomodules/
     - name: Build custom firmware with user modules, and tests. Unix/x64
-      run: make check_unix V=1
+      run: |
+        make check_unix V=1
+        mkdir -p ./dist/ports/linux
+        mv ./dist/ports/unix/micropython ./dist/ports/linux/micropython
     - name: Build .mpy modules and run tests Unix/x64
       run: make check ARCH=x64 V=1
     - name: Setup MicroPython ARM
@@ -73,15 +76,6 @@ jobs:
         name: release
         path: emlearn-micropython-*.zip
 
-    - name: Deploy to Github Pages
-      if: "github.ref_name == 'master' || github.ref_type == 'tag'"
-      uses: peaceiris/actions-gh-pages@v3
-      with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        publish_dir: ./dist
-        keep_files: true
-        destination_dir: builds/${{ github.ref_name }}
-
   build-macos:
     runs-on: macos-latest
     env:
@@ -110,11 +104,44 @@ jobs:
         source tools/ci.sh && ci_unix_32bit_setup && ci_unix_standard_build
         mv ./ports/unix/build-standard/ ./ports/unix/build-nomodules/
     - name: Build custom firmware with user modules, and tests. Unix/x64
-      run: make check_unix V=1
+      run: |
+        make check_unix V=1
+        mkdir -p ./dist/ports/macos
+        mv ./dist/ports/unix/micropython ./dist/ports/macos/micropython
     - name: Build .mpy modules and run tests Unix/x64
       # natmod build with linking seems broken on Mac OS, exception in mpy_ld.py, ELFError, magic number does not match
       run: echo SKIP make check ARCH=x64 V=1
 
+    - name: Archive dist artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: dist
+        path: dist
+
+  deploy-pages:
+    needs: [test, build-macos]
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    
+    steps:
+    - name: Setup Pages
+      uses: actions/configure-pages@v4
+    
+    - name: Download all artifacts
+      uses: actions/download-artifact@v4
+      with:
+        path: dist/
+
+    - name: Deploy to Github Pages
+      if: "github.ref_name == 'master' || github.ref_type == 'tag'"
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ./dist
+        keep_files: true
+        destination_dir: builds/${{ github.ref_name }}
 
   docs:
 
