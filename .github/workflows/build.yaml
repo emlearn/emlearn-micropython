@@ -168,6 +168,8 @@ jobs:
         path: dist
 
   deploy-pages:
+    permissions:
+      contents: write
     needs: [build-linux, build-arm, build-esp32, build-macos]
     runs-on: ubuntu-latest
     environment:
