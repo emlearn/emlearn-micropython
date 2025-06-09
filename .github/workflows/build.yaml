@@ -82,6 +82,29 @@ jobs:
         keep_files: true
         destination_dir: builds/${{ github.ref_name }}
 
+  build-macos:
+    runs-on: macos-latest
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: true
+    - name: Install OS dependencies
+      run:  brew install pkg-config libffi 
+    - uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
+    - uses: actions/checkout@v4
+      with:
+        repository: jonnor/micropython
+        path: micropython
+        ref: v1.25.0    
+    - name: Build custom firmware with user modules, and tests. Unix/x64
+      run: make check_unix V=1
+    - name: Build .mpy modules and run tests Unix/x64
+      run: make check ARCH=x64 V=1
+
+
   docs:
 
     runs-on: ubuntu-latest
