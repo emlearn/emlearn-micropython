@@ -182,14 +182,8 @@ jobs:
       contents: write
     needs: [build-linux, build-arm, build-esp32, build-macos]
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     
     steps:
-    - name: Setup Pages
-      uses: actions/configure-pages@v4
-    
     - name: Download all artifacts
       uses: actions/download-artifact@v4
       with:
