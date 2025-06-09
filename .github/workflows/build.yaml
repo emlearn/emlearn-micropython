@@ -185,7 +185,12 @@ jobs:
     - name: Download all artifacts
       uses: actions/download-artifact@v4
       with:
-        path: dist/
+        path: artifacts/
+
+    - name: Prepare files for distribution
+      run: |
+        mkdir -p dist/
+        cp -r artifacts/*/* dist/
 
     - name: Deploy to Github Pages
       if: "github.ref_name == 'master' || github.ref_type == 'tag'"
