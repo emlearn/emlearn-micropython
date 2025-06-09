@@ -113,7 +113,9 @@ jobs:
 
     - name: Setup MicroPython ESP32
       working-directory: micropython
-      run: source tools/ci.sh && ci_esp32_idf_setup
+      run: |
+        source tools/ci.sh && ci_esp32_idf_setup
+        make -C mpy-cross
     - name: Setup submodules esp32
       working-directory: micropython/ports/esp32
       run: source ../../esp-idf/export.sh && make submodules
