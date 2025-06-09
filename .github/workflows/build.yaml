@@ -112,7 +112,7 @@ jobs:
       run: source tools/ci.sh && ci_esp32_idf_setup
     - name: Setup submodules esp32
       working-directory: micropython/ports/esp32
-      run: make submodules
+      run: source ../../esp-idf/export.sh && make submodules
     - name: Build custom firmware with extmod, ESP32
       run: |
         source micropython/esp-idf/export.sh && pip install -r requirements.txt
