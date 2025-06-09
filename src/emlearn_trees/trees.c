@@ -15,7 +15,7 @@
 
 #ifdef MICROPY_ENABLE_DYNRUNTIME
 // memset is used by some standard C constructs
-#if !defined(__linux__)
+#if !defined(__linux__) && !defined(__APPLE__)
 void *memcpy(void *dst, const void *src, size_t n) {
     return mp_fun_table.memmove_(dst, src, n);
 }
