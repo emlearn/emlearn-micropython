@@ -84,6 +84,9 @@ jobs:
 
   build-macos:
     runs-on: macos-latest
+    env:
+      MPY_DIR: ./micropython
+      MICROPYTHON_BIN: ./micropython/ports/unix/build-nomodules/micropython
 
     steps:
     - uses: actions/checkout@v4
@@ -99,6 +102,12 @@ jobs:
         repository: jonnor/micropython
         path: micropython
         ref: v1.25.0    
+
+    - name: Setup MicroPython X86
+      working-directory: micropython
+      run: |
+        source tools/ci.sh && ci_unix_32bit_setup && ci_unix_standard_build
+        mv ./ports/unix/build-standard/ ./ports/unix/build-nomodules/
     - name: Build custom firmware with user modules, and tests. Unix/x64
       run: make check_unix V=1
     - name: Build .mpy modules and run tests Unix/x64
