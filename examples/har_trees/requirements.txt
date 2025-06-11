@@ -1,8 +1,10 @@
 pandas
 pyarrow
 git+https://github.com/jonnor/leaf-clustering
-emlearn
+emlearn>=0.22.0
 scikit-learn
 setuptools
 structlog
 matplotlib
+mpremote
+
