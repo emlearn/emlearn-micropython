@@ -6,10 +6,12 @@ import pickle
 import tempfile
 import subprocess
 import json
+import itertools
 
 import pandas
 import numpy
 import structlog
+import joblib
 
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import f1_score, make_scorer, get_scorer, PrecisionRecallDisplay
@@ -195,6 +197,18 @@ def timebased_features(windows : list[pandas.DataFrame],
 
     return df
 
+def batched_iterator(iterable, batch_size):
+    """Yield lists of size batch_size from iterable"""
+    iterator = iter(iterable)
+    while batch := list(itertools.islice(iterator, batch_size)):
+        yield batch
+
+def process_in_parallel_streaming(gen, process_item, batch_size=1000, n_jobs=-1):
+    for batch in batched_iterator(gen, batch_size):
+        yield from joblib.Parallel(n_jobs=n_jobs)(
+            joblib.delayed(process_item)(item) for item in batch
+        )
+
 def extract_features(sensordata : pandas.DataFrame,
     columns : list[str],
     groupby,
@@ -220,9 +234,8 @@ def extract_features(sensordata : pandas.DataFrame,
 
     # Split into fixed-length windows
     features_values = []
-    generator = extract_windows(sensordata, window_length, window_hop, groupby=groupby, time_column=time_column)
-    for windows in generator:
-    
+
+    def process_one(windows) -> pandas.DataFrame:
         # drop invalid data
         windows = [ w for w in windows if not w[columns].isnull().values.any() ]
 
@@ -246,6 +259,14 @@ def extract_features(sensordata : pandas.DataFrame,
         for idx_column in index_columns:
             df[idx_column] = [w[idx_column].iloc[0] for w in windows]
         df = df.set_index(index_columns)
+
+        return df
+
+    
+    data_generator = extract_windows(sensordata, window_length, window_hop, groupby=groupby, time_column=time_column)
+    feature_generator = process_in_parallel_streaming(data_generator, process_one, batch_size=10)
+
+    for df in feature_generator:
 
         features_values.append(df)
 
