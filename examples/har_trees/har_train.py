@@ -148,7 +148,7 @@ def assign_window_label(labels, majority=0.66):
 
 def timebased_features(windows : list[pandas.DataFrame],
         columns : list[str],
-        micropython_bin='micropython') -> pandas.DataFrame:
+        python_bin='python') -> pandas.DataFrame:
 
     #print('w', len(windows), columns)
 
@@ -173,13 +173,13 @@ def timebased_features(windows : list[pandas.DataFrame],
 
         # Run MicroPython program
         args = [
-            micropython_bin,
+            python_bin,
             feature_extraction_script,
             data_path,
             features_path,
         ]
         cmd = ' '.join(args)
-        #log.debug('run-micropython', cmd=cmd)
+        #log.debug('run-timebased', cmd=cmd)
         try:
             out = subprocess.check_output(args)
         except subprocess.CalledProcessError as e:
@@ -341,6 +341,7 @@ def run_pipeline(run, hyperparameters, dataset,
     data_path = os.path.join(data_dir, f'{dataset}.parquet')
 
     data_load_start = time.time()
+    log.info('data-load-start', dataset=dataset)
     data = pandas.read_parquet(data_path)
 
     #print(data.index.names)
@@ -351,14 +352,17 @@ def run_pipeline(run, hyperparameters, dataset,
     enabled_classes = dataset_config[dataset]['classes']
     label_column = dataset_config[dataset].get('label_column', 'activity')
     time_column = dataset_config[dataset].get('time_column', 'time')
-    sensitivity = dataset_config[dataset].get('sensitivity', 2.0)
+    sensitivity = dataset_config[dataset].get('sensitivity', 4.0)
 
     data[label_column] = data[label_column].astype(str)
 
     data_load_duration = time.time() - data_load_start
-    log.info('data-loaded', dataset=dataset, samples=len(data), duration=data_load_duration)
+    log.info('data-load-end', dataset=dataset, samples=len(data), duration=data_load_duration)
 
     feature_extraction_start = time.time()
+    log.info('feature-extraction-start',
+        dataset=dataset,
+    )
     features = extract_features(data,
         columns=data_columns,
         groupby=groups,             
