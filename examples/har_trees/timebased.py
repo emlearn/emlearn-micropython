@@ -9,12 +9,27 @@
 # The input data must alreayd be segmented in windows. For each window, all features are computed.
 # Author: Atis Elsts, 2019
 
-
 import os
 import sys
 import math
 import array
 import time
+
+if sys.implementation.name != 'micropython':
+    # shim for micropython.native
+    class micropython:
+        @classmethod
+        def native(cls, func):
+            # do nothing
+            return func
+
+    def _time_ticks_ms():
+        return int(time.time()/1000.0)
+    def _time_ticks_diff(a, b):
+        return a-b
+
+    time.ticks_ms = _time_ticks_ms
+    time.ticks_diff = _time_ticks_diff
 
 #########################################
 
@@ -114,17 +129,23 @@ def jerk_filter(inp, out):
 @micropython.native
 def norm_filter_l1(x, y, z, out):
     for i in range(len(x)):
-        out[i] = abs(x[i]) + abs(y[i]) + abs(z[i])
+        v = abs(x[i]) + abs(y[i]) + abs(z[i])
+        v = min(v, 2**15-1)
+        out[i] = v
 
 @micropython.native
 def norm_filter_l2(x, y, z, out):
     for i in range(len(x)):
-        out[i] = (x[i]*x[i] + y[i]*y[i] + z[i]*z[i])**0.5
+        v = (x[i]*x[i] + y[i]*y[i] + z[i]*z[i])**0.5
+        v = min(v, 2**15-1)
+        out[i] = v
 
 @micropython.native
 def norm_filter_l2_squared(x, y, z, out):
     for i in range(len(x)):
-        out[i] = (x[i]*x[i] + y[i]*y[i] + z[i]*z[i])
+        v = (x[i]*x[i] + y[i]*y[i] + z[i]*z[i])
+        v = min(v, 2**15-1)
+        out[i] = v
 
 ##########################################
 
