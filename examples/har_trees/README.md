@@ -123,7 +123,7 @@ mpremote cp windower.py :
 
 Run the classification
 ```
-mpremote har_live.py
+mpremote run har_live.py
 ```
 
 This will continiously output the results of the classification,
