@@ -19,7 +19,8 @@ from gui.core.writer import Writer
 from gui.core.nanogui import refresh
 from gui.widgets.meter import Meter
 from gui.widgets.label import Label, ALIGN_RIGHT
-import gui.fonts.courier20 as fixed_font
+#import gui.fonts.courier20 as fixed_font
+import gui.fonts.arial10 as fixed_font
 
 # Cleanup after import frees considerable memory
 gc.collect()
@@ -139,7 +140,7 @@ def render_display(durations):
         value_text = f'{stats:.0f}s'
         text2 = Label(wri, y, 140, 50, align=ALIGN_RIGHT)
         text2.value(value_text)
-        y += 22
+        y += 17
 
     refresh(ssd)
 
@@ -152,7 +153,7 @@ def main():
     dataset = 'har_uci'
     
     if dataset == 'har_uci':
-        classname_index = {"LAYING": 0, "SITTING": 1, "STANDING": 2, "WALKING": 3, "WALKING_DOWNSTAIRS": 4, "WALKING_UPSTAIRS": 5, "other": 6}
+        classname_index = {"LAYING": 0, "SITTING": 1, "STANDING": 2, "WALKING": 3, "WALKING_DOWN": 4, "WALKING_UP": 5, "other": 6}
         window_length = 128
     elif dataset == 'har_exercise_1':
         classname_index = {"jacks": 0, "lunge": 1, "other": 2, "squat": 3}
@@ -232,7 +233,7 @@ def main():
                 d = time.ticks_diff(time.ticks_ms(), start)
                 print('classify', activity, list(out), d, 'ms')
                 for classname, duration in durations.items():
-                    print(f'{classname}:\t\t\t{duration:.0f} seconds')
+                    print(f'{classname}:\t\t\t{duration:.0f} s')
 
                 # Send predictions over BLE
                 send_bluetooth_le(prediction_no, out)
