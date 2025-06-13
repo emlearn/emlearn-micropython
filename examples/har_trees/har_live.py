@@ -150,6 +150,14 @@ def render_display(durations):
 
 def main():
 
+    # Internal LED on M5StickC PLUS2
+    led_pin = machine.Pin(19, machine.Pin.OUT)
+    led_pin.value(1)
+    
+    # On M5StickC we need to set HOLD pin to stay alive when on battery
+    hold_pin = machine.Pin(4, machine.Pin.OUT)
+    hold_pin.value(1)
+
     dataset = 'har_uci'
     
     if dataset == 'har_uci':
