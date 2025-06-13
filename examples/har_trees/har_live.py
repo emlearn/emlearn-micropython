@@ -130,6 +130,8 @@ def render_display(durations):
     y = 5
     for classname, stats in durations.items():
         
+        classname = classname[:8] # truncate to make sure it fits
+
         key_text = classname
         text1 = Label(wri, y, 10, wri.stringlen(key_text))
         text1.value(key_text)
@@ -147,9 +149,9 @@ def render_display(durations):
 
 def main():
 
-    dataset = 'har_exercise_1'
+    dataset = 'har_uci'
     
-    if dataset == 'uci_har':
+    if dataset == 'har_uci':
         classname_index = {"LAYING": 0, "SITTING": 1, "STANDING": 2, "WALKING": 3, "WALKING_DOWNSTAIRS": 4, "WALKING_UPSTAIRS": 5}
         window_length = 128
     elif dataset == 'har_exercise_1':
