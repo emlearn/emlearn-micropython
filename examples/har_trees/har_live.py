@@ -152,7 +152,7 @@ def main():
     dataset = 'har_uci'
     
     if dataset == 'har_uci':
-        classname_index = {"LAYING": 0, "SITTING": 1, "STANDING": 2, "WALKING": 3, "WALKING_DOWNSTAIRS": 4, "WALKING_UPSTAIRS": 5}
+        classname_index = {"LAYING": 0, "SITTING": 1, "STANDING": 2, "WALKING": 3, "WALKING_DOWNSTAIRS": 4, "WALKING_UPSTAIRS": 5, "other": 6}
         window_length = 128
     elif dataset == 'har_exercise_1':
         classname_index = {"jacks": 0, "lunge": 1, "other": 2, "squat": 3}
