@@ -3,6 +3,10 @@
 import machine
 from machine import Pin, I2C
 
+# On M5StickC we need to set HOLD pin to stay alive when on battery
+hold_pin = machine.Pin(4, machine.Pin.OUT)
+hold_pin.value(1)
+
 from mpu6886 import MPU6886
 
 # mpremote mip install "github:peterhinch/micropython-async/v3/primitives"
@@ -89,6 +93,15 @@ data_dir = 'har_record'
 
 
 def main():
+
+    # Internal LED on M5StickC PLUS2
+    led_pin = machine.Pin(19, machine.Pin.OUT)
+    led_pin.value(1)
+    time.sleep(0.10)
+    led_pin.value(0)
+
+    ssd = init_screen()
+
     mpu = MPU6886(I2C(0, sda=21, scl=22, freq=100000))
 
     # Enable FIFO at a fixed samplerate
@@ -97,15 +110,6 @@ def main():
 
     chunk = bytearray(mpu.bytes_per_sample*chunk_length) # raw bytes
     decoded = array.array('h', (0 for _ in range(3*chunk_length))) # decoded int16
-
-    ssd = init_screen()
-
-    # Internal LED on M5StickC PLUS2
-    led_pin = machine.Pin(19, machine.Pin.OUT)
-
-    # On M5StickC we need to set HOLD pin to stay alive when on battery
-    hold_pin = machine.Pin(4, machine.Pin.OUT)
-    hold_pin.value(1)
 
     # Support cycling between classes, to indicate which is being recorded
     class_selected = 0
