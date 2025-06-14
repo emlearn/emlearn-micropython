@@ -244,7 +244,10 @@ def main():
                     print(f'{classname}:\t\t\t{duration:.0f} s')
 
                 # Send predictions over BLE
-                send_bluetooth_le(prediction_no, out)
+                try:
+                    send_bluetooth_le(prediction_no, out)
+                except OSError as e:
+                    print('send-ble-failed', e)
 
                 # Update display
                 render_display(durations)
@@ -256,4 +259,10 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    try:
+        main()
+    except KeyboardInterrupt:
+        raise
+    except Exception as e:
+        print('unhandled-exception', e)
+        machine.reset()
