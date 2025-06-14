@@ -19,12 +19,13 @@ from recorder import Recorder
 
 # for display
 # mpremote mip install "github:peterhinch/micropython-nano-gui"
-from color_setup import ssd
 from gui.core.writer import Writer
 from gui.core.nanogui import refresh
 from gui.widgets.meter import Meter
 from gui.widgets.label import Label
 import gui.fonts.courier20 as fixed
+
+from display import init_screen
 
 # Cleanup after import frees considerable memory
 gc.collect()
@@ -46,7 +47,7 @@ def decode_samples(buf : bytearray, samples : array.array, bytes_per_sample):
         samples[(i*3)+2] = z
 
 
-def render_display(selected_class, recording : bool):
+def render_display(ssd, selected_class, recording : bool):
     start_time = time.ticks_ms()
    
     ssd.fill(0)
@@ -97,6 +98,8 @@ def main():
     chunk = bytearray(mpu.bytes_per_sample*chunk_length) # raw bytes
     decoded = array.array('h', (0 for _ in range(3*chunk_length))) # decoded int16
 
+    ssd = init_screen()
+
     # Internal LED on M5StickC PLUS2
     led_pin = machine.Pin(19, machine.Pin.OUT)
 
@@ -109,7 +112,7 @@ def main():
 
     def update_display():
         c = classes[class_selected]
-        render_display(c, recorder._recording)
+        render_display(ssd, c, recorder._recording)
         led_pin.value(1 if recorder._recording else 0)
 
     def on_longpress():
@@ -173,4 +176,10 @@ def main():
         asyncio.run(run())
 
 if __name__ == '__main__':
-    main()
+    try:
+        main()
+    except KeyboardInterrupt:
+        raise
+    except Exception as e:
+        print('unhandled-exception', e)
+        machine.reset()
