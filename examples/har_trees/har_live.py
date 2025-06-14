@@ -1,6 +1,11 @@
 
 import machine
-from machine import Pin, I2C
+from machine import Pin, I2C, SPI
+
+# On M5StickC we need to set HOLD pin to stay alive when on battery
+hold_pin = machine.Pin(4, machine.Pin.OUT)
+hold_pin.value(1)
+
 from mpu6886 import MPU6886
 import bluetooth
 
@@ -14,7 +19,6 @@ import emlearn_trees
 
 # for display
 # mpremote mip install "github:peterhinch/micropython-nano-gui"
-from color_setup import ssd
 from gui.core.writer import Writer
 from gui.core.nanogui import refresh
 from gui.widgets.meter import Meter
@@ -22,8 +26,29 @@ from gui.widgets.label import Label, ALIGN_RIGHT
 #import gui.fonts.courier20 as fixed_font
 import gui.fonts.arial10 as fixed_font
 
+from drivers.st7789.st7789_4bit import ST7789, LANDSCAPE, TDISPLAY
+
 # Cleanup after import frees considerable memory
 gc.collect()
+
+
+def init_screen():
+
+    # M5Stack M5StickC PLUS 2
+    # https://docs.m5stack.com/en/core/M5StickC%20PLUS2
+    #   ESP32 	    GPIO15 	    GPIO13 	    GPIO14 	GPIO12 	    GPIO5 	GPIO27
+    #   TFT LCD 	TFT_MOSI 	TFT_CLK 	TFT_DC 	TFT_RST 	TFT_CS 	TFT_BL
+
+    pdc = Pin(14, Pin.OUT, value=0)
+    pcs = Pin(5, Pin.OUT, value=1)
+    prst = Pin(12, Pin.OUT, value=1)
+    pbl = Pin(27, Pin.OUT, value=1)
+
+    # Conservative low baudrate. Can go to 62.5MHz.
+    spi = SPI(1, 30_000_000, sck=Pin(13), mosi=Pin(15))
+    ssd = ST7789(spi, height=135, width=240, dc=pdc, cs=pcs, rst=prst, disp_mode=LANDSCAPE, display=TDISPLAY)
+    return ssd
+
 
 def mean(arr):
     m = sum(arr) / float(len(arr))
@@ -119,7 +144,7 @@ def send_bluetooth_le(sequence, probabilities,
     ble.active(False)
 
 
-def render_display(durations):
+def render_display(ssd, durations):
     start_time = time.ticks_ms()
    
     ssd.fill(0)
@@ -153,10 +178,8 @@ def main():
     # Internal LED on M5StickC PLUS2
     led_pin = machine.Pin(19, machine.Pin.OUT)
     led_pin.value(1)
-    
-    # On M5StickC we need to set HOLD pin to stay alive when on battery
-    hold_pin = machine.Pin(4, machine.Pin.OUT)
-    hold_pin.value(1)
+
+    ssd = init_screen()
 
     dataset = 'har_uci'
     
@@ -250,7 +273,7 @@ def main():
                     print('send-ble-failed', e)
 
                 # Update display
-                render_display(durations)
+                render_display(ssd, durations)
         
                 prediction_no += 1
 
