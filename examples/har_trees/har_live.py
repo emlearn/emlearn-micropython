@@ -25,7 +25,7 @@ from gui.core.nanogui import refresh
 from gui.widgets.meter import Meter
 from gui.widgets.label import Label, ALIGN_RIGHT
 #import gui.fonts.courier20 as fixed_font
-import gui.fonts.arial10 as fixed_font
+import gui.fonts.font10 as fixed_font
 
 from color_setup import init_screen
 
