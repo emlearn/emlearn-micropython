@@ -80,15 +80,16 @@ def render_display(ssd, selected_class, recording : bool):
 
 # Configuration
 classes = [
-    'jumpingjack',
-    'lunge',
-    'squat',
+    'idle',
+    'snake',
+    'updown',
+    'wave',
     'other',
 ]
 
 samplerate = 100
 chunk_length = 50
-file_duration = 10.0
+file_duration = 4.0
 data_dir = 'har_record'
 
 
