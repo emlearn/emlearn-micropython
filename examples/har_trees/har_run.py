@@ -64,10 +64,10 @@ def main():
 
     model = emlearn_trees.new(10, 1000, 10)
 
-    dataset = 'har_uci'
+    dataset = 'uci_har'
     #dataset = 'har_exercise_1'
 
-    model_path = f'{dataset}_trees.csv'
+    model_path = f'{dataset}.trees.csv'
 
     # Load a CSV file with the model
     with open(model_path, 'r') as f:
