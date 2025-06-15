@@ -8,6 +8,7 @@ import subprocess
 import json
 import itertools
 
+import yaml
 import pandas
 import numpy
 import structlog
@@ -285,7 +286,14 @@ def export_model(path, out):
         cmodel.save(name='harmodel', format='csv', file=out)
 
 
+def load_config(file_path):
+
+    with open(file_path, 'r') as f:
+        data = yaml.safe_load(f)
+    return data
+
 def run_pipeline(run, hyperparameters, dataset,
+        config,
         data_dir,
         out_dir,
         model_settings=dict(),
@@ -293,68 +301,8 @@ def run_pipeline(run, hyperparameters, dataset,
         features='timebased',
     ):
 
-    dataset_config = {
-        'uci_har': dict(
-            groups=['subject', 'experiment'],
-            data_columns = ['acc_x', 'acc_y', 'acc_z'],
-            classes = [
-                #'STAND_TO_LIE',
-                #'SIT_TO_LIE',
-                #'LIE_TO_SIT',
-                #'STAND_TO_SIT',
-                #'LIE_TO_STAND',
-                #'SIT_TO_STAND',
-                'STANDING', 'LAYING', 'SITTING',
-                'WALKING', 'WALKING_UPSTAIRS', 'WALKING_DOWNSTAIRS',
-            ],
-        ),
-        'pamap2': dict(
-            groups=['subject'],
-            data_columns = ['hand_acceleration_16g_x', 'hand_acceleration_16g_y', 'hand_acceleration_16g_z'],
-            classes = [
-                #'transient',
-                'walking', 'ironing', 'lying', 'standing',
-                'Nordic_walking', 'sitting', 'vacuum_cleaning',
-                'cycling', 'ascending_stairs', 'descending_stairs',
-                'running', 'rope_jumping',
-            ],
-        ),
-        'har_exercise_1': dict(
-            groups=['file'],
-            data_columns = ['x', 'y', 'z'],
-            classes = [
-                #'mixed',
-                'squat', 'jumpingjack', 'lunge', 'other',
-            ],
-        ),
-        'toothbrush_hussain2021': dict(
-            groups=['subject'],
-            label_column = 'is_brushing',
-            time_column = 'elapsed',
-            data_columns = ['acc_x', 'acc_y', 'acc_z'],
-            #data_columns = ['gravity_x', 'gravity_y', 'gravity_z'],
-            #data_columns = ['motion_x', 'motion_y', 'motion_z'],
-            classes = [
-                #'mixed',
-                'True', 'False',
-            ],
-        ),
-        'toothbrush_jonnor': dict(
-            groups=['session'],
-            label_column = 'is_brushing',
-            time_column = 'time',
-            data_columns = ['x', 'y', 'z'],
-            #data_columns = ['gravity_x', 'gravity_y', 'gravity_z'],
-            #data_columns = ['motion_x', 'motion_y', 'motion_z'],
-            classes = [
-                #'mixed',
-                'True', 'False',
-            ],
-        ),
-    }
+    dataset_config = load_config(config)
 
-    if not dataset in dataset_config.keys():
-        raise ValueError(f"Unknown dataset {dataset}")
 
     if not os.path.exists(out_dir):
         os.makedirs(out_dir)
@@ -368,12 +316,12 @@ def run_pipeline(run, hyperparameters, dataset,
     #print(data.index.names)
     #print(data.columns)
 
-    groups = dataset_config[dataset]['groups']
-    data_columns = dataset_config[dataset]['data_columns']
-    enabled_classes = dataset_config[dataset]['classes']
-    label_column = dataset_config[dataset].get('label_column', 'activity')
-    time_column = dataset_config[dataset].get('time_column', 'time')
-    sensitivity = dataset_config[dataset].get('sensitivity', 4.0)
+    groups = dataset_config['groups']
+    data_columns = dataset_config['data_columns']
+    enabled_classes = dataset_config['classes']
+    label_column = dataset_config.get('label_column', 'activity')
+    time_column = dataset_config.get('time_column', 'time')
+    sensitivity = dataset_config.get('sensitivity', 4.0)
 
     data[label_column] = data[label_column].astype(str)
 
@@ -486,6 +434,8 @@ def parse():
 
     parser.add_argument('--dataset', type=str, default='uci_har',
                         help='Which dataset to use')
+    parser.add_argument('--config', type=str, default='data/configurations/uci_har.yaml',
+                        help='Which dataset/training config to use')
     parser.add_argument('--data-dir', metavar='DIRECTORY', type=str, default='./data/processed',
                         help='Where the input data is stored')
     parser.add_argument('--out-dir', metavar='DIRECTORY', type=str, default='./',
@@ -506,9 +456,6 @@ def parse():
 def main():
 
     args = parse()
-    dataset = args.dataset
-    out_dir = args.out_dir
-    data_dir = args.data_dir
 
     run_id = uuid.uuid4().hex.upper()[0:6]
 
@@ -524,6 +471,7 @@ def main():
     }
 
     results = run_pipeline(dataset=args.dataset,
+        config=args.config,
         out_dir=args.out_dir,
         data_dir=args.data_dir,
         run=run_id,

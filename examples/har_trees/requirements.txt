@@ -7,4 +7,4 @@ setuptools
 structlog
 matplotlib
 mpremote
-
+pyyaml
