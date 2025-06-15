@@ -34,7 +34,7 @@ def load_har_record(path,
             df['time'] = t
             df = df.set_index('time')
 
-            classname = f.split('_')[1].rstrip(suffix)
+            classname = os.path.splitext(f)[0].split('_')[1]
             
             # Remove :, special character on Windows
             filename = f.replace(':', '')

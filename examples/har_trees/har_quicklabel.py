@@ -45,15 +45,11 @@ def main():
     # Lookup data
     recordings = load_har_record(data_path)
 
-    print(recordings.columns)
-
-    print(recordings.head(5))
-
     # Create packed dataframe
     dfs = []
     for filename, row in recordings.iterrows():
         classname = row.classname
-        filename = filename.rstrip('.npy')
+        filename = filename
         #print(filename, classname)    
 
         d = row.data
@@ -66,7 +62,6 @@ def main():
     #p = 'data/processed/pamap2.parquet'
     
     out = pandas.concat(dfs, ignore_index=True)
-    print(out)
     out.to_parquet(out_path)
 
     #return
@@ -75,7 +70,7 @@ def main():
     print(df.columns)
     print(df.activity.value_counts())
     print(df.file.value_counts())
-    print(df.head())
+    print(df.head(5))
 
 
 if __name__ == '__main__':

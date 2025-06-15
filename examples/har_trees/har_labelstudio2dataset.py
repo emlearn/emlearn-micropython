@@ -5,8 +5,8 @@ import os
 import pandas
 
 
+from har_data2labelstudio import load_har_record
 
-from read_data import load_har_record
 
 def extract_filename(url):
 
