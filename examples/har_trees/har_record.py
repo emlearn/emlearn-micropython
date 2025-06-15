@@ -180,10 +180,5 @@ def main():
         asyncio.run(run())
 
 if __name__ == '__main__':
-    try:
-        main()
-    except KeyboardInterrupt:
-        raise
-    except Exception as e:
-        print('unhandled-exception', e)
-        machine.reset()
+    main()
+
