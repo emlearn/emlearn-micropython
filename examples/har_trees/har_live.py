@@ -26,7 +26,7 @@ from gui.widgets.label import Label, ALIGN_RIGHT
 #import gui.fonts.courier20 as fixed_font
 import gui.fonts.arial10 as fixed_font
 
-from display import init_screen
+from color_setup import init_screen
 
 # Cleanup after import frees considerable memory
 gc.collect()

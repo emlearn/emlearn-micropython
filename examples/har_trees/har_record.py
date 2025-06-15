@@ -29,7 +29,7 @@ from gui.widgets.meter import Meter
 from gui.widgets.label import Label
 import gui.fonts.courier20 as fixed
 
-from display import init_screen
+from color_setup import init_screen
 
 # Cleanup after import frees considerable memory
 gc.collect()

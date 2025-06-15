@@ -1,7 +1,7 @@
 
 from machine import Pin, SPI, PWM
 
-from drivers.st7789.st7789_4bit import ST7789, LANDSCAPE, TDISPLAY
+from drivers.st7789.st7789_4bit import ST7789 as SSD, LANDSCAPE, TDISPLAY
 
 def init_screen(backlight_duty=400, backlight_freq=1000):
 
@@ -17,5 +17,5 @@ def init_screen(backlight_duty=400, backlight_freq=1000):
 
     # Conservative low baudrate. Can go to 62.5MHz.
     spi = SPI(1, 30_000_000, sck=Pin(13), mosi=Pin(15))
-    ssd = ST7789(spi, height=135, width=240, dc=pdc, cs=pcs, rst=prst, disp_mode=LANDSCAPE, display=TDISPLAY)
+    ssd = SSD(spi, height=135, width=240, dc=pdc, cs=pcs, rst=prst, disp_mode=LANDSCAPE, display=TDISPLAY)
     return ssd
