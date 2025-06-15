@@ -124,6 +124,7 @@ def calculate_features_xyz(xyz : tuple[array.array]) -> array.array:
     #feature_data[Feature.pitch] = pitch
     #feature_data[Feature.roll] = roll
 
+    # FIXME: use the normalized (unit-scaled) gravity vector instead of quaternion
     orientation_q = tilt_quaternion_from_accel(gravity_x, gravity_y, gravity_z)
     feature_data[Feature.orient_w] = orientation_q[0]
     feature_data[Feature.orient_x] = orientation_q[1]
