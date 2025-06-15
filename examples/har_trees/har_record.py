@@ -124,6 +124,8 @@ def main():
         if recorder._recording:
             recorder.stop()
         else:
+            c = classes[class_selected]
+            recorder.set_class(c)
             recorder.start()
         update_display()
 
@@ -133,8 +135,6 @@ def main():
         class_selected += 1
         if class_selected >= len(classes):
             class_selected = 0
-        c = classes[class_selected]
-        recorder.set_class(c)
         update_display()
 
         print(f'har-record-cycle class={c}')
