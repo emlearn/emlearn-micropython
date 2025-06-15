@@ -12,6 +12,7 @@ import bluetooth
 import time
 import struct
 import array
+import json
 
 from windower import TriaxialWindower, empty_array
 import timebased
@@ -147,15 +148,23 @@ def render_display(ssd, durations):
         value_text = f'{stats:.0f}s'
         text2 = Label(wri, y, 140, 50, align=ALIGN_RIGHT)
         text2.value(value_text)
-        y += 17
+        y += 20
 
     refresh(ssd)
 
     duration = time.ticks_ms() - start_time
-    print('render-display', duration, 'ms')
+    if False:
+        print('render-display', duration, 'ms')
 
 
 def main():
+
+    # Settings
+    DATASET = 'cgestures'
+    BLE_ENABLED = False
+    MIN_PROBABILITY = 0.4 # if no class has higher, consider as "other"
+    SAMPLERATE = 100 # TODO: load from model meta.json
+    hop_length = 64
 
     # Internal LED on M5StickC PLUS2
     led_pin = machine.Pin(19, machine.Pin.OUT)
@@ -163,20 +172,14 @@ def main():
 
     ssd = init_screen()
 
-    dataset = 'har_uci'
-    
-    if dataset == 'har_uci':
-        classname_index = {"LAYING": 0, "SITTING": 1, "STANDING": 2, "WALKING": 3, "WALKING_DOWN": 4, "WALKING_UP": 5, "other": 6}
-        window_length = 128
-    elif dataset == 'har_exercise_1':
-        classname_index = {"jacks": 0, "lunge": 1, "other": 2, "squat": 3}
-        window_length = 256
-    else:
-        raise ValueError('Unknown dataset')
+    # Load model metadata
+    with open(f'{DATASET}.meta.json', 'r') as f:
+        model_meta = json.loads(f.read())
+    classname_index = model_meta['classes']
+    window_length = model_meta['window_length']
 
-    model_path = f'{dataset}_trees.csv'
+    model_path = f'{DATASET}.trees.csv'
     class_index_to_name = { v: k for k, v in classname_index.items() }
-
 
     # Load a CSV file with the model
     model = emlearn_trees.new(10, 1000, 10)
@@ -186,11 +189,9 @@ def main():
     mpu = MPU6886(I2C(0, sda=21, scl=22, freq=100000))
 
     # Enable FIFO at a fixed samplerate
-    SAMPLERATE = 100
     mpu.fifo_enable(True)
     mpu.set_odr(SAMPLERATE)
 
-    hop_length = 64
     chunk = bytearray(mpu.bytes_per_sample*hop_length)
 
     x_values = empty_array('h', hop_length)
@@ -209,7 +210,7 @@ def main():
 
     prediction_no = 0
     durations = { classname: 0.0 for classname in classname_index.keys() } # how long each class has been active
-    MIN_PROBABILITY = 0.5 # if no class has higher, consider as "other"
+
 
     while True:
 
@@ -240,7 +241,8 @@ def main():
                 if max(out) < MIN_PROBABILITY:
                     activity = 'other'
                 
-                durations[activity] += (hop_length/SAMPLERATE)
+                if activity in durations.keys():
+                    durations[activity] += (hop_length/SAMPLERATE)
 
                 # Print status
                 d = time.ticks_diff(time.ticks_ms(), start)
@@ -250,7 +252,8 @@ def main():
 
                 # Send predictions over BLE
                 try:
-                    send_bluetooth_le(prediction_no, out)
+                    if BLE_ENABLED:
+                        send_bluetooth_le(prediction_no, out)
                 except OSError as e:
                     print('send-ble-failed', e)
 

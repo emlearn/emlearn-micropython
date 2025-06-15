@@ -332,12 +332,13 @@ def run_pipeline(run, hyperparameters, dataset,
     log.info('feature-extraction-start',
         dataset=dataset,
     )
+    window_length = model_settings['window_length']
     features = extract_features(data,
         columns=data_columns,
         groupby=groups,             
         features=features,
         sensitivity=sensitivity,
-        window_length=model_settings['window_length'],
+        window_length=window_length,
         window_hop=model_settings['window_hop'],
         label_column=label_column,
         time_column=time_column,
@@ -385,16 +386,18 @@ def run_pipeline(run, hyperparameters, dataset,
         pickle.dump(estimator, file=f)
 
     # Export model with emlearn
-    model_path = os.path.join(out_dir, f'{dataset}_trees.csv')
+    model_path = os.path.join(out_dir, f'{dataset}.trees.csv')
     export_model(estimator_path, model_path)
 
-    # Save testdata
+    # Save metadata
     classes = estimator.classes_
     class_mapping = dict(zip(classes, range(len(classes))))
-    meta_path = os.path.join(out_dir, f'{dataset}.meta.json')    
+    meta_path = os.path.join(out_dir, f'{dataset}.meta.json')
+    metadata = dict(classes=class_mapping, window_length=window_length)
     with open(meta_path, 'w') as f:
-        f.write(json.dumps(class_mapping))
+        f.write(json.dumps(metadata))
 
+    # Save testdata
     testdata_path = os.path.join(out_dir, f'{dataset}.testdata.npz')
     testdata = features.groupby(label_column, as_index=False).sample(n=10)
     # convert to class number/index
