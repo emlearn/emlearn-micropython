@@ -138,6 +138,7 @@ def main():
             class_selected = 0
         update_display()
 
+        c = classes[class_selected]
         print(f'har-record-cycle class={c}')
 
     button_pin = machine.Pin(37, machine.Pin.IN, machine.Pin.PULL_UP) # Button A on M5StickC PLUS2
