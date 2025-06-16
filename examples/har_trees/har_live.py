@@ -160,7 +160,7 @@ def render_display(ssd, durations):
 def main():
 
     # Settings
-    DATASET = 'cgestures'
+    DATASET = 'uci_har'
     BLE_ENABLED = False
     MIN_PROBABILITY = 0.4 # if no class has higher, consider as "other"
     SAMPLERATE = 100 # TODO: load from model meta.json
