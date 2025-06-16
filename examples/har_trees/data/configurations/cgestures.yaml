@@ -1,0 +1,12 @@
+groups:
+  - file
+data_columns:
+  - x
+  - y
+  - z
+classes:
+  - idle
+  - snake
+  - updown
+  - wave
+  - other

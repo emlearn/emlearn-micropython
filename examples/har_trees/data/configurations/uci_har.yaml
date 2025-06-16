@@ -1,0 +1,20 @@
+groups:
+  - subject
+  - experiment
+data_columns:
+  - acc_x
+  - acc_y
+  - acc_z
+classes:
+  # - STAND_TO_LIE
+  # - SIT_TO_LIE
+  # - LIE_TO_SIT
+  # - STAND_TO_SIT
+  # - LIE_TO_STAND
+  # - SIT_TO_STAND
+  - STANDING
+  - LAYING
+  - SITTING
+  - WALKING
+  - WALKING_UPSTAIRS
+  - WALKING_DOWNSTAIRS

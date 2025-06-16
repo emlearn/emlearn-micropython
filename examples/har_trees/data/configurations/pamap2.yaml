@@ -1,0 +1,20 @@
+groups:
+  - subject
+data_columns:
+  - hand_acceleration_16g_x
+  - hand_acceleration_16g_y
+  - hand_acceleration_16g_z
+classes:
+  # - transient
+  - walking
+  - ironing
+  - lying
+  - standing
+  - Nordic_walking
+  - sitting
+  - vacuum_cleaning
+  - cycling
+  - ascending_stairs
+  - descending_stairs
+  - running
+  - rope_jumping
