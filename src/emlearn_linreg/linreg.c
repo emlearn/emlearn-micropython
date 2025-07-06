@@ -169,11 +169,11 @@ static mp_obj_t elasticnet_model_del(mp_obj_t self_obj) {
 // Define a Python reference to the function above
 static MP_DEFINE_CONST_FUN_OBJ_1(elasticnet_model_del_obj, elasticnet_model_del);
 
-// Train the model
-static mp_obj_t elasticnet_model_train(size_t n_args, const mp_obj_t *args) {
-    // Args: self, X, y, max_iterations, tolerance
-    if (n_args != 5) {
-        mp_raise_ValueError(MP_ERROR_TEXT("Expected 5 arguments: self, X, y, max_iterations, tolerance"));
+// Single training iteration
+static mp_obj_t elasticnet_model_step(size_t n_args, const mp_obj_t *args) {
+    // Args: self, X, y
+    if (n_args != 3) {
+        mp_raise_ValueError(MP_ERROR_TEXT("Expected 3 arguments: self, X, y"));
     }
     
     mp_obj_elasticnet_model_t *o = MP_OBJ_TO_PTR(args[0]);
@@ -203,39 +203,13 @@ static mp_obj_t elasticnet_model_train(size_t n_args, const mp_obj_t *args) {
     }
 
     const uint16_t n_samples = y_len;
-    const uint16_t max_iterations = mp_obj_get_int(args[3]);
-    const float tolerance = mp_obj_get_float(args[4]);
 
-    // Train the model
-    float prev_mse = 1e10f;
-    const uint16_t check_interval = 10;
-    const float divergence_factor = 10.0f;
-
-    for (uint16_t iter = 0; iter < max_iterations; iter++) {
-        elastic_net_iterate(self, X, y, n_samples);
-        
-        // Check convergence at specified intervals
-        if (iter % check_interval == 0) {
-            float mse = elastic_net_mse(self, X, y, n_samples);
-            float change = fabsf(prev_mse - mse);
-            
-            // Check for convergence
-            if (change < tolerance && iter > check_interval * 2) {
-                break;
-            }
-            
-            // Check for divergence
-            if (mse > prev_mse * divergence_factor || !isfinite(mse)) {
-                break;
-            }
-            
-            prev_mse = mse;
-        }
-    }
+    // Perform single iteration
+    elastic_net_iterate(self, X, y, n_samples);
 
     return mp_const_none;
 }
-static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(elasticnet_model_train_obj, 5, 5, elasticnet_model_train);
+static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(elasticnet_model_step_obj, 3, 3, elasticnet_model_step);
 
 // Predict using the model
 static mp_obj_t elasticnet_model_predict(mp_obj_fun_bc_t *self_obj,
@@ -290,6 +264,16 @@ static mp_obj_t elasticnet_model_get_weights(mp_obj_t self_obj, mp_obj_t out_obj
 // Define a Python reference to the function above
 static MP_DEFINE_CONST_FUN_OBJ_2(elasticnet_model_get_weights_obj, elasticnet_model_get_weights);
 
+// Get number of features
+static mp_obj_t elasticnet_model_get_n_features(mp_obj_t self_obj) {
+    mp_obj_elasticnet_model_t *o = MP_OBJ_TO_PTR(self_obj);
+    elastic_net_model_t *self = &o->model;
+
+    return mp_obj_new_int(self->n_features);
+}
+// Define a Python reference to the function above
+static MP_DEFINE_CONST_FUN_OBJ_1(elasticnet_model_get_n_features_obj, elasticnet_model_get_n_features);
+
 // Get model bias
 static mp_obj_t elasticnet_model_get_bias(mp_obj_t self_obj) {
     mp_obj_elasticnet_model_t *o = MP_OBJ_TO_PTR(self_obj);
@@ -300,50 +284,48 @@ static mp_obj_t elasticnet_model_get_bias(mp_obj_t self_obj) {
 // Define a Python reference to the function above
 static MP_DEFINE_CONST_FUN_OBJ_1(elasticnet_model_get_bias_obj, elasticnet_model_get_bias);
 
-// Calculate MSE from true and predicted values
-static mp_obj_t elasticnet_model_mse(size_t n_args, const mp_obj_t *args) {
-    // Args: self, y_true, y_pred
+// Calculate MSE from X and y (saves memory by not storing predictions)
+static mp_obj_t elasticnet_model_score_mse(size_t n_args, const mp_obj_t *args) {
+    // Args: self, X, y
     if (n_args != 3) {
-        mp_raise_ValueError(MP_ERROR_TEXT("Expected 3 arguments: self, y_true, y_pred"));
+        mp_raise_ValueError(MP_ERROR_TEXT("Expected 3 arguments: self, X, y"));
     }
+    
+    mp_obj_elasticnet_model_t *o = MP_OBJ_TO_PTR(args[0]);
+    elastic_net_model_t *self = &o->model;
 
-    // Extract y_true buffer
-    mp_buffer_info_t y_true_bufinfo;
-    mp_get_buffer_raise(args[1], &y_true_bufinfo, MP_BUFFER_READ);
-    if (y_true_bufinfo.typecode != 'f') {
-        mp_raise_ValueError(MP_ERROR_TEXT("y_true expecting float32 array"));
+    // Extract X buffer
+    mp_buffer_info_t X_bufinfo;
+    mp_get_buffer_raise(args[1], &X_bufinfo, MP_BUFFER_READ);
+    if (X_bufinfo.typecode != 'f') {
+        mp_raise_ValueError(MP_ERROR_TEXT("X expecting float32 array"));
     }
-    const float *y_true = y_true_bufinfo.buf;
-    const int y_true_len = y_true_bufinfo.len / sizeof(float);
+    const float *X = X_bufinfo.buf;
+    const int X_len = X_bufinfo.len / sizeof(float);
 
-    // Extract y_pred buffer
-    mp_buffer_info_t y_pred_bufinfo;
-    mp_get_buffer_raise(args[2], &y_pred_bufinfo, MP_BUFFER_READ);
-    if (y_pred_bufinfo.typecode != 'f') {
-        mp_raise_ValueError(MP_ERROR_TEXT("y_pred expecting float32 array"));
+    // Extract y buffer
+    mp_buffer_info_t y_bufinfo;
+    mp_get_buffer_raise(args[2], &y_bufinfo, MP_BUFFER_READ);
+    if (y_bufinfo.typecode != 'f') {
+        mp_raise_ValueError(MP_ERROR_TEXT("y expecting float32 array"));
     }
-    const float *y_pred = y_pred_bufinfo.buf;
-    const int y_pred_len = y_pred_bufinfo.len / sizeof(float);
+    const float *y = y_bufinfo.buf;
+    const int y_len = y_bufinfo.len / sizeof(float);
 
     // Validate dimensions
-    if (y_true_len != y_pred_len) {
-        mp_raise_ValueError(MP_ERROR_TEXT("y_true and y_pred must have same length"));
+    if (X_len != y_len * self->n_features) {
+        mp_raise_ValueError(MP_ERROR_TEXT("X and y dimensions don't match"));
     }
 
-    // Calculate MSE manually
-    float mse = 0.0f;
-    for (int i = 0; i < y_true_len; i++) {
-        float error = y_true[i] - y_pred[i];
-        mse += error * error;
-    }
-    mse /= y_true_len;
+    const uint16_t n_samples = y_len;
+    float mse = elastic_net_mse(self, X, y, n_samples);
 
     return mp_obj_new_float(mse);
 }
-static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(elasticnet_model_mse_obj, 3, 3, elasticnet_model_mse);
+static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(elasticnet_model_score_mse_obj, 3, 3, elasticnet_model_score_mse);
 
 // Module setup
-mp_map_elem_t elasticnet_model_locals_dict_table[7];
+mp_map_elem_t elasticnet_model_locals_dict_table[8];
 static MP_DEFINE_CONST_DICT(elasticnet_model_locals_dict, elasticnet_model_locals_dict_table);
 
 // Module setup entrypoint
@@ -359,13 +341,14 @@ mp_obj_t mpy_init(mp_obj_fun_bc_t *self, size_t n_args, size_t n_kw, mp_obj_t *a
     
     // methods
     elasticnet_model_locals_dict_table[0] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR_predict), MP_DYNRUNTIME_MAKE_FUNCTION(elasticnet_model_predict) };
-    elasticnet_model_locals_dict_table[1] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR_train), MP_OBJ_FROM_PTR(&elasticnet_model_train_obj) };
+    elasticnet_model_locals_dict_table[1] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR_step), MP_OBJ_FROM_PTR(&elasticnet_model_step_obj) };
     elasticnet_model_locals_dict_table[2] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR___del__), MP_OBJ_FROM_PTR(&elasticnet_model_del_obj) };
     elasticnet_model_locals_dict_table[3] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR_get_weights), MP_OBJ_FROM_PTR(&elasticnet_model_get_weights_obj) };
     elasticnet_model_locals_dict_table[4] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR_get_bias), MP_OBJ_FROM_PTR(&elasticnet_model_get_bias_obj) };
-    elasticnet_model_locals_dict_table[5] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR_mse), MP_OBJ_FROM_PTR(&elasticnet_model_mse_obj) };
+    elasticnet_model_locals_dict_table[5] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR_get_n_features), MP_OBJ_FROM_PTR(&elasticnet_model_get_n_features_obj) };
+    elasticnet_model_locals_dict_table[6] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR_score_mse), MP_OBJ_FROM_PTR(&elasticnet_model_score_mse_obj) };
 
-    MP_OBJ_TYPE_SET_SLOT(&elasticnet_model_type, locals_dict, (void*)&elasticnet_model_locals_dict, 6);
+    MP_OBJ_TYPE_SET_SLOT(&elasticnet_model_type, locals_dict, (void*)&elasticnet_model_locals_dict, 7);
 
     // This must be last, it restores the globals dict
     MP_DYNRUNTIME_INIT_EXIT
