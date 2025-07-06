@@ -51,3 +51,5 @@ def train(model, X_train, y_train,
             
         prev_mse = current_mse
 
+    return iteration, prev_mse
+

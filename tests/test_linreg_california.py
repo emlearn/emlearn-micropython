@@ -3,6 +3,7 @@ import emlearn_linreg
 import npyfile
 import array
 import gc
+import time
 
 def load_npy_as_array(filename, dtype='f'):
     """Load .npy file and convert to MicroPython array."""
@@ -39,7 +40,7 @@ def compare_regularization():
         
         model = emlearn_linreg.new(n_features, alpha, l1_ratio, 0.01)
         emlearn_linreg.train(model, X_subset, y_subset,
-            max_iterations=2000, check_interval=50, verbose=1)
+            max_iterations=100, check_interval=50, verbose=1)
 
         # Calculate predictions and MSE
         mse = model.score_mse(X_subset, y_subset)
@@ -75,11 +76,17 @@ def test_elasticnet_full():
     print("Creating ElasticNet model...")
     model = emlearn_linreg.new(n_features, 0.001, 0.5, 0.01)  # Lower learning rate for stability
     
+    train_start = time.ticks_ms()
     # Train on full dataset
     print("Training on full dataset...")
-    emlearn_linreg.train(model, X_train_data, y_train_data,
-        max_iterations=2000, check_interval=50, verbose=1, tolerance=0.001, score_limit=0.60)
-    
+    stop_iter, stop_mse = emlearn_linreg.train(model,
+            X_train_data, y_train_data,
+            max_iterations=2000, check_interval=50,
+            verbose=2, tolerance=0.001, score_limit=0.60,
+    )
+    train_duration = time.ticks_diff(time.ticks_ms(), train_start)    
+    print('Train time (ms)', train_duration, 'per iter', train_duration/stop_iter)
+
     # Get final parameters
     weights = array.array('f', [0.0] * n_features)
     model.get_weights(weights)
@@ -117,8 +124,9 @@ def main():
     
     try:
         # Compare regularization approaches
-        compare_regularization()
-        
+        #compare_regularization()
+        gc.collect()        
+
         test_elasticnet_full()        
         print("\n=== All Tests Completed Successfully! ===")
         
