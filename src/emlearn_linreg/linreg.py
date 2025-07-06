@@ -1,10 +1,13 @@
 
 
+log_prefix = 'emlearn_linreg:'
+
 def train(model, X_train, y_train,
         max_iterations=100, 
         tolerance=1e-6,
         check_interval=10,
         divergence_factor=10.0,
+        score_limit=None,
         verbose=0,
         ):
     """
@@ -25,22 +28,25 @@ def train(model, X_train, y_train,
         change = abs(prev_mse - current_mse)
 
         if verbose >= 2:
-            print(f'Iteration {iteration} mse={current_mse}')        
+            print(log_prefix, f'Iteration {iteration} mse={current_mse}')        
 
         # Check convergence
         converged = change < tolerance and iteration > check_interval * 2
         
+        if score_limit is not None:
+            converged = converged or current_mse <= score_limit
+
         # Check divergence
         diverged = current_mse > prev_mse * divergence_factor or not (current_mse == current_mse)  # NaN check
         
         if converged:
-            if verbose:
-                print(f"Converged at iteration {iteration}")
+            if verbose >= 1:
+                print(log_prefix, f"Converged at iteration {iteration}")
             break
             
         if diverged:
-            if verbose:
-                print(f"Diverged at iteration {iteration}")
+            if verbose >= 1:
+                print(log_prefix, f"Diverged at iteration {iteration}")
             break
             
         prev_mse = current_mse
