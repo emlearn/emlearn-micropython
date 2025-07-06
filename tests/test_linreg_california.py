@@ -1,7 +1,6 @@
 # MicroPython test script for ElasticNet module with California housing dataset
-
-import npyfile
 import emlearn_linreg
+import npyfile
 import array
 import gc
 
@@ -69,8 +68,17 @@ def test_elasticnet_small():
     print(f"First sample actual: {actual}")
     print(f"Error: {abs(prediction - actual)}")
     
-    # Calculate training MSE
-    mse = model.score(X_small, y_small)
+    # Test prediction and calculate MSE manually
+    y_pred = array.array('f', [0.0] * n_samples_small)
+    for i in range(n_samples_small):
+        start_idx = i * n_features
+        end_idx = start_idx + n_features
+        sample_features = array.array('f', X_data[start_idx:end_idx])
+        prediction = model.predict(sample_features)
+        y_pred[i] = prediction
+    
+    # Calculate training MSE using the cleaner API
+    mse = model.mse(y_small, y_pred)
     print(f"Training MSE: {mse}")
     
     return model
@@ -110,11 +118,27 @@ def test_elasticnet_full():
     print(f"Final bias: {bias}")
     
     # Evaluate on train set
-    train_mse = model.score(X_train_data, y_train_data)
+    print("Calculating training MSE...")
+    y_train_pred = array.array('f', [0.0] * n_train)
+    for i in range(n_train):
+        start_idx = i * n_features
+        end_idx = start_idx + n_features
+        sample_features = array.array('f', X_train_data[start_idx:end_idx])
+        y_train_pred[i] = model.predict(sample_features)
+    
+    train_mse = model.mse(y_train_data, y_train_pred)
     print(f"Training MSE: {train_mse}")
     
     # Evaluate on test set
-    test_mse = model.score(X_test_data, y_test_data)
+    print("Calculating test MSE...")
+    y_test_pred = array.array('f', [0.0] * n_test)
+    for i in range(n_test):
+        start_idx = i * n_features
+        end_idx = start_idx + n_features
+        sample_features = array.array('f', X_test_data[start_idx:end_idx])
+        y_test_pred[i] = model.predict(sample_features)
+    
+    test_mse = model.mse(y_test_data, y_test_pred)
     print(f"Test MSE: {test_mse}")
     
     # Make some sample predictions
@@ -156,7 +180,15 @@ def compare_regularization():
         model = emlearn_linreg.new(n_features, alpha, l1_ratio, 0.001)
         model.train(X_subset, y_subset, 300, 1e-6)
         
-        mse = model.score(X_subset, y_subset)
+        # Calculate predictions and MSE using cleaner API
+        y_pred = array.array('f', [0.0] * n_samples)
+        for i in range(n_samples):
+            start_idx = i * n_features
+            end_idx = start_idx + n_features
+            sample_features = array.array('f', X_subset[start_idx:end_idx])
+            y_pred[i] = model.predict(sample_features)
+        
+        mse = model.mse(y_subset, y_pred)
         
         weights = array.array('f', [0.0] * n_features)
         model.get_weights(weights)
