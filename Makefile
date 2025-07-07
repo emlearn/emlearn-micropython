@@ -58,6 +58,9 @@ $(MODULES_PATH)/emlearn_arrayutils.mpy:
 $(MODULES_PATH)/emlearn_linreg.mpy:
 	make -C src/emlearn_linreg/ ARCH=$(ARCH) MPY_DIR=$(MPY_DIR_ABS) V=1 clean dist
 
+$(MODULES_PATH)/emlearn_extratrees.mpy:
+	make -C src/emlearn_extratrees/ ARCH=$(ARCH) MPY_DIR=$(MPY_DIR_ABS) V=1 clean dist
+
 emlearn_trees.results: $(MODULES_PATH)/emlearn_trees.mpy
 	MICROPYPATH=$(MODULES_PATH) $(MICROPYTHON_BIN) tests/test_trees.py
 
@@ -84,6 +87,9 @@ emlearn_arrayutils.results: $(MODULES_PATH)/emlearn_arrayutils.mpy
 
 emlearn_linreg.results: $(MODULES_PATH)/emlearn_linreg.mpy
 	MICROPYPATH=$(MODULES_PATH) $(MICROPYTHON_BIN) tests/test_linreg.py
+
+emlearn_extratrees.results: $(MODULES_PATH)/emlearn_extratrees.mpy
+	MICROPYPATH=$(MODULES_PATH) $(MICROPYTHON_BIN) tests/test_extratrees_xor.py
 
 $(PORT_DIR):
 	mkdir -p $@
