@@ -142,7 +142,7 @@ static mp_obj_t elasticnet_model_predict(mp_obj_fun_bc_t *self_obj,
     // Make prediction
     float prediction = predict_sample(self, features);
 
-    return mp_obj_new_float(prediction);
+    return (mp_obj_t)mp_obj_new_float(prediction);
 }
 
 // Get model weights
@@ -185,7 +185,7 @@ static mp_obj_t elasticnet_model_get_bias(mp_obj_t self_obj) {
     mp_obj_elasticnet_model_t *o = MP_OBJ_TO_PTR(self_obj);
     elastic_net_model_t *self = &o->model;
 
-    return mp_obj_new_float(self->bias);
+    return (mp_obj_t)mp_obj_new_float(self->bias);
 }
 // Define a Python reference to the function above
 static MP_DEFINE_CONST_FUN_OBJ_1(elasticnet_model_get_bias_obj, elasticnet_model_get_bias);
