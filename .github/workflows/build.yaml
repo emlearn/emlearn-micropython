@@ -62,7 +62,7 @@ jobs:
       with:
         repository: jonnor/micropython
         path: micropython
-        ref: v1.25.0
+        ref: v1.25.0-armv6m-abs-relocations
     - name: Install Python dependencies
       run: pip install -r requirements.txt
     - name: Setup MicroPython ARM
@@ -107,7 +107,7 @@ jobs:
       with:
         repository: jonnor/micropython
         path: micropython
-        ref: v1.25.0
+        ref: v1.25.0-armv6m-abs-relocations
     - name: Install Python dependencies
       run: pip install -r requirements.txt
 
@@ -152,7 +152,7 @@ jobs:
       with:
         repository: jonnor/micropython
         path: micropython
-        ref: v1.25.0    
+        ref: v1.25.0-armv6m-abs-relocations   
     - name: Install Python dependencies
       run: pip install -r requirements.txt
     - name: Setup MicroPython X86
