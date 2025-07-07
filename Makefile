@@ -38,6 +38,7 @@ MODULES = emlearn_trees \
 	emlearn_arrayutils \
 	emlearn_linreg \
 	emlearn_logreg \
+	emlearn_extratrees \
 	emlearn_cnn_int8 \
 	emlearn_cnn_fp32
 
@@ -60,6 +61,7 @@ emlearn_iir_q15_SRC = src/emlearn_iir_q15
 emlearn_arrayutils_SRC = src/emlearn_arrayutils
 emlearn_linreg_SRC = src/emlearn_linreg
 emlearn_logreg_SRC = src/emlearn_logreg
+emlearn_extratrees_SRC = src/emlearn_extratrees
 
 # Dependencies for each .mpy file: .c, .h, .py files, and Makefile
 $(foreach mod,$(MODULES),\
