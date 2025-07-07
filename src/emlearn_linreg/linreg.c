@@ -31,9 +31,9 @@ static mp_obj_t elasticnet_model_new(size_t n_args, const mp_obj_t *args) {
     }
     
     mp_int_t n_features = mp_obj_get_int(args[0]);
-    float alpha = mp_obj_get_float(args[1]);
-    float l1_ratio = mp_obj_get_float(args[2]);
-    float learning_rate = mp_obj_get_float(args[3]);
+    float alpha = mp_obj_get_float_to_f(args[1]);
+    float l1_ratio = mp_obj_get_float_to_f(args[2]);
+    float learning_rate = mp_obj_get_float_to_f(args[3]);
 
     // Allocate space
     mp_obj_elasticnet_model_t *o = \
@@ -142,7 +142,7 @@ static mp_obj_t elasticnet_model_predict(mp_obj_fun_bc_t *self_obj,
     // Make prediction
     float prediction = predict_sample(self, features);
 
-    return (mp_obj_t)mp_obj_new_float(prediction);
+    return mp_obj_new_float_from_f(prediction);
 }
 
 // Get model weights
@@ -185,7 +185,7 @@ static mp_obj_t elasticnet_model_get_bias(mp_obj_t self_obj) {
     mp_obj_elasticnet_model_t *o = MP_OBJ_TO_PTR(self_obj);
     elastic_net_model_t *self = &o->model;
 
-    return (mp_obj_t)mp_obj_new_float(self->bias);
+    return mp_obj_new_float_from_f(self->bias);
 }
 // Define a Python reference to the function above
 static MP_DEFINE_CONST_FUN_OBJ_1(elasticnet_model_get_bias_obj, elasticnet_model_get_bias);
@@ -226,7 +226,7 @@ static mp_obj_t elasticnet_model_score_mse(size_t n_args, const mp_obj_t *args) 
     const uint16_t n_samples = y_len;
     float mse = elastic_net_mse(self, X, y, n_samples);
 
-    return mp_obj_new_float(mse);
+    return mp_obj_new_float_from_f(mse);
 }
 static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(elasticnet_model_score_mse_obj, 3, 3, elasticnet_model_score_mse);
 
