@@ -55,6 +55,9 @@ $(MODULES_PATH)/emlearn_iir_q15.mpy:
 $(MODULES_PATH)/emlearn_arrayutils.mpy:
 	make -C src/emlearn_arrayutils/ ARCH=$(ARCH) MPY_DIR=$(MPY_DIR_ABS) V=1 clean dist
 
+$(MODULES_PATH)/emlearn_linreg.mpy:
+	make -C src/emlearn_linreg/ ARCH=$(ARCH) MPY_DIR=$(MPY_DIR_ABS) V=1 clean dist
+
 emlearn_trees.results: $(MODULES_PATH)/emlearn_trees.mpy
 	MICROPYPATH=$(MODULES_PATH) $(MICROPYTHON_BIN) tests/test_trees.py
 
@@ -78,6 +81,9 @@ emlearn_iir_q15.results: $(MODULES_PATH)/emlearn_iir_q15.mpy
 
 emlearn_arrayutils.results: $(MODULES_PATH)/emlearn_arrayutils.mpy
 	MICROPYPATH=$(MODULES_PATH) $(MICROPYTHON_BIN) tests/test_arrayutils.py
+
+emlearn_linreg.results: $(MODULES_PATH)/emlearn_linreg.mpy
+	MICROPYPATH=$(MODULES_PATH) $(MICROPYTHON_BIN) tests/test_linreg.py
 
 $(PORT_DIR):
 	mkdir -p $@
@@ -124,8 +130,8 @@ release:
 	zip -r $(RELEASE_NAME).zip $(RELEASE_NAME)
 	#cp $(RELEASE_NAME).zip emlearn-micropython-latest.zip
 
-check: emlearn_trees.results emlearn_neighbors.results emlearn_iir.results emlearn_iir_q15.results emlearn_fft.results emlearn_kmeans.results emlearn_arrayutils.results emlearn_cnn.results
+check: emlearn_trees.results emlearn_neighbors.results emlearn_iir.results emlearn_iir_q15.results emlearn_fft.results emlearn_kmeans.results emlearn_arrayutils.results emlearn_cnn.results emlearn_linreg.results
 
-dist: $(MODULES_PATH)/emlearn_trees.mpy $(MODULES_PATH)/emlearn_neighbors.mpy $(MODULES_PATH)/emlearn_iir.mpy $(MODULES_PATH)/emlearn_iir_q15.mpy $(MODULES_PATH)/emlearn_fft.mpy $(MODULES_PATH)/emlearn_kmeans.mpy $(MODULES_PATH)/emlearn_arrayutils.mpy $(MODULES_PATH)/emlearn_cnn_int8.mpy $(MODULES_PATH)/emlearn_cnn_fp32.mpy
+dist: $(MODULES_PATH)/emlearn_trees.mpy $(MODULES_PATH)/emlearn_neighbors.mpy $(MODULES_PATH)/emlearn_iir.mpy $(MODULES_PATH)/emlearn_iir_q15.mpy $(MODULES_PATH)/emlearn_fft.mpy $(MODULES_PATH)/emlearn_kmeans.mpy $(MODULES_PATH)/emlearn_arrayutils.mpy $(MODULES_PATH)/emlearn_cnn_int8.mpy $(MODULES_PATH)/emlearn_cnn_fp32.mpy $(MODULES_PATH)/emlearn_linreg.mpy
 
 
