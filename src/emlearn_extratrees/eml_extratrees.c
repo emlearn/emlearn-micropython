@@ -3,7 +3,13 @@
 #include <string.h>
 #include <stdio.h>
 
+#define DEBUG 0
+
+#if DEBUG
 #define printf(fmt, ...) mp_printf(&mp_plat_print, fmt, ##__VA_ARGS__)
+#else
+#define printf(fmt, ...) ((void)0)
+#endif
 
 typedef struct _EmlTreesNode {
     int8_t feature;   // -1 for leaf nodes
