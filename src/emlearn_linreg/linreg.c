@@ -190,6 +190,46 @@ static mp_obj_t elasticnet_model_get_bias(mp_obj_t self_obj) {
 // Define a Python reference to the function above
 static MP_DEFINE_CONST_FUN_OBJ_1(elasticnet_model_get_bias_obj, elasticnet_model_get_bias);
 
+
+// Set model bias
+static mp_obj_t elasticnet_model_set_bias(mp_obj_t self_obj, mp_obj_t bias_obj) {
+    mp_obj_elasticnet_model_t *o = MP_OBJ_TO_PTR(self_obj);
+    elastic_net_model_t *self = &o->model;
+
+    float bias = mp_obj_get_float_to_f(bias_obj);
+    self->bias = bias;
+
+    return mp_const_none;
+}
+// Define a Python reference to the function above
+static MP_DEFINE_CONST_FUN_OBJ_2(elasticnet_model_set_bias_obj, elasticnet_model_set_bias);
+
+// Set model weights
+static mp_obj_t elasticnet_model_set_weights(mp_obj_t self_obj, mp_obj_t weights_obj) {
+    mp_obj_elasticnet_model_t *o = MP_OBJ_TO_PTR(self_obj);
+    elastic_net_model_t *self = &o->model;
+
+    // Extract buffer pointer and verify typecode
+    mp_buffer_info_t bufinfo;
+    mp_get_buffer_raise(weights_obj, &bufinfo, MP_BUFFER_READ);
+    if (bufinfo.typecode != 'f') {
+        mp_raise_ValueError(MP_ERROR_TEXT("expecting float32 array"));
+    }
+    const float *weights = bufinfo.buf;
+    const int n_features = bufinfo.len / sizeof(float);
+
+    if (n_features != self->n_features) {
+        mp_raise_ValueError(MP_ERROR_TEXT("Weight array size mismatch"));
+    }
+
+    memcpy(self->weights, weights, sizeof(float) * n_features);
+
+    return mp_const_none;
+}
+// Define a Python reference to the function above
+static MP_DEFINE_CONST_FUN_OBJ_2(elasticnet_model_set_weights_obj, elasticnet_model_set_weights);
+
+
 // Calculate MSE from X and y (saves memory by not storing predictions)
 static mp_obj_t elasticnet_model_score_mse(size_t n_args, const mp_obj_t *args) {
     // Args: self, X, y
@@ -231,7 +271,7 @@ static mp_obj_t elasticnet_model_score_mse(size_t n_args, const mp_obj_t *args) 
 static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(elasticnet_model_score_mse_obj, 3, 3, elasticnet_model_score_mse);
 
 // Module setup
-mp_map_elem_t elasticnet_model_locals_dict_table[8];
+mp_map_elem_t elasticnet_model_locals_dict_table[10];
 static MP_DEFINE_CONST_DICT(elasticnet_model_locals_dict, elasticnet_model_locals_dict_table);
 
 // Module setup entrypoint
@@ -253,8 +293,10 @@ mp_obj_t mpy_init(mp_obj_fun_bc_t *self, size_t n_args, size_t n_kw, mp_obj_t *a
     elasticnet_model_locals_dict_table[4] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR_get_bias), MP_OBJ_FROM_PTR(&elasticnet_model_get_bias_obj) };
     elasticnet_model_locals_dict_table[5] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR_get_n_features), MP_OBJ_FROM_PTR(&elasticnet_model_get_n_features_obj) };
     elasticnet_model_locals_dict_table[6] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR_score_mse), MP_OBJ_FROM_PTR(&elasticnet_model_score_mse_obj) };
+    elasticnet_model_locals_dict_table[7] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR_set_bias), MP_OBJ_FROM_PTR(&elasticnet_model_set_bias_obj) };
+    elasticnet_model_locals_dict_table[8] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR_set_weights), MP_OBJ_FROM_PTR(&elasticnet_model_set_weights_obj) };
 
-    MP_OBJ_TYPE_SET_SLOT(&elasticnet_model_type, locals_dict, (void*)&elasticnet_model_locals_dict, 7);
+    MP_OBJ_TYPE_SET_SLOT(&elasticnet_model_type, locals_dict, (void*)&elasticnet_model_locals_dict, 9);
 
     // This must be last, it restores the globals dict
     MP_DYNRUNTIME_INIT_EXIT
