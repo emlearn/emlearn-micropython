@@ -55,7 +55,10 @@ class AccelerometerClassifier():
         fft_energy = sum(self.fft_real)
         if fft_energy > 1e-6:
             for i in range(len(self.fft_real)):
-                self.fft_real[i] = self.fft_real[i] / fft_energy
+                self.fft_real[i] = abs(self.fft_real[i]) / fft_energy
+        else:
+            for i in range(len(self.fft_real)):
+                self.fft_real[i] = 0.0
 
         # Pick relevant features
         fft_features = list(self.fft_real[self.fft_start:self.fft_end])
@@ -68,7 +71,7 @@ class AccelerometerClassifier():
 
 def process_file(inp, out, model=None):
 
-    window_length = 128
+    window_length = 256
     pipeline = AccelerometerClassifier(window_length=window_length, classes=5, model_file=model)
     fft_features = pipeline.fft_end - pipeline.fft_start    
 
