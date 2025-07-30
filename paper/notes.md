@@ -16,7 +16,9 @@ Critical
 
 Non-critical
 
-- Add a documentation page about the wider Data Science ecosystem?
+- Add linreg to the API reference
+- Fixup hardware support page. armv6m now should work?
+- Add a documentation page about the wider MicroPython Data Science ecosystem?
 - Donate another 100 USD to JOSS
 
 # Process
@@ -44,7 +46,7 @@ https://joss.readthedocs.io/en/latest/example_paper.html
 
 ## Outline
 Should be 250-1000 words.
-Scope. Max 2 pages plus references
+Scope. 2-3 pages, plus references
 
 - Summary. 1-3 paragraphs. Max 1/2 page
 - Statement of need. Up to 1/2 page

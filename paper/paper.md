@@ -21,11 +21,11 @@ bibliography: paper.bib
 
 # Summary
 
-emlearn-micropython enable sensor data analysis on low-cost microcontrollers.
+emlearn-micropython enables sensor data analysis on low-cost microcontrollers.
 The library provides implementations of a set of algorithms commonly used for sensor data processing.
 This includes Digital Signal Processing techniques such as Infinite Impulse Response and Fast Fourier Transform,
 as well as Machine Learning inference such as Random Forest, Nearest Neighbors and Convolutional Neural Networks.
-Any time of sensor data can be processed, including audio, images, radar, and accelerometer data.
+Any kind of sensor data can be processed, including audio, images, radar, and accelerometer data.
 
 The library builds on MicroPython, a tiny Python implementation designed for microcontrollers.
 The modules expose high-level Python API and implemented in C code for computational efficiency.
@@ -46,7 +46,7 @@ Thanks to the MicroPython[@micropython] project, it has become feasible to use P
 and this is an attractive proposition for practictioners that are familiar with Python.
 However, research has identified that running computationally-intensive algorithms in Python
 with MicroPython can be inefficient[@plauska_performance_2023; @ionescu_investigating_2020; @dokic_micropython_2020].
-This also limits the effectiveness of tools that generate Python code from a machine-learning model, such as m2cgen[@m2cgen].
+This also limits the effectiveness of tools that generate Python code, such as m2cgen[@m2cgen].
 
 The library ulab[@ulab] implements efficient numeric computing facilities for MicroPython,
 including the core parts of numpy[@numpy], plus some parts of scipy[@scipy].
@@ -60,12 +60,12 @@ However, their solution only officially supports the OpenMV hardware, which limi
 For these reasons, we saw a need to develop a software library for MicroPython, with following properties:
 1) supports inference for common machine learning algorithms,
 2) is computationally efficient (in terms of execution speed, program space and RAM usage),
-3) run on any hardware (supported by MicroPython),
+3) run on any hardware supported by MicroPython,
 4) can be installed in a easy manner.
 
 Our goal is to make research and development in applied machine learning for embedded systems
 easier for those that prefer developing in Python over conventional C or C++.
-We also believe that this can be highly relevant in an educational context.
+We believe that will be attractive for many researchers and engineers, and also highly relevant in an educational context.
 
 Within one year of the first relase,
 emlearn-micropython was referenced in a work on on-device learning of decision-trees[@karavaev2024tinydecisiontreeclassifier].
@@ -74,15 +74,13 @@ emlearn-micropython was referenced in a work on on-device learning of decision-t
 
 The emlearn-micropython software package provides a selection of machine learning inference algorithms,
 along with some Digital Signal Processing functions.
-They have been selected based on what is useful and commonly used in embedded systems for processing sensor data.
+The algorithms have been selected based on what is useful and commonly used in embedded systems for processing sensor data.
 The implementations are designed to be compatible with established packages,
 notably scikit-learn[@scikit-learn], Keras[@keras] and scipy[@scipy].
-Table \ref{table_emlearn_micropython_modules} provides an listing of the provided functionality.
+\autoref{table_emlearn_micropython_modules} provides an listing of the provided functionality.
 
-The software is distributes as MicroPython native modules[@micropython_native_module].
-A MicroPython native module contains a combination of machine code (compiled from C) and MicroPython interpret byte-code (compiled from Python).
-The module can installed at runtime using the `mip` package manager.
-
+The software is distributed as MicroPython native modules[@micropython_native_module],
+which can installed at runtime using the `mip` package manager.
 The modules provided by emlearn-micropython are independent of eachother, and typically a few kilobytes large.
 This makes it easy to install just what is needed for a particular application,
 and to fit in the limited program memory provided by the target microcontroller.
@@ -93,6 +91,7 @@ and to fit in the limited program memory provided by the target microcontroller.
 | emlearn_trees      | Decision tree ensembles              | sklearn RandomForestClassifier    |
 | emlearn_neighbors  | Nearest Neighbors                    | sklearn KNeighborsClassifier      |
 | emlearn_cnn        | Convolutional Neural Network         | keras Model+Conv2D                |
+| emlearn_linreg     | Linear Regression                    | sklearn ElasticNet                |
 | emlearn_fft        | Fast Fourier Transform               | scipy.fft.fft                     |
 | emlearn_iir        | Infinite Impulse Response filters    | scipy.signal.sosfilt              |
 | emlearn_arrayutils | Fast utilities for array.array       | N/A                               |
@@ -113,7 +112,7 @@ Tri-axial data stream from the wrist-mounted accelerometer is split into consecu
 Each window is then processed using Fast Fourier Transform (with `emlearn_fft`),
 to extract the energy at frequencies characteristic of walking and running.
 These features are then classified using a Random Forest Classifier (with `emlearn_trees`).
-The data at the various processing stages is illustrated on a few minutes of data in Fig \autoref{fig:physical_activity_recognition_pipeline}.
+The data at the various processing stages is illustrated on a few minutes of data in \autoref{fig:physical_activity_recognition_pipeline}.
 
 ![Data pipeline for recognizing physical activities from accelerometer data using emlearn-micropython.](physical_activity_recognition_pipeline.png){#fig:physical_activity_recognition_pipeline width=100% }
 
@@ -126,7 +125,7 @@ emlearn-micropython documentation[^emlearn_micropython_documentation].
 
 We would like to thank
 Volodymyr Shymanskyy for his work on improving native module support in MicroPython,
-Damien P. George for fixes to native modules (and generally for MicroPython maintenance),
+Damien P. George and Alessandro Gatti for fixes to native modules,
 and Jeremy Meyer for user-testing of the emlearn_cnn module.
 
 Soundsensing has received finanical support in the period
