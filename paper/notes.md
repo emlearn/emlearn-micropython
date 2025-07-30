@@ -9,10 +9,10 @@ docker run --rm --volume $PWD/paper:/data --user $(id -u):$(id -g) --env JOURNAL
 
 Critical
 
-- Add FFT/frequency feature extraction to har_trees.py
-- Run preprocessing code to get spectrograms out
-- Add some feature selection on some bands
-- Finish a plot illustrating HAR over time
+- Example. Improve the plot.
+See example.py and AccelerometerExample.ipynb
+Make sure subplots share X axis
+- Add example code as appendix?
 
 Non-critical
 

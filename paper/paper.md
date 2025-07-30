@@ -65,10 +65,10 @@ For these reasons, we saw a need to develop a software library for MicroPython, 
 
 Our goal is to make research and development in applied machine learning for embedded systems
 easier for those that prefer developing in Python over conventional C or C++.
-We believe that will be attractive for many researchers and engineers, and also highly relevant in an educational context.
+We believe that this is attractive for many researchers and engineers, and also highly relevant in an educational context.
 
-Within one year of the first relase,
-emlearn-micropython was referenced in a work on on-device learning of decision-trees[@karavaev2024tinydecisiontreeclassifier].
+Within one year of the first release,
+emlearn-micropython was referenced in a work for on-device learning of decision-trees[@karavaev2024tinydecisiontreeclassifier].
 
 # Package contents
 
@@ -107,8 +107,8 @@ As an illustrative example of sensor data analysis with emlearn-micropython,
 we show how data from accelerometer can be used to recognize human activities.
 This can be deployed for example in a fitness bracelet or smartphone.
 
-The data is taken from the AMAP2 Physical Activity Monitoring dataset[@pamap2_dataset].
-Tri-axial data stream from the wrist-mounted accelerometer is split into consecutive fixed-length windows of 128 samples.
+The data is taken from the PAMAP2 Physical Activity Monitoring dataset[@pamap2_dataset].
+Tri-axial data stream from the wrist-mounted accelerometer is split into consecutive fixed-length windows.
 Each window is then processed using Fast Fourier Transform (with `emlearn_fft`),
 to extract the energy at frequencies characteristic of walking and running.
 These features are then classified using a Random Forest Classifier (with `emlearn_trees`).
