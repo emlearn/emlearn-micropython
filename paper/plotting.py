@@ -93,12 +93,9 @@ def plot_timeline(fig, df,
                   cols=1,
                  ):
 
-
     df = df.reset_index()
-    df[time] = df[time] / pandas.Timedelta(seconds=1) # convert to seconds
-    df[time] -= df[time].min()
+    df[time] = convert_times(df[time])
     df = df.sort_values(time)
-    #print(df[time].min(), df[time].max())
     
     if label is not None:
         df = df.set_index(time)
@@ -118,18 +115,21 @@ def plot_timeline(fig, df,
             name=column
         )
         fig.add_trace(trace, **subplot)
-        
-    
-    tick_vals, tick_text = time_ticks(df[time], every=60)
-    
+       
+def convert_times(times):
+    out = times
+    out = out / pandas.Timedelta(seconds=1)
+    out -= out.min()
+    return out
+
+def configure_xaxis(fig, times, every=60):
+
+    times = convert_times(times)
+
+    tick_vals, tick_text = time_ticks(times)
+
     # Customize layout
     fig.update_layout(
-        #title='Tri-Axial Accelerometdf[data[0]]er Data Over Time',
-        #xaxis_title='Time',
-        #yaxis_title='Acceleration (g)',
-        #legend_title='Axis',
-        template='plotly_white',
-        #hovermode='x unified'
         xaxis=dict(
             title='Elapsed Time (MM:SS)',
             tickmode='array',
@@ -138,6 +138,30 @@ def plot_timeline(fig, df,
         ),
     )
 
-    return fig
 
+def plot_heatmap(fig, data, columns, time='time', zmax=1.0, zmin=None, subplot={}):
+
+    if zmin is None:
+        zmin = -zmax
+    
+    from plotly import graph_objects as go
+
+    data[time] = convert_times(data[time])
+    
+    x_labels = data[time]
+    z_data = data[columns].T.values  # Transpose for proper orientation
+
+    # Create heatmap
+    fig.add_heatmap(
+        z=z_data,
+        x=x_labels,
+        y=columns,
+        colorscale='RdBu',
+        showscale=False,
+        zmin=zmin,
+        zmax=zmax,
+        **subplot,
+    )
+    
+    return fig
 
