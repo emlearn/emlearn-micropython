@@ -10,11 +10,7 @@ docker run --rm --volume $PWD/paper:/data --user $(id -u):$(id -g) --env JOURNAL
 Critical
 
 - Example. Improve the plot.
-See example.py and AccelerometerExample.ipynb
 Setup conversion with emlearn. NB: scaling as int16
-Get predictions from emlearn-micropython
-Make sure subplots share X axis
-Use Hz for column names in feature plot
 Drop FFT 0 / 0Hz / DC?
 
 - Add example code as appendix?

@@ -96,6 +96,7 @@ def plot_timeline(fig, df,
                   label='activity',
                   subplot={},
                   cols=1,
+                  opacity=0.5,
                  ):
 
     df = df.reset_index()
@@ -125,6 +126,7 @@ def plot_timeline(fig, df,
             mode='lines',
             name=column,
             line=dict(color=data_colors[column]),
+            opacity=opacity,
         )
         fig.add_trace(trace, **subplot)
        
@@ -150,12 +152,15 @@ def configure_xaxis(fig, times, every=60, col=1, row=1):
     )
 
 
-def plot_heatmap(fig, data, columns, time='time', zmax=1.0, zmin=None, subplot={}):
+def plot_heatmap(fig, data, columns, y_labels=None, colorscale='RdBu', time='time', zmax=1.0, zmin=None, subplot={}):
 
     if zmin is None:
         zmin = -zmax
     
     from plotly import graph_objects as go
+
+    if y_labels is None:
+        y_labels = columns
 
     data[time] = convert_times(data[time])
     
@@ -166,8 +171,8 @@ def plot_heatmap(fig, data, columns, time='time', zmax=1.0, zmin=None, subplot={
     fig.add_heatmap(
         z=z_data,
         x=x_labels,
-        y=columns,
-        colorscale='RdBu',
+        y=y_labels,
+        colorscale=colorscale,
         showscale=False,
         zmin=zmin,
         zmax=zmax,
