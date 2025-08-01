@@ -32,12 +32,7 @@ def get_subplot_axes(rows, cols, row, col):
     else:
         return f'x{subplot_num}', f'y{subplot_num}'
 
-def add_events(fig, df, subplot={}, cols=0):
-
-    labels = df['label'].unique()
-    color_pool = qualitative.Set3 + qualitative.Dark24 + qualitative.Pastel1
-    label_colors = dict(zip(labels, color_pool))
-    assert len(labels) <= len(color_pool)
+def add_events(fig, df, label_colors, subplot={}, cols=0):
     
     xaxis, yaxis = get_subplot_axes(fig, cols=cols, **subplot)
     print('add-events', subplot, yaxis)
@@ -85,8 +80,18 @@ def time_ticks(times, every=30):
 
     return tick_vals, tick_text
 
+def make_label_colors(labels) -> dict[str, object]:
+
+    color_pool = qualitative.Set3 + qualitative.Dark24 + qualitative.Pastel1
+    label_colors = dict(zip(labels, color_pool))
+    assert len(labels) <= len(color_pool)
+
+    return label_colors
+
 def plot_timeline(fig, df,
                   data: list[str],
+                  label_colors=None,
+                  data_colors=None,
                   time='time',
                   label='activity',
                   subplot={},
@@ -97,12 +102,18 @@ def plot_timeline(fig, df,
     df[time] = convert_times(df[time])
     df = df.sort_values(time)
     
+    if label_colors is None:
+        label_colors = make_label_colors(df[label].unique())
+
+    if data_colors is None:
+        data_colors = make_label_colors(list(set(data)))
+
     if label is not None:
         df = df.set_index(time)
         events = find_runs(df[label])
         events = events[~events.label.isin(['transient'])]
         df = df.reset_index()
-        add_events(fig, events, subplot=subplot, cols=cols)
+        add_events(fig, events, label_colors=label_colors, subplot=subplot, cols=cols)
     
     # Add each axis as a line
     for column in data:
@@ -112,7 +123,8 @@ def plot_timeline(fig, df,
         trace = go.Scatter(x=df[time],
             y=y,
             mode='lines',
-            name=column
+            name=column,
+            line=dict(color=data_colors[column]),
         )
         fig.add_trace(trace, **subplot)
        
@@ -122,20 +134,19 @@ def convert_times(times):
     out -= out.min()
     return out
 
-def configure_xaxis(fig, times, every=60):
+def configure_xaxis(fig, times, every=60, col=1, row=1):
 
     times = convert_times(times)
 
     tick_vals, tick_text = time_ticks(times)
 
     # Customize layout
-    fig.update_layout(
-        xaxis=dict(
-            title='Elapsed Time (MM:SS)',
-            tickmode='array',
-            tickvals=tick_vals,
-            ticktext=tick_text,
-        ),
+    fig.update_xaxes(
+        title='Elapsed Time (MM:SS)',
+        tickmode='array',
+        tickvals=tick_vals,
+        ticktext=tick_text,
+        col=col, row=row,
     )
 
 
