@@ -107,12 +107,13 @@ As an illustrative example of sensor data analysis with emlearn-micropython,
 we show how data from an accelerometer can be used to recognize human activities.
 This can, for example, be deployed in a fitness bracelet or smartphone.
 
-The data is taken from the PAMAP2 Physical Activity Monitoring dataset [@pamap2_dataset].
-A tri-axial data stream from the wrist-mounted accelerometer is split into consecutive fixed-length windows.
+Example data is taken from the PAMAP2 Physical Activity Monitoring dataset [@pamap2_dataset].
+The tri-axial data stream from the wrist-mounted accelerometer is split into consecutive fixed-length windows.
 Each window is then processed using Fast Fourier Transform (with `emlearn_fft`),
-to extract the energy at frequencies characteristic of human activities (below 10 Hz).
+to extract the energy at frequencies characteristic of human activities (typically below 10 Hz).
 These features are then classified using a Random Forest Classifier (with `emlearn_trees`).
-The data at the various processing stages is illustrated in \autoref{fig:physical_activity_recognition_pipeline}.
+A running median filter is applied to the predictions to smooth out noise.
+The data at these processing stages is shown in \autoref{fig:physical_activity_recognition_pipeline}.
 
 ![Data pipeline for recognizing physical activities from accelerometer data using emlearn-micropython. Top plot shows input data from the 3-axis accelerometer. Middle plots show extracted features. The bottom plot slows the output probabilities from the classification model. The colored sections indicate the labeled activity (ground-truth).](physical_activity_recognition_pipeline.png){#fig:physical_activity_recognition_pipeline width=100% }
 
