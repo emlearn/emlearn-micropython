@@ -7,14 +7,6 @@ docker run --rm --volume $PWD/paper:/data --user $(id -u):$(id -g) --env JOURNAL
 
 # TODO
 
-Critical
-
-- Example. Improve the plot.
-Setup conversion with emlearn. NB: scaling as int16
-Drop FFT 0 / 0Hz / DC?
-
-- Add example code as appendix?
-
 Non-critical
 
 - Add linreg to the API reference

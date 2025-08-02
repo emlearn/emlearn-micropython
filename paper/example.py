@@ -6,7 +6,7 @@ import npyfile
 import array
 
 class AccelerometerClassifier():
-    def __init__(self, window_length : int, classes : int,
+    def __init__(self, window_length : int,
         max_trees=10, max_nodes=1000,
         dimensions=3, model_file=None, fft_start=0, fft_end=16):
         
@@ -24,11 +24,13 @@ class AccelerometerClassifier():
 
         # Setup tree-based classification model
         self.model = None
-        self.probabilities = array.array('f', (0 for _ in range(classes)))
+        self.probabilties = None
         if model_file is not None:
             self.model = emlearn_trees.new(max_trees, max_nodes, 10)
             with open(model_file) as f:
                 emlearn_trees.load_model(self.model, f)
+                classes = self.model.outputs()
+                self.probabilities = array.array('f', (0 for _ in range(classes)))
 
     def preprocess(self, samples : array.array):
         assert len(samples) == (self.window_length*self.dimensions)
@@ -50,19 +52,19 @@ class AccelerometerClassifier():
             self.fft_imag[i] = 0
 
         self.fft.run(self.fft_real, self.fft_imag)
-        peak2peak = magnitude_max - magnitude_min
+        peak2peak = (magnitude_max - magnitude_min)
         # Normalize FFT by total energy
         fft_energy = sum(self.fft_real)
         if fft_energy > 1e-6:
             for i in range(len(self.fft_real)):
-                self.fft_real[i] = abs(self.fft_real[i]) / fft_energy
+                self.fft_real[i] = 2**14 * (abs(self.fft_real[i]) / fft_energy)
         else:
             for i in range(len(self.fft_real)):
                 self.fft_real[i] = 0.0
 
         # Pick relevant features
         fft_features = list(self.fft_real[self.fft_start:self.fft_end])
-        features = [ peak2peak, fft_energy ] + fft_features
+        features = [ 2**14 * peak2peak, 2**10 * fft_energy ] + fft_features
         return features
 
     def classify(self, features):
@@ -71,8 +73,10 @@ class AccelerometerClassifier():
 
 def process_file(inp, out, model=None):
 
+    print('process-file', inp, out, model)
+
     window_length = 256
-    pipeline = AccelerometerClassifier(window_length=window_length, classes=5, model_file=model)
+    pipeline = AccelerometerClassifier(window_length=window_length, model_file=model)
     fft_features = pipeline.fft_end - pipeline.fft_start    
 
     with npyfile.Reader(inp) as reader:
@@ -87,7 +91,7 @@ def process_file(inp, out, model=None):
         n_windows = reader.shape[0]//pipeline.window_length
         out_dimensions = 2 + fft_features
         if model is not None:
-            out_dimensions += pipeline.n_classes
+            out_dimensions += pipeline.model.outputs()
         out_shape = (n_windows, out_dimensions)
 
         # process the data
@@ -100,12 +104,13 @@ def process_file(inp, out, model=None):
                     continue # last window chunk might be incomplete, skip it
 
                 features = list(pipeline.preprocess(chunk))
+                arr = array.array('h', [int(f) for f in features])
                 if model:
-                    probabilities = pipeline.classify(features)
+                    probabilities = pipeline.classify(arr)
                 else:
                     probabilities = []
 
-                out = array.array('f', features + probabilities)
+                out = array.array('f', features + list(probabilities))
                 assert len(out) == out_dimensions, (len(out), out_dimensions)
                 writer.write_values(out)
                 written += len(out)

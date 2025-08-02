@@ -35,7 +35,9 @@ def process_data(df : pandas.DataFrame,
         samplerate = 100,
         window_length = 256,
         fft_start = 0,
-        fft_end = 16
+        fft_end = 16,
+        model_path = None,
+        classes = [],
     ):
 
     fft_features = fft_end - fft_start
@@ -71,6 +73,9 @@ def process_data(df : pandas.DataFrame,
             in_path,
             out_path,
         ]
+        if model_path is not None:
+            args.append(model_path)
+
         cmd = ' '.join(args)
         print('run-cmd', cmd)
         subprocess.check_output(args)
@@ -80,7 +85,7 @@ def process_data(df : pandas.DataFrame,
         out = numpy.load(out_path)
 
         fft_columns = [ f'fft.{i}' for i in range(fft_features) ]
-        columns = ['peak2peak', 'fft_energy'] + fft_columns
+        columns = ['peak2peak', 'fft_energy'] + fft_columns + classes
         df = pandas.DataFrame(out, columns=columns)
 
         df['time'] = times.min() + (time_resolution * numpy.arange(0, len(df)))
