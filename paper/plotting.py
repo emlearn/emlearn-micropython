@@ -32,7 +32,7 @@ def get_subplot_axes(rows, cols, row, col):
     else:
         return f'x{subplot_num}', f'y{subplot_num}'
 
-def add_events(fig, df, label_colors, subplot={}, cols=0):
+def add_events(fig, df, label_colors, subplot={}, cols=0, font_size=16, font_family='sans-serif'):
     
     xaxis, yaxis = get_subplot_axes(fig, cols=cols, **subplot)
     print('add-events', subplot, yaxis)
@@ -62,13 +62,13 @@ def add_events(fig, df, label_colors, subplot={}, cols=0):
             showarrow=False,
             xref='x',
             yref=f'{yaxis} domain',
-            font=dict(size=10),
+            font=dict(size=font_size, family=font_family),
             **subplot,
         )
 
-def time_ticks(times, every=30):
+def time_ticks(times, every=30, skip_start=0):
     n_times = len(times)
-    start = times.min()
+    start = times.min() + skip_start
     end = times.max()
 
     def minute_second_format(t : float):
@@ -136,19 +136,30 @@ def convert_times(times):
     out -= out.min()
     return out
 
-def configure_xaxis(fig, times, every=60, col=1, row=1):
+def configure_xaxis(fig, times, every=60, col=1, row=1, standoff=10):
 
     times = convert_times(times)
 
-    tick_vals, tick_text = time_ticks(times)
+    tick_vals, tick_text = time_ticks(times, skip_start=30)
 
     # Customize layout
     fig.update_xaxes(
-        title='Elapsed Time (MM:SS)',
         tickmode='array',
         tickvals=tick_vals,
         ticktext=tick_text,
         col=col, row=row,
+    )
+
+    fig.add_annotation(
+        text="Time (MM:SS)",
+        x=0,                    # Left edge of plot area
+        y=-0.035,                 # Below the plot (negative moves down)
+        xref="x domain",        # Relative to subplot domain
+        yref="paper",           # Relative to entire figure
+        xanchor="left",         # Left-align text
+        yanchor="top",          # Anchor to top of text
+        showarrow=False,
+        font=dict(size=14)
     )
 
 
