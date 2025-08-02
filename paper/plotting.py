@@ -7,6 +7,8 @@ import plotly.graph_objects as go
 
 from plotly.colors import qualitative
 
+from sklearn.preprocessing import MinMaxScaler, StandardScaler, RobustScaler
+
 def find_runs(labels : pandas.Series):
 
     # Detect changes
@@ -191,4 +193,122 @@ def plot_heatmap(fig, data, columns, y_labels=None, colorscale='RdBu', time='tim
     )
     
     return fig
+
+
+def fft_freq_from_bin(bin_idx, length, sample_rate):
+    """Convert FFT bin index to frequency"""
+    return bin_idx * sample_rate / length
+
+def make_timeline_plot(data, features, predictions,
+    colors,
+    class_names,
+    width = 1600,
+    aspect = 2.0,
+    ):
+    
+    from plotly.subplots import make_subplots
+    from plotting import configure_xaxis, plot_heatmap
+
+    # Create subplots
+    rows = 4
+    fig = make_subplots(
+        rows=rows, cols=1,
+        row_titles=('Sensor input', 'FFT', 'Energy', 'Predictions'),
+        shared_xaxes=True,
+        vertical_spacing=0.02,
+        row_heights=(0.4, 0.4, 0.10, 0.4),
+    )
+    subplots = [ dict(col=1, row=i) for i in range(1, rows+1) ] 
+    
+    # Input data
+    sensor_columns = ['hand_acceleration_6g_x', 'hand_acceleration_6g_y', 'hand_acceleration_6g_z']
+    sensor_colors = dict(zip(sensor_columns, ['red', 'green', 'blue']))
+    scaled_data = data.copy()
+    scaled_data.loc[:, sensor_columns] = scaled_data.loc[:, sensor_columns] / 10.0 # XXX: guessing appropriate scaling factor 
+    plot_timeline(fig, scaled_data, data=sensor_columns,
+        label='activity',
+        label_colors=colors,
+        data_colors=sensor_colors,
+        subplot=subplots[0]
+    )
+    fig.update_yaxes(range=(-5, 5), **subplots[0], title_text="Acceleration (g)")
+    
+    # Features
+    heatmap_colorscale = 'blues'
+    feature_columns = ['peak2peak', 'fft_energy']
+    feature_names = ['P2P', 'FFT']
+    #plot_timeline(fig, sub, data=['peak2peak', 'fft_energy'], label=None, subplot=subplots[1])
+    scaler = RobustScaler(quantile_range=(5.0, 95.0), with_centering=False)
+    scaler.set_output(transform='pandas')
+    features_scaled = scaler.fit_transform(features[feature_columns])
+    plot_heatmap(fig,
+                 features_scaled.reset_index(),
+                 columns=feature_columns,
+                 y_labels=feature_names,
+                 subplot=subplots[2],
+                 zmin=0.0, zmax=3.0,
+                 colorscale=heatmap_colorscale,
+    )
+    print(features_scaled.describe())
+    # FFT
+    fft_columns = list(features.columns[features.columns.str.contains('fft.', regex=False)])
+    scaler = RobustScaler(quantile_range=(5.0, 95.0), with_centering=False)
+    scaler.set_output(transform='pandas')
+    fft_scaled = scaler.fit_transform(features[fft_columns]) / 3.0
+    fft_length = 256
+    samplerate = 100
+    fft_frequencies = numpy.array([ fft_freq_from_bin(int(c.removeprefix('fft.')), fft_length, samplerate) for c in fft_columns ]).round(1)
+    print(fft_frequencies)
+    plot_heatmap(fig,
+                 fft_scaled.reset_index(),
+                 columns=fft_columns,
+                 y_labels=fft_frequencies,
+                 zmin=0.0, zmax=0.8,
+                 subplot=subplots[1],
+                 colorscale=heatmap_colorscale,
+    )
+    fig.update_yaxes(title_text="Hz", **subplots[1])
+    
+    # Predictions
+    plot_timeline(fig, predictions, data=class_names,
+                  label='activity',
+                  label_colors=colors,
+                  data_colors=colors,
+                  opacity=1.0,
+                  subplot=subplots[3])
+    fig.update_yaxes(range=(0, 1.0), title_text="Probability", **subplots[3])
+    
+    
+    configure_xaxis(fig, data.index, every=60, row=4)
+    
+    # Customize layout
+    fig.update_layout(
+        template='plotly_white',
+    )
+
+    fig.update_layout(
+        legend=dict(
+            orientation="h",
+            yanchor="top",
+            y=-0.03,               # Adjust distance from plot
+            xanchor="center",
+            x=0.5,
+            font=dict(size=10),    # Smaller font if needed
+            itemwidth=30           # Control item spacing
+        ),
+        margin=dict(b=30)          # Add bottom margin for legend space
+    )
+
+    fig.update_yaxes(tickformat=".1f")
+    
+    height = int(width / aspect)
+    fig.update_layout(
+        width=width,
+        height=height,
+        margin=dict(l=10, r=10, t=10, b=10),  # Fixed margins
+        autosize=False
+    )
+
+    return fig
+
 
