@@ -7,7 +7,7 @@
 
 // memset is used by some standard C constructs. Missing on some platforms, but not all...
 // Unfortunately cannot use weak symbols with mpy_ld
-#if !(defined(__linux__) || defined(__riscv__))
+#if !(defined(__linux__) || defined(__riscv__) || defined(__riscv))
 void *memcpy(void *dst, const void *src, size_t n) {
     return mp_fun_table.memmove_(dst, src, n);
 }
