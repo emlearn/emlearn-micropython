@@ -80,15 +80,33 @@ git clone https://github.com/emlearn/emlearn-micropython
 ```
 
 #### Prerequisites
-These come in addition to the prequisites described above.
 
-Make sure you have the dependencies needed to build for your platform.
-See [MicroPython: Building native modules](https://docs.micropython.org/en/latest/develop/natmod.html).
+You will need to have **Python 3.10+ or later** already installed.
 
-We assume that micropython is installed in the same place as this repository.
+We assume that **micropython** git repository available.
+It is assumed to be at the same level as this repository in the file system.
 If using another location, adjust `MPY_DIR` accordingly.
-
 You should be using MicroPython 1.25 (or newer).
+
+Make sure you have the **build toolchain** needed for your platform.
+See [MicroPython: Building native modules](https://docs.micropython.org/en/latest/develop/natmod.html),
+and the documentation for the MicroPython port/architecture of interest.
+
+#### Download dependencies
+
+Fetch git submodules
+
+```
+git submodule update --init
+```
+
+Recommend using a Python virtual environment.
+
+Install Python packages
+```
+pip install -r requirements.txt
+```
+
 
 #### Build
 
