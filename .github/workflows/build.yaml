@@ -133,6 +133,49 @@ jobs:
         path: dist
 
 
+  build-riscv:
+    runs-on: ubuntu-24.04
+    env:
+      MPY_DIR: ./micropython
+      MICROPYTHON_BIN: ./micropython/ports/unix/build-nomodules/micropython
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: true
+    - name: Install OS dependencies
+      run: sudo add-apt-repository universe
+    - uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
+    - uses: actions/checkout@v4
+      with:
+        repository: jonnor/micropython
+        path: micropython
+        ref: v1.25.0-armv6m-abs-relocations
+    - name: Install Python dependencies
+      run: pip install -r requirements.txt
+
+    - name: Setup MicroPython ESP32
+      working-directory: micropython
+      run: |
+        source tools/ci.sh && ci_esp32_idf_setup && ci_gcc_riscv_setup
+        make -C mpy-cross
+    - name: Setup submodules esp32
+      working-directory: micropython/ports/esp32
+      run: source ../../esp-idf/export.sh && make submodules
+    - name: Build custom firmware with extmod, ESP32
+      run: |
+        source micropython/esp-idf/export.sh && pip install -r requirements.txt
+        make extmod PORT=esp32 BOARD=ESP32_GENERIC_C6
+    - name: Build nadmod xtensawin
+      run: source micropython/esp-idf/export.sh && pip install -r requirements.txt && make dist ARCH=rv32imc V=1
+    - name: Archive dist artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: emlearn-micropython-build-riscv
+        path: dist
+
+
   build-macos:
     runs-on: macos-latest
     env:
