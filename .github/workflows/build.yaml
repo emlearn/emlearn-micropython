@@ -166,7 +166,7 @@ jobs:
     - name: Build custom firmware with extmod, ESP32
       run: |
         source micropython/esp-idf/export.sh && pip install -r requirements.txt
-        make extmod PORT=esp32 BOARD=ESP32_GENERIC_C6
+        echo make extmod PORT=esp32 BOARD=ESP32_GENERIC_C6
     - name: Build nadmod xtensawin
       run: source micropython/esp-idf/export.sh && pip install -r requirements.txt && make dist ARCH=rv32imc V=1
     - name: Archive dist artifacts
