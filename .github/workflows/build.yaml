@@ -221,7 +221,7 @@ jobs:
   deploy-pages:
     permissions:
       contents: write
-    needs: [build-linux, build-arm, build-esp32, build-macos]
+    needs: [build-linux, build-arm, build-esp32, build-macos, build-riscv]
     runs-on: ubuntu-latest
     
     steps:
