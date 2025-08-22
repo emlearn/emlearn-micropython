@@ -100,7 +100,7 @@ mpremote mip install github:jonnor/micropython-zipfile
 
 Copy example code
 ```
-mpremote cp uci_har.trees.csv uci_har.testdata.npz timebased.py  :
+mpremote cp uci_har.trees.csv uci_har.testdata.npz uci_har.meta.json timebased.py  :
 ```
 
 Run model evaluation on a test set
@@ -118,6 +118,8 @@ Using a MPU6886 accelerometer connected via I2C.
 Install dependencies. In addition to the above
 ```
 mpremote mip install github:jonnor/micropython-mpu6886
+mpremote mip install "github:peterhinch/micropython-nano-gui"
+mpremote mip install "github:peterhinch/micropython-nano-gui/drivers/st7789"
 mpremote cp windower.py :
 ```
 
