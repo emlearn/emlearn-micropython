@@ -120,7 +120,7 @@ Install dependencies. In addition to the above
 mpremote mip install github:jonnor/micropython-mpu6886
 mpremote mip install "github:peterhinch/micropython-nano-gui"
 mpremote mip install "github:peterhinch/micropython-nano-gui/drivers/st7789"
-mpremote cp windower.py :
+mpremote cp windower.py color_setup.py :
 ```
 
 Run the classification
