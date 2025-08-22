@@ -100,7 +100,7 @@ mpremote mip install github:jonnor/micropython-zipfile
 
 Copy example code
 ```
-mpremote cp har_uci_trees.csv har_uci.testdata.npz timebased.py  :
+mpremote cp uci_har.trees.csv uci_har.testdata.npz timebased.py  :
 ```
 
 Run model evaluation on a test set
