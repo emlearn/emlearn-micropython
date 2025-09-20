@@ -17137,99 +17137,99 @@ LOAD /usr/lib/gcc/arm-none-eabi/13.2.1/../../../arm-none-eabi/lib/thumb/v6-m/nof
  .rodata.fun_data_asyncio___init____lt_module_gt_
                 0x1004e110       0x4b CMakeFiles/firmware.dir/frozen_content.c.o
  *fill*         0x1004e15b        0x1 
- .rodata.frozen_module_rp2
-                0x1004e15c        0xc CMakeFiles/firmware.dir/frozen_content.c.o
- .rodata.const_obj_table_data_rp2
-                0x1004e168       0x24 CMakeFiles/firmware.dir/frozen_content.c.o
- .rodata.const_obj_rp2_3
-                0x1004e18c       0x10 CMakeFiles/firmware.dir/frozen_content.c.o
- .rodata.__compound_literal.0
-                0x1004e19c        0x4 CMakeFiles/firmware.dir/frozen_content.c.o
- .rodata.const_obj_rp2_2
-                0x1004e1a0       0x10 CMakeFiles/firmware.dir/frozen_content.c.o
- .rodata.const_obj_rp2_1
-                0x1004e1b0       0x34 CMakeFiles/firmware.dir/frozen_content.c.o
- .rodata.const_obj_rp2_0
-                0x1004e1e4       0x14 CMakeFiles/firmware.dir/frozen_content.c.o
- .rodata.const_qstr_table_data_rp2
-                0x1004e1f8       0xe2 CMakeFiles/firmware.dir/frozen_content.c.o
- *fill*         0x1004e2da        0x2 
- .rodata.proto_fun_rp2__lt_module_gt_
-                0x1004e2dc        0xc CMakeFiles/firmware.dir/frozen_content.c.o
- .rodata.children_rp2__lt_module_gt_
-                0x1004e2e8       0x1c CMakeFiles/firmware.dir/frozen_content.c.o
- .rodata.fun_data_rp2_asm_pio_encode
-                0x1004e304       0x8e CMakeFiles/firmware.dir/frozen_content.c.o
- *fill*         0x1004e392        0x2 
- .rodata.proto_fun_rp2_asm_pio
-                0x1004e394        0xc CMakeFiles/firmware.dir/frozen_content.c.o
- .rodata.children_rp2_asm_pio
-                0x1004e3a0        0x4 CMakeFiles/firmware.dir/frozen_content.c.o
- .rodata.fun_data_rp2_asm_pio_dec
-                0x1004e3a4       0x7c CMakeFiles/firmware.dir/frozen_content.c.o
- .rodata.fun_data_rp2_asm_pio
-                0x1004e420       0x1c CMakeFiles/firmware.dir/frozen_content.c.o
- .rodata.fun_data_rp2__lt_lambda_gt_3
-                0x1004e43c        0xa CMakeFiles/firmware.dir/frozen_content.c.o
- .rodata.fun_data_rp2__lt_lambda_gt_2
-                0x1004e446        0xa CMakeFiles/firmware.dir/frozen_content.c.o
- .rodata.fun_data_rp2__lt_lambda_gt_
-                0x1004e450        0xa CMakeFiles/firmware.dir/frozen_content.c.o
- *fill*         0x1004e45a        0x2 
- .rodata.proto_fun_rp2_PIOASMEmit
-                0x1004e45c        0xc CMakeFiles/firmware.dir/frozen_content.c.o
- .rodata.children_rp2_PIOASMEmit
-                0x1004e468       0x4c CMakeFiles/firmware.dir/frozen_content.c.o
- .rodata.fun_data_rp2_PIOASMEmit_set
-                0x1004e4b4       0x18 CMakeFiles/firmware.dir/frozen_content.c.o
- .rodata.fun_data_rp2_PIOASMEmit_irq
-                0x1004e4cc       0x27 CMakeFiles/firmware.dir/frozen_content.c.o
- .rodata.fun_data_rp2_PIOASMEmit_mov
-                0x1004e4f3       0x21 CMakeFiles/firmware.dir/frozen_content.c.o
- .rodata.fun_data_rp2_PIOASMEmit_pull
-                0x1004e514       0x2a CMakeFiles/firmware.dir/frozen_content.c.o
- .rodata.fun_data_rp2_PIOASMEmit_push
-                0x1004e53e       0x2a CMakeFiles/firmware.dir/frozen_content.c.o
- .rodata.fun_data_rp2_PIOASMEmit_out
-                0x1004e568       0x40 CMakeFiles/firmware.dir/frozen_content.c.o
- .rodata.fun_data_rp2_PIOASMEmit_in_
-                0x1004e5a8       0x37 CMakeFiles/firmware.dir/frozen_content.c.o
- .rodata.fun_data_rp2_PIOASMEmit_wait
-                0x1004e5df       0x34 CMakeFiles/firmware.dir/frozen_content.c.o
- .rodata.fun_data_rp2_PIOASMEmit_jmp
-                0x1004e613       0x21 CMakeFiles/firmware.dir/frozen_content.c.o
- .rodata.fun_data_rp2_PIOASMEmit_nop
-                0x1004e634       0x10 CMakeFiles/firmware.dir/frozen_content.c.o
- .rodata.fun_data_rp2_PIOASMEmit_word
-                0x1004e644       0x53 CMakeFiles/firmware.dir/frozen_content.c.o
- .rodata.fun_data_rp2_PIOASMEmit_label
-                0x1004e697       0x2e CMakeFiles/firmware.dir/frozen_content.c.o
- .rodata.fun_data_rp2_PIOASMEmit_wrap
-                0x1004e6c5       0x26 CMakeFiles/firmware.dir/frozen_content.c.o
- .rodata.fun_data_rp2_PIOASMEmit_wrap_target
-                0x1004e6eb       0x16 CMakeFiles/firmware.dir/frozen_content.c.o
- .rodata.fun_data_rp2_PIOASMEmit_side
-                0x1004e701       0x59 CMakeFiles/firmware.dir/frozen_content.c.o
- .rodata.fun_data_rp2_PIOASMEmit_delay
-                0x1004e75a       0x30 CMakeFiles/firmware.dir/frozen_content.c.o
- .rodata.fun_data_rp2_PIOASMEmit___getitem__
-                0x1004e78a        0xe CMakeFiles/firmware.dir/frozen_content.c.o
- .rodata.fun_data_rp2_PIOASMEmit_start_pass
-                0x1004e798       0x6e CMakeFiles/firmware.dir/frozen_content.c.o
- .rodata.fun_data_rp2_PIOASMEmit___init__
-                0x1004e806       0x93 CMakeFiles/firmware.dir/frozen_content.c.o
- .rodata.fun_data_rp2_PIOASMEmit
-                0x1004e899       0xd0 CMakeFiles/firmware.dir/frozen_content.c.o
- .rodata.fun_data_rp2_PIOASMError
-                0x1004e969        0xf CMakeFiles/firmware.dir/frozen_content.c.o
- .rodata.fun_data_rp2__lt_module_gt_
-                0x1004e978       0xe4 CMakeFiles/firmware.dir/frozen_content.c.o
  .rodata.frozen_module__boot
-                0x1004ea5c        0xc CMakeFiles/firmware.dir/frozen_content.c.o
+                0x1004e15c        0xc CMakeFiles/firmware.dir/frozen_content.c.o
  .rodata.const_qstr_table_data__boot
-                0x1004ea68       0x1a CMakeFiles/firmware.dir/frozen_content.c.o
+                0x1004e168       0x1a CMakeFiles/firmware.dir/frozen_content.c.o
  .rodata.fun_data__boot__lt_module_gt_
-                0x1004ea82       0x72 CMakeFiles/firmware.dir/frozen_content.c.o
+                0x1004e182       0x72 CMakeFiles/firmware.dir/frozen_content.c.o
+ .rodata.frozen_module_rp2
+                0x1004e1f4        0xc CMakeFiles/firmware.dir/frozen_content.c.o
+ .rodata.const_obj_table_data_rp2
+                0x1004e200       0x24 CMakeFiles/firmware.dir/frozen_content.c.o
+ .rodata.const_obj_rp2_3
+                0x1004e224       0x10 CMakeFiles/firmware.dir/frozen_content.c.o
+ .rodata.__compound_literal.0
+                0x1004e234        0x4 CMakeFiles/firmware.dir/frozen_content.c.o
+ .rodata.const_obj_rp2_2
+                0x1004e238       0x10 CMakeFiles/firmware.dir/frozen_content.c.o
+ .rodata.const_obj_rp2_1
+                0x1004e248       0x34 CMakeFiles/firmware.dir/frozen_content.c.o
+ .rodata.const_obj_rp2_0
+                0x1004e27c       0x14 CMakeFiles/firmware.dir/frozen_content.c.o
+ .rodata.const_qstr_table_data_rp2
+                0x1004e290       0xe2 CMakeFiles/firmware.dir/frozen_content.c.o
+ *fill*         0x1004e372        0x2 
+ .rodata.proto_fun_rp2__lt_module_gt_
+                0x1004e374        0xc CMakeFiles/firmware.dir/frozen_content.c.o
+ .rodata.children_rp2__lt_module_gt_
+                0x1004e380       0x1c CMakeFiles/firmware.dir/frozen_content.c.o
+ .rodata.fun_data_rp2_asm_pio_encode
+                0x1004e39c       0x8e CMakeFiles/firmware.dir/frozen_content.c.o
+ *fill*         0x1004e42a        0x2 
+ .rodata.proto_fun_rp2_asm_pio
+                0x1004e42c        0xc CMakeFiles/firmware.dir/frozen_content.c.o
+ .rodata.children_rp2_asm_pio
+                0x1004e438        0x4 CMakeFiles/firmware.dir/frozen_content.c.o
+ .rodata.fun_data_rp2_asm_pio_dec
+                0x1004e43c       0x7c CMakeFiles/firmware.dir/frozen_content.c.o
+ .rodata.fun_data_rp2_asm_pio
+                0x1004e4b8       0x1c CMakeFiles/firmware.dir/frozen_content.c.o
+ .rodata.fun_data_rp2__lt_lambda_gt_3
+                0x1004e4d4        0xa CMakeFiles/firmware.dir/frozen_content.c.o
+ .rodata.fun_data_rp2__lt_lambda_gt_2
+                0x1004e4de        0xa CMakeFiles/firmware.dir/frozen_content.c.o
+ .rodata.fun_data_rp2__lt_lambda_gt_
+                0x1004e4e8        0xa CMakeFiles/firmware.dir/frozen_content.c.o
+ *fill*         0x1004e4f2        0x2 
+ .rodata.proto_fun_rp2_PIOASMEmit
+                0x1004e4f4        0xc CMakeFiles/firmware.dir/frozen_content.c.o
+ .rodata.children_rp2_PIOASMEmit
+                0x1004e500       0x4c CMakeFiles/firmware.dir/frozen_content.c.o
+ .rodata.fun_data_rp2_PIOASMEmit_set
+                0x1004e54c       0x18 CMakeFiles/firmware.dir/frozen_content.c.o
+ .rodata.fun_data_rp2_PIOASMEmit_irq
+                0x1004e564       0x27 CMakeFiles/firmware.dir/frozen_content.c.o
+ .rodata.fun_data_rp2_PIOASMEmit_mov
+                0x1004e58b       0x21 CMakeFiles/firmware.dir/frozen_content.c.o
+ .rodata.fun_data_rp2_PIOASMEmit_pull
+                0x1004e5ac       0x2a CMakeFiles/firmware.dir/frozen_content.c.o
+ .rodata.fun_data_rp2_PIOASMEmit_push
+                0x1004e5d6       0x2a CMakeFiles/firmware.dir/frozen_content.c.o
+ .rodata.fun_data_rp2_PIOASMEmit_out
+                0x1004e600       0x40 CMakeFiles/firmware.dir/frozen_content.c.o
+ .rodata.fun_data_rp2_PIOASMEmit_in_
+                0x1004e640       0x37 CMakeFiles/firmware.dir/frozen_content.c.o
+ .rodata.fun_data_rp2_PIOASMEmit_wait
+                0x1004e677       0x34 CMakeFiles/firmware.dir/frozen_content.c.o
+ .rodata.fun_data_rp2_PIOASMEmit_jmp
+                0x1004e6ab       0x21 CMakeFiles/firmware.dir/frozen_content.c.o
+ .rodata.fun_data_rp2_PIOASMEmit_nop
+                0x1004e6cc       0x10 CMakeFiles/firmware.dir/frozen_content.c.o
+ .rodata.fun_data_rp2_PIOASMEmit_word
+                0x1004e6dc       0x53 CMakeFiles/firmware.dir/frozen_content.c.o
+ .rodata.fun_data_rp2_PIOASMEmit_label
+                0x1004e72f       0x2e CMakeFiles/firmware.dir/frozen_content.c.o
+ .rodata.fun_data_rp2_PIOASMEmit_wrap
+                0x1004e75d       0x26 CMakeFiles/firmware.dir/frozen_content.c.o
+ .rodata.fun_data_rp2_PIOASMEmit_wrap_target
+                0x1004e783       0x16 CMakeFiles/firmware.dir/frozen_content.c.o
+ .rodata.fun_data_rp2_PIOASMEmit_side
+                0x1004e799       0x59 CMakeFiles/firmware.dir/frozen_content.c.o
+ .rodata.fun_data_rp2_PIOASMEmit_delay
+                0x1004e7f2       0x30 CMakeFiles/firmware.dir/frozen_content.c.o
+ .rodata.fun_data_rp2_PIOASMEmit___getitem__
+                0x1004e822        0xe CMakeFiles/firmware.dir/frozen_content.c.o
+ .rodata.fun_data_rp2_PIOASMEmit_start_pass
+                0x1004e830       0x6e CMakeFiles/firmware.dir/frozen_content.c.o
+ .rodata.fun_data_rp2_PIOASMEmit___init__
+                0x1004e89e       0x93 CMakeFiles/firmware.dir/frozen_content.c.o
+ .rodata.fun_data_rp2_PIOASMEmit
+                0x1004e931       0xd0 CMakeFiles/firmware.dir/frozen_content.c.o
+ .rodata.fun_data_rp2_PIOASMError
+                0x1004ea01        0xf CMakeFiles/firmware.dir/frozen_content.c.o
+ .rodata.fun_data_rp2__lt_module_gt_
+                0x1004ea10       0xe4 CMakeFiles/firmware.dir/frozen_content.c.o
  .rodata.frozen_module__boot_fat
                 0x1004eaf4        0xc CMakeFiles/firmware.dir/frozen_content.c.o
  .rodata.const_qstr_table_data__boot_fat
