@@ -1,0 +1,21 @@
+[project]
+name = "emlearn-har-trees"
+version = "0.0.1"
+dependencies = [
+    "pandas",
+    "pyarrow",
+    "emlearn>=0.22.0",
+    "leaf-clustering@git+https://github.com/jonnor/leaf-clustering",
+    "scikit-learn",
+    "setuptools",
+    "structlog",
+    "matplotlib",
+    "mpremote",
+    "pyyaml",
+]
+
+[tool.setuptools]
+py-modules = ["har_train"]
+
+[project.optional-dependencies]
+test = ["pytest"]

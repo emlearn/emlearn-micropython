@@ -153,7 +153,7 @@ You need to have Python (CPython) installed on the PC.
 
 Install requirements
 ```
-pip install -r requirements.txt
+pip install .
 ```
 
 Download training data (4 GB space)
