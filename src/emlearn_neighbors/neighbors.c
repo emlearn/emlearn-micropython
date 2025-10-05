@@ -1,5 +1,9 @@
 // Include the header file to get access to the MicroPython API
+#ifdef MICROPY_ENABLE_DYNRUNTIME
 #include "py/dynruntime.h"
+#else
+#include "py/runtime.h"
+#endif
 
 #define EML_LOG_ENABLE 0
 #if EML_LOG_ENABLE
@@ -11,6 +15,7 @@
 
 #include <string.h>
 
+#ifdef MICROPY_ENABLE_DYNRUNTIME
 // memset is used by some standard C constructs
 #if !defined(__linux__)
 void *memcpy(void *dst, const void *src, size_t n) {
@@ -20,8 +25,7 @@ void *memset(void *s, int c, size_t n) {
     return mp_fun_table.memset_(s, c, n);
 }
 #endif
-
-
+#endif // MICROPY_ENABLE_DYNRUNTIME
 
 
 // MicroPython type for EmlNeighborsModel
@@ -31,7 +35,12 @@ typedef struct _mp_obj_neighbors_model_t {
     EmlNeighborsDistanceItem *distances;
 } mp_obj_neighbors_model_t;
 
+#ifdef MICROPY_ENABLE_DYNRUNTIME
 mp_obj_full_type_t neighbors_model_type;
+#else
+static const mp_obj_type_t neighbors_model_type;
+#endif
+
 
 // Create a new instace
 static mp_obj_t neighbors_model_new(mp_obj_t items_obj, mp_obj_t features_obj, mp_obj_t neighbors_obj) {
@@ -145,7 +154,7 @@ static MP_DEFINE_CONST_FUN_OBJ_3(neighbors_model_get_item_obj, neighbors_model_g
 
 
 // Takes a integer array
-static mp_obj_t neighbors_model_predict(mp_obj_fun_bc_t *self_obj,
+static mp_obj_t neighbors_model_predict(mp_obj_t *self_obj,
         size_t n_args, size_t n_kw, mp_obj_t *args) {
     // Check number of arguments is valid
     mp_arg_check_num(n_args, n_kw, 2, 2, false);
@@ -200,7 +209,7 @@ static MP_DEFINE_CONST_FUN_OBJ_2(neighbors_model_get_result_obj, neighbors_model
 
 
 
-
+#ifdef MICROPY_ENABLE_DYNRUNTIME
 // Module setup
 mp_map_elem_t neighbors_model_locals_dict_table[5];
 static MP_DEFINE_CONST_DICT(neighbors_model_locals_dict, neighbors_model_locals_dict_table);
@@ -227,4 +236,38 @@ mp_obj_t mpy_init(mp_obj_fun_bc_t *self, size_t n_args, size_t n_kw, mp_obj_t *a
     // This must be last, it restores the globals dict
     MP_DYNRUNTIME_INIT_EXIT
 }
+#else
+
+
+// Define the class
+static const mp_rom_map_elem_t neighbors_model_locals_dict_table[] = {
+
+    { MP_ROM_QSTR(MP_QSTR_predict), MP_ROM_PTR(&neighbors_model_predict) },
+    { MP_ROM_QSTR(MP_QSTR_additem), MP_ROM_PTR(&neighbors_model_additem_obj) },
+    { MP_ROM_QSTR(MP_QSTR___del__), MP_ROM_PTR(&neighbors_model_del_obj) },
+    { MP_ROM_QSTR(MP_QSTR_getresult), MP_ROM_PTR(&neighbors_model_get_result_obj) },
+    { MP_ROM_QSTR(MP_QSTR_getitem), MP_ROM_PTR(&neighbors_model_get_item_obj) }
+};
+static MP_DEFINE_CONST_DICT(neighbors_model_locals_dict, neighbors_model_locals_dict_table);
+
+static MP_DEFINE_CONST_OBJ_TYPE(
+    neighbors_model_type,
+    MP_QSTR_emlneighbors,
+    MP_TYPE_FLAG_NONE,
+    locals_dict, &neighbors_model_locals_dict
+);
+
+// Define module object.
+static const mp_rom_map_elem_t emlearn_neighbors_globals_table[] = {
+    { MP_ROM_QSTR(MP_QSTR_new), MP_ROM_PTR(&neighbors_model_new_obj) },
+};
+static MP_DEFINE_CONST_DICT(emlearn_neighbors_globals, emlearn_neighbors_globals_table);
+
+const mp_obj_module_t emlearn_neighbors_cmodule = {
+    .base = { &mp_type_module },
+    .globals = (mp_obj_dict_t *)&emlearn_neighbors_globals,
+};
+
+MP_REGISTER_MODULE(MP_QSTR_emlearn_neighbors, emlearn_neighbors_cmodule);
+#endif
 
