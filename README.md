@@ -21,13 +21,13 @@ Builds on [emlearn](https://emlearn.org), a C99 library for Machine Learning on 
 - Supports most MicroPython ports using runtime installable native modules
 - Primarily tested on `x64` (Unix port) and `xtensawin` (ESP32/ESP32-S3/etc).
 - Some devices only supported using external, notably armv6m/Cortex-M0/RP2040
-- Not yet supported: [RISC-V/ESP32-C3/ESP32-C6](https://github.com/emlearn/emlearn-micropython/issues/35)
 
 ## Features
 
 - Classification with [RandomForest](https://en.wikipedia.org/wiki/Random_forest)/DecisionTree models
 - Classification and on-device learning with [K-Nearest Neighbors (KNN)](https://en.wikipedia.org/wiki/K-nearest_neighbors_algorithm)
 - Classification with Convolutional Neural Network (CNN), using [TinyMaix](https://github.com/sipeed/TinyMaix/) library.
+- Regression and on-device learning with Linear Regression
 - [Fast Fourier Transform (FFT)](https://en.wikipedia.org/wiki/Fast_Fourier_transform) for feature preprocessing, or general DSP
 - Infinite Impulse Response (IIR) filters for feature preprocessing, or general DSP
 - Clustering using K-means
