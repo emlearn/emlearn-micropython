@@ -154,17 +154,14 @@ static MP_DEFINE_CONST_FUN_OBJ_3(neighbors_model_get_item_obj, neighbors_model_g
 
 
 // Takes a integer array
-static mp_obj_t neighbors_model_predict(mp_obj_t *self_obj,
-        size_t n_args, size_t n_kw, mp_obj_t *args) {
-    // Check number of arguments is valid
-    mp_arg_check_num(n_args, n_kw, 2, 2, false);
+static mp_obj_t neighbors_model_predict(mp_obj_t self_obj, mp_obj_t data_obj) {
 
-    mp_obj_neighbors_model_t *o = MP_OBJ_TO_PTR(args[0]);
+    mp_obj_neighbors_model_t *o = MP_OBJ_TO_PTR(self_obj);
     EmlNeighborsModel *self = &o->model;    
 
     // Extract buffer pointer and verify typecode
     mp_buffer_info_t bufinfo;
-    mp_get_buffer_raise(args[1], &bufinfo, MP_BUFFER_RW);
+    mp_get_buffer_raise(data_obj, &bufinfo, MP_BUFFER_RW);
     if (bufinfo.typecode != 'h') {
         mp_raise_ValueError(MP_ERROR_TEXT("expecting int16 array"));
     }
@@ -183,6 +180,7 @@ static mp_obj_t neighbors_model_predict(mp_obj_t *self_obj,
 
     return mp_obj_new_int(out);
 }
+static MP_DEFINE_CONST_FUN_OBJ_2(neighbors_model_predict_obj, neighbors_model_predict);
 
 // Access details about prediction result
 static mp_obj_t neighbors_model_get_result(mp_obj_t self_obj, mp_obj_t index_obj) {
@@ -225,7 +223,7 @@ mp_obj_t mpy_init(mp_obj_fun_bc_t *self, size_t n_args, size_t n_kw, mp_obj_t *a
     neighbors_model_type.flags = MP_TYPE_FLAG_ITER_IS_CUSTOM;
     neighbors_model_type.name = MP_QSTR_emlneighbors;
     // methods
-    neighbors_model_locals_dict_table[0] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR_predict), MP_DYNRUNTIME_MAKE_FUNCTION(neighbors_model_predict) };
+    neighbors_model_locals_dict_table[0] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR_predict), MP_OBJ_FROM_PTR(&neighbors_model_predict_obj) };
     neighbors_model_locals_dict_table[1] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR_additem), MP_OBJ_FROM_PTR(&neighbors_model_additem_obj) };
     neighbors_model_locals_dict_table[2] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR___del__), MP_OBJ_FROM_PTR(&neighbors_model_del_obj) };
     neighbors_model_locals_dict_table[3] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR_getresult), MP_OBJ_FROM_PTR(&neighbors_model_get_result_obj) };
@@ -242,7 +240,7 @@ mp_obj_t mpy_init(mp_obj_fun_bc_t *self, size_t n_args, size_t n_kw, mp_obj_t *a
 // Define the class
 static const mp_rom_map_elem_t neighbors_model_locals_dict_table[] = {
 
-    { MP_ROM_QSTR(MP_QSTR_predict), MP_ROM_PTR(&neighbors_model_predict) },
+    { MP_ROM_QSTR(MP_QSTR_predict), MP_ROM_PTR(&neighbors_model_predict_obj) },
     { MP_ROM_QSTR(MP_QSTR_additem), MP_ROM_PTR(&neighbors_model_additem_obj) },
     { MP_ROM_QSTR(MP_QSTR___del__), MP_ROM_PTR(&neighbors_model_del_obj) },
     { MP_ROM_QSTR(MP_QSTR_getresult), MP_ROM_PTR(&neighbors_model_get_result_obj) },
