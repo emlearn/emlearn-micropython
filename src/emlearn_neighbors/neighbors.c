@@ -80,9 +80,9 @@ static mp_obj_t neighbors_model_del(mp_obj_t self_obj) {
     EmlNeighborsModel *self = &o->model;   
 
     // free allocated memory
-    m_free(self->data);
-    m_free(self->labels);
-    m_free(o->distances);
+    m_del(int16_t, self->data, self->n_features*self->max_items);
+    m_del(int16_t, self->labels, self->max_items);
+    m_del(EmlNeighborsDistanceItem, o->distances, self->max_items);
 
     return mp_const_none;
 }
