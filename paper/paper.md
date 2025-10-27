@@ -115,7 +115,7 @@ These features are then classified using a Random Forest Classifier (with `emlea
 A running median filter is applied to the predictions to smooth out noise.
 The data at these processing stages is shown in \autoref{fig:physical_activity_recognition_pipeline}.
 
-![Data pipeline for recognizing physical activities from accelerometer data using emlearn-micropython. Top plot shows input data from the 3-axis accelerometer. Middle plots show extracted features. The bottom plot slows the output probabilities from the classification model. The colored sections indicate the labeled activity (ground-truth).](physical_activity_recognition_pipeline.png){#fig:physical_activity_recognition_pipeline width=100% }
+![Data pipeline for recognizing physical activities from accelerometer data using emlearn-micropython. Top plot shows input data from the 3-axis accelerometer. Middle plots show extracted features. The bottom plot shows the output probabilities from the classification model. The colored sections indicate the labeled activity (ground-truth).](physical_activity_recognition_pipeline.png){#fig:physical_activity_recognition_pipeline width=100% }
 
 The emlearn-micropython documentation
 contains complete example code for Human Activity Recognition, image classification, and more.
