@@ -36,7 +36,7 @@ Install emlearn-micropython modules
 ====================================
 
 emlearn-micropython is distributed as a set of MicroPython native modules.
-These are .npy file with native code, that can be installed at runtime using **mip**.
+These are .mpy file with native code, that can be installed at runtime using **mip**.
 This example uses the ``emlearn_trees`` module, so that is what we will install.
 
 For ESP32 use the ``xtensawin`` architecture.
