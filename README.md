@@ -66,65 +66,7 @@ If you use `emlearn-micropython` in an academic work, please reference it using:
 }
 ```
 
-
-
 ## Developing
 
-For those that wish to hack on emlearn-micropython itself.
-
-#### Download the code
-
-Clone the repository using git
-```
-git clone https://github.com/emlearn/emlearn-micropython
-```
-
-#### Prerequisites
-
-You will need to have **Python 3.10+ or later** already installed.
-
-We assume that **micropython** git repository available.
-It is assumed to be at the same level as this repository in the file system.
-If using another location, adjust `MPY_DIR` accordingly.
-You should be using MicroPython 1.25 (or newer).
-
-Make sure you have the **build toolchain** needed for your platform.
-See [MicroPython: Building native modules](https://docs.micropython.org/en/latest/develop/natmod.html),
-and the documentation for the MicroPython port/architecture of interest.
-
-#### Download dependencies
-
-Fetch git submodules
-
-```
-git submodule update --init
-```
-
-Recommend using a Python virtual environment.
-
-Install Python packages
-```
-pip install -r requirements.txt
-```
-
-
-#### Build
-
-Build the .mpy native module
-```
-make dist ARCH=xtensawin MPY_DIR=../micropython
-```
-
-Install it on device
-```
-mpremote cp dist/armv6m*/emlearn_trees.mpy :emlearn_trees.mpy
-```
-
-#### Run tests
-
-To build and run tests on host
-```
-make check
-```
-
+For how to hack on emlearn-micropython itself, see [docs/developing.md](docs/developing.md).
 
