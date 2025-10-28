@@ -7,6 +7,10 @@ If you just wish to use it as a library, see instead the [usage guide](https://e
 
 #### Prerequisites
 
+These instructions have been tested on Linux.
+They might also work on Mac OS.
+For Windows, I recommend using Windows Subsystem for Linux (WSL2).
+
 You will need to have **Python 3.10+ or later** already installed.
 
 We assume that **micropython** git repository available.
@@ -17,6 +21,8 @@ You should be using MicroPython 1.25 (or newer).
 Make sure you have the **build toolchain** needed for your platform.
 See [MicroPython: Building native modules](https://docs.micropython.org/en/latest/develop/natmod.html),
 and the documentation for the MicroPython port/architecture of interest.
+
+For example the [MicroPython Unix port](https://github.com/micropython/micropython/blob/master/ports/unix/README.md) to run/test on PC.
 
 #### Download the code
 
@@ -43,6 +49,8 @@ pip install -r requirements.txt
 
 #### Run tests on PC
 
+NOTE: Requires `micropython` program to installed (MicroPython Unix port).
+
 To build and run tests on host
 ```
 make check
@@ -50,6 +58,9 @@ make check
 
 
 #### Build for device
+
+NOTE: Requires the toolchain for the particular device to be installed.
+See MicroPython documentation for the port in-question.
 
 Build the .mpy native module
 ```
