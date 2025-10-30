@@ -1,7 +1,15 @@
 
 # emlearn-micropython JOSS paper
 
-## Example
+## Building PDF from paper
+
+How to build the paper locally. Requires Docker.
+
+```
+docker run --rm --volume $PWD/paper:/data --user $(id -u):$(id -g) --env JOURNAL=joss openjournals/inara
+```
+
+## Runnable example
 
 There is a plot in the paper,
 that demonstrates using emlearn_fft and emlearn_trees from emlearn-micropython
