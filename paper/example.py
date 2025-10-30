@@ -1,4 +1,15 @@
 
+"""
+Simple example for motion classification (Human Activity Detection et.c)
+using emlearn-micropython
+
+Takes tri-axial accelerometer data (int16) as fixed-length time windows,
+computes overall energy features (p2p of magnitude),
+as well as spectral features using FFT.
+
+Then classifies the features using a tree-based classifier (Random Forest).
+"""
+
 import emlearn_fft
 import emlearn_trees
 import npyfile
@@ -73,8 +84,6 @@ class AccelerometerClassifier():
 
 def process_file(inp, out, model=None):
 
-    print('process-file', inp, out, model)
-
     window_length = 256
     pipeline = AccelerometerClassifier(window_length=window_length, model_file=model)
     fft_features = pipeline.fft_end - pipeline.fft_start    
@@ -84,7 +93,7 @@ def process_file(inp, out, model=None):
         # check input
         assert len(reader.shape) == 2
         assert reader.shape[1] == pipeline.dimensions
-        assert reader.typecode == 'h'
+        assert reader.typecode == 'h' # int16
 
         # determine expected output
         chunksize = reader.shape[1]*pipeline.window_length
@@ -94,7 +103,7 @@ def process_file(inp, out, model=None):
             out_dimensions += pipeline.model.outputs()
         out_shape = (n_windows, out_dimensions)
 
-        # process the data
+        # process the data, using non-overlapped windows
         written = 0
         n_chunks = 0
         with npyfile.Writer(out, out_shape, 'f') as writer:
@@ -115,7 +124,6 @@ def process_file(inp, out, model=None):
                 writer.write_values(out)
                 written += len(out)
                 n_chunks += 1
-        print(out_shape, written, n_chunks, written/n_chunks)
 
 if __name__ == '__main__':
     import sys

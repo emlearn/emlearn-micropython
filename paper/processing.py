@@ -46,7 +46,7 @@ def process_data(df : pandas.DataFrame,
 
     hop_length = window_length
     time_resolution = pandas.Timedelta(seconds=1)/samplerate * hop_length
-    print(time_resolution)
+    print('window duration', hop_length, time_resolution/pandas.Timedelta('1s'), 's')
 
     # check input
     data = numpy.ascontiguousarray(df.values)    
@@ -58,7 +58,6 @@ def process_data(df : pandas.DataFrame,
     times = df.index
     
     with tempfile.TemporaryDirectory() as temp:
-        temp = ''
         in_path = os.path.join(temp, 'input.npy')
         out_path = os.path.join(temp, 'output.npy')
 

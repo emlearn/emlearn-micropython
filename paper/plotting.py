@@ -24,7 +24,10 @@ def find_runs(labels : pandas.Series):
             'end_time': g.index[-1],
         })
         return out
-    runs = labels.to_frame().groupby(run_ids, as_index=False).apply(foo)
+
+    labels_df = labels.to_frame()
+    labels_df['run'] = run_ids
+    runs = labels_df.groupby('run', as_index=False).apply(foo, include_groups=False)
     return runs
 
 def get_subplot_axes(rows, cols, row, col):
@@ -37,7 +40,6 @@ def get_subplot_axes(rows, cols, row, col):
 def add_events(fig, df, label_colors, subplot={}, cols=0, font_size=16, font_family='sans-serif'):
     
     xaxis, yaxis = get_subplot_axes(fig, cols=cols, **subplot)
-    print('add-events', subplot, yaxis)
 
     # Plot rectangles
     for _, row in df.iterrows():
@@ -249,7 +251,7 @@ def make_timeline_plot(data, features, predictions,
                  zmin=0.0, zmax=3.0,
                  colorscale=heatmap_colorscale,
     )
-    print(features_scaled.describe())
+
     # FFT
     fft_columns = list(features.columns[features.columns.str.contains('fft.', regex=False)])
     scaler = RobustScaler(quantile_range=(5.0, 95.0), with_centering=False)
@@ -258,7 +260,7 @@ def make_timeline_plot(data, features, predictions,
     fft_length = 256
     samplerate = 100
     fft_frequencies = numpy.array([ fft_freq_from_bin(int(c.removeprefix('fft.')), fft_length, samplerate) for c in fft_columns ]).round(1)
-    print(fft_frequencies)
+
     plot_heatmap(fig,
                  fft_scaled.reset_index(),
                  columns=fft_columns,
