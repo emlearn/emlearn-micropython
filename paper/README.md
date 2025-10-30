@@ -34,7 +34,7 @@ The following Python files are used for support:
 ### Install Python dependencies
 
 ```
-pip install plotly numpy pandas scikit-learn emlearn setuptools pyarrow
+pip install plotly numpy pandas scikit-learn emlearn setuptools pyarrow kaleido
 ```
 
 ### Install MicroPython modules
