@@ -21,7 +21,7 @@ jobs:
         path: micropython
         ref: master
     - name: Install Python dependencies
-      run: pip install plotly numpy pandas scikit-learn
+      run: pip install plotly numpy pandas scikit-learn emlearn
     - name: Setup MicroPython Unix X86
       working-directory: micropython
       run: |
