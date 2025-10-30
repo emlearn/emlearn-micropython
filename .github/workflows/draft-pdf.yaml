@@ -27,6 +27,11 @@ jobs:
       run: |
         source tools/ci.sh && ci_unix_32bit_setup && ci_unix_standard_build
         cp ./ports/unix/build-standard/micropython /usr/local/bin/micropython
+    - name: Install MicroPython modules
+      run: |
+        micropython -m mip install github:jonnor/micropython-npyfile
+        micropython -m mip install https://emlearn.github.io/emlearn-micropython/builds/master/x64_6.3/emlearn_trees.mpy
+        micropython -m mip install https://emlearn.github.io/emlearn-micropython/builds/master/x64_6.3/emlearn_fft.mpy
     - name: Run example
       working-directory: paper
       run: python create_plot.py
