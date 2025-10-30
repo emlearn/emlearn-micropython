@@ -2,6 +2,35 @@ name: Draft PDF
 on: [push]
 
 jobs:
+
+  example:
+    runs-on: ubuntu-24.04
+    name: Example
+    env:
+      MPY_DIR: ./micropython
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install OS dependencies
+      run: sudo add-apt-repository universe
+    - uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+    - uses: actions/checkout@v4
+      with:
+        repository: micropython/micropython
+        path: micropython
+        ref: master
+    - name: Install Python dependencies
+      run: pip install plotly numpy pandas scikit-learn
+    - name: Setup MicroPython Unix X86
+      working-directory: micropython
+      run: |
+        source tools/ci.sh && ci_unix_32bit_setup && ci_unix_standard_build
+        cp ./ports/unix/build-standard/micropython /usr/local/bin/micropython
+    - name: Run example
+      working-directory: paper
+      run: python create_plot.py
+
   paper:
     runs-on: ubuntu-latest
     name: Paper Draft
