@@ -49,6 +49,10 @@ Builds on [emlearn](https://emlearn.org), a C99 library for Machine Learning on 
 ## Documentation
 
 Complete usage [documentation on ReadTheDocs](https://emlearn-micropython.readthedocs.io/en/latest/user_guide.html).
+Good starting points:
+
+- [Getting started on PC (Linux/MacOS/Windows)](https://emlearn-micropython.readthedocs.io/en/latest/getting_started_host.html)
+- [Getting started on device (ESP32/RP2/STM32/etc)](https://emlearn-micropython.readthedocs.io/en/latest/getting_started_device.html)
 
 
 ## Citations
@@ -68,5 +72,7 @@ If you use `emlearn-micropython` in an academic work, please reference it using:
 
 ## Developing
 
-For how to hack on emlearn-micropython itself, see [docs/developing.md](docs/developing.md).
+For how to hack on emlearn-micropython itself, see [docs/developing.md](docs/developing.md),
+and for how to contribute see [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md).
+
 
