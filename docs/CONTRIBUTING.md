@@ -13,7 +13,7 @@ This is a volunteer-driven hobby project and we welcome contributions.
 
 ## Developing
 
-See [developing.md](./developing.md)
+See [developing.md](https://github.com/emlearn/emlearn-micropython/blob/master/docs/developing.md)
 
 ## Guidelines for Pull Requests
 

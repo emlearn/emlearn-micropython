@@ -3,6 +3,8 @@
 
 For those that wish to hack on emlearn-micropython itself.
 
+Contribution guidelines can be found in [CONTRIBUTING.md](CONTRIBUTING.md).
+
 If you just wish to use it as a library, see instead the [usage guide](https://emlearn-micropython.readthedocs.io/en/latest/user_guide.html).
 
 #### Prerequisites
@@ -18,11 +20,13 @@ It is assumed to be at the same level as this repository in the file system.
 If using another location, adjust `MPY_DIR` accordingly.
 You should be using MicroPython 1.25 (or newer).
 
-Make sure you have the **build toolchain** needed for your platform.
+You should build and install the [MicroPython Unix port](https://github.com/micropython/micropython/blob/master/ports/unix/README.md) to run/test on PC (`micropython` executable).
+
+To build and test on device, make sure you have the **build toolchain** needed for your hardware platform.
 See [MicroPython: Building native modules](https://docs.micropython.org/en/latest/develop/natmod.html),
 and the documentation for the MicroPython port/architecture of interest.
+For example `esp32`, `stm32` or `rp2`.
 
-For example the [MicroPython Unix port](https://github.com/micropython/micropython/blob/master/ports/unix/README.md) to run/test on PC.
 
 #### Download the code
 
