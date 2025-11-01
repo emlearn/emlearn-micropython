@@ -24,6 +24,12 @@ emlearn_trees - Decision tree ensembles
 .. automodule:: emlearn_trees
    :members:
 
+.. _emlearn_linreg:
+emlearn_linreg - Linear regression
+----------------------------------------------------
+
+.. automodule:: emlearn_linreg
+   :members:
 
 .. _emlearn_cnn:
 emlearn_cnn - Convolutional Neural Networks
