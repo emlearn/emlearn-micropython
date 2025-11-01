@@ -77,3 +77,19 @@ mpremote cp dist/armv6m*/emlearn_trees.mpy :emlearn_trees.mpy
 ```
 
 
+## Building documentation
+
+Make sure to have dev dependencies
+
+```
+pip install -r requirements.dev.txt
+```
+
+Run the Sphinx build
+
+```
+make -C docs/ html
+```
+
+Open the frontpage in browser `docs/_build/html/index.html`
+
