@@ -39,5 +39,5 @@ def test_iir_del():
     print(before_new, after_new, after_del)
     #assert diff == 0, diff
 
-
-test_iir_del()
+if __name__ == '__main__':
+    test_iir_del()

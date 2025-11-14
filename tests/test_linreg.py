@@ -2,15 +2,22 @@
 import emlearn_linreg
 import array
 
-model = emlearn_linreg.new(4, 0.1, 0.5, 0.01)
+def test_linreg_train_trivial():
 
-# Training data (float32 arrays)
-X = array.array('f', [1,2,3,4, 2,3,4,5])  # flattened
-y = array.array('f', [10, 15])
+    model = emlearn_linreg.new(4, 0.1, 0.5, 0.01)
 
-# Train
-emlearn_linreg.train(model, X, y, max_iterations=100, tolerance=1e-6, verbose=0)
+    # Training data (float32 arrays)
+    X = array.array('f', [1,2,3,4, 2,3,4,5])  # flattened
+    y = array.array('f', [10, 15])
 
-# Predict
-prediction = model.predict(array.array('f', [1,2,3,4]))
-print(prediction)
+    # Train
+    emlearn_linreg.train(model, X, y, max_iterations=100, tolerance=1e-6, verbose=0)
+
+    # Predict
+    prediction = model.predict(array.array('f', [1,2,3,4]))
+
+    error = prediction - 10.0
+    assert abs(error) < 0.80, error
+
+if __name__ == '__main__':
+    test_linreg_train_trivial()

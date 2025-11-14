@@ -51,6 +51,6 @@ def test_iir_del():
     #assert diff == 0, diff
 
 # TODO: add a test that actually runs
-
-test_convert_coefficients()
-test_iir_del()
+if __name__ == '__main__':
+    test_convert_coefficients()
+    test_iir_del()

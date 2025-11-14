@@ -63,6 +63,7 @@ def test_trees_xor():
         result = argmax(out)
         assert result == expect, (ex, expect, result)
 
-test_trees_del()
-test_trees_xor()
+if __name__ == '__main__':
+    test_trees_del()
+    test_trees_xor()
 

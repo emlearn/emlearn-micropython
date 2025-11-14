@@ -78,6 +78,8 @@ def test_neighbors_get_results():
     assert model.getresult(0)[2] == 0
     assert model.getresult(3)[2] == 1
 
-test_neighbors_del()
-test_neighbors_trivial()
-test_neighbors_get_results()
+if __name__ == '__main__':
+    test_neighbors_del()
+    test_neighbors_trivial()
+    test_neighbors_get_results()
+
