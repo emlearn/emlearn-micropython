@@ -18,7 +18,7 @@ You will need to have **Python 3.10+ or later** already installed.
 We assume that **micropython** git repository available.
 It is assumed to be at the same level as this repository in the file system.
 If using another location, adjust `MPY_DIR` accordingly.
-You should be using MicroPython 1.25 (or newer).
+You should be using MicroPython 1.26 (or newer).
 
 You should build and install the [MicroPython Unix port](https://github.com/micropython/micropython/blob/master/ports/unix/README.md) to run/test on PC (`micropython` executable).
 
@@ -50,12 +50,27 @@ Install Python packages
 pip install -r requirements.txt
 ```
 
+#### Run tests on PC using external modules build
 
-#### Run tests on PC
+This runs tests by building the modules as external C modules,
+which bakes them into the firmware image/executable.
+
+NOTE: Tested on Linux and Mac OS. Not tested on Windows Subsystem for Linux (WSL).
+
+```
+make check_unix
+```
+
+#### Run tests on PC using dynamic native modules
+
+This runs tests by building as dynamic native modules (.mpy files),
+and the .mpy files are then loaded at runtime.
+
+NOTE: This does not work on Mac OS. Due to https://github.com/micropython/micropython/issues/5500
 
 NOTE: Requires `micropython` program to installed (MicroPython Unix port).
 
-To build and run tests on host
+To build and run tests of dynamic native modules on host
 ```
 make check
 ```

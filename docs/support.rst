@@ -19,7 +19,8 @@ There are no long-term-support or bugfix versions of emlearn-micropython, at thi
 ==================  ======================
 MicroPython         emlearn-micropython
 ==================  ======================
-1.25.x              master
+1.26.x              master
+1.26.x              0.9.x
 1.25.x              0.8.x
 1.24.x              0.7.0
 1.23.x              0.6.0
