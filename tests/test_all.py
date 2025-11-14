@@ -1,6 +1,22 @@
 
-
 import sys
+
+# Find the module path (architecture+version specific)
+sys_mpy = sys.implementation._mpy
+mpy_arch = [None, 'x86', 'x64',
+    'armv6', 'armv6m', 'armv7m', 'armv7em', 'armv7emsp', 'armv7emdp',
+    'xtensa', 'xtensawin', 'rv32imc'][sys_mpy >> 10]
+mpy_major = sys_mpy & 0xff
+mpy_minor = sys_mpy >> 8 & 3
+
+module_dir = f'{mpy_arch}_{mpy_major}.{mpy_minor}' 
+
+# make sure we can import .mpy modules
+sys.path.insert(0, './dist/'+module_dir)
+
+# make sure we can import test files
+sys.path.insert(0, './tests')
+
 
 TEST_MODULES=[
     'test_arrayutils',
