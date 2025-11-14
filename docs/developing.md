@@ -18,7 +18,7 @@ You will need to have **Python 3.10+ or later** already installed.
 We assume that **micropython** git repository available.
 It is assumed to be at the same level as this repository in the file system.
 If using another location, adjust `MPY_DIR` accordingly.
-You should be using MicroPython 1.25 (or newer).
+You should be using MicroPython 1.26 (or newer).
 
 You should build and install the [MicroPython Unix port](https://github.com/micropython/micropython/blob/master/ports/unix/README.md) to run/test on PC (`micropython` executable).
 
