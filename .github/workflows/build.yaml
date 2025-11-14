@@ -23,7 +23,7 @@ jobs:
       with:
         repository: jonnor/micropython
         path: micropython
-        ref: v1.25.0-armv6m-abs-relocations
+        ref: v1.26.1-emlearn
     - name: Install Python dependencies
       run: pip install -r requirements.txt
     - name: Setup MicroPython X86
@@ -62,7 +62,7 @@ jobs:
       with:
         repository: jonnor/micropython
         path: micropython
-        ref: v1.25.0-armv6m-abs-relocations
+        ref: v1.26.1-emlearn
     - name: Install Python dependencies
       run: pip install -r requirements.txt
     - name: Setup MicroPython ARM
@@ -107,7 +107,7 @@ jobs:
       with:
         repository: jonnor/micropython
         path: micropython
-        ref: v1.25.0-armv6m-abs-relocations
+        ref: v1.26.1-emlearn
     - name: Install Python dependencies
       run: pip install -r requirements.txt
 
@@ -151,7 +151,7 @@ jobs:
       with:
         repository: jonnor/micropython
         path: micropython
-        ref: v1.25.0-armv6m-abs-relocations
+        ref: v1.26.1-emlearn
     - name: Install Python dependencies
       run: pip install -r requirements.txt
 
@@ -195,7 +195,7 @@ jobs:
       with:
         repository: jonnor/micropython
         path: micropython
-        ref: v1.25.0-armv6m-abs-relocations   
+        ref: v1.26.1-emlearn
     - name: Install Python dependencies
       run: pip install -r requirements.txt
     - name: Setup MicroPython X86
