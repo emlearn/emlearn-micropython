@@ -3,3 +3,4 @@ scikit-learn>=1.0.0
 ar>=1.0.0
 pyelftools>=0.31
 setuptools>=71.0.0
+mpremote>=1.25.0
