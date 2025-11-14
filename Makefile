@@ -29,34 +29,34 @@ PORT_DIST_DIR=./dist/ports/$(PORT)/$(BOARD)
 UNIX_MICROPYTHON = ./dist/ports/unix/micropython
 
 $(MODULES_PATH)/emlearn_trees.mpy:
-	make -C src/emlearn_trees/ ARCH=$(ARCH) MPY_DIR=$(MPY_DIR_ABS) V=1 clean dist
+	make -C src/emlearn_trees/ ARCH=$(ARCH) MPY_DIR=$(MPY_DIR_ABS) CFLAGS_EXTRA=${CFLAGS_EXTRA} V=1 clean dist
 
 $(MODULES_PATH)/emlearn_neighbors.mpy:
-	make -C src/emlearn_neighbors/ ARCH=$(ARCH) MPY_DIR=$(MPY_DIR_ABS) V=1 clean dist
+	make -C src/emlearn_neighbors/ ARCH=$(ARCH) MPY_DIR=$(MPY_DIR_ABS) CFLAGS_EXTRA=${CFLAGS_EXTRA} V=1 clean dist
 
 $(MODULES_PATH)/emlearn_iir.mpy:
-	make -C src/emlearn_iir/ ARCH=$(ARCH) MPY_DIR=$(MPY_DIR_ABS) V=1 clean dist
+	make -C src/emlearn_iir/ ARCH=$(ARCH) MPY_DIR=$(MPY_DIR_ABS) CFLAGS_EXTRA=${CFLAGS_EXTRA} V=1 clean dist
 
 $(MODULES_PATH)/emlearn_fft.mpy:
-	make -C src/emlearn_fft/ ARCH=$(ARCH) MPY_DIR=$(MPY_DIR_ABS) V=1 clean dist
+	make -C src/emlearn_fft/ ARCH=$(ARCH) MPY_DIR=$(MPY_DIR_ABS) CFLAGS_EXTRA=${CFLAGS_EXTRA} V=1 clean dist
 
 $(MODULES_PATH)/emlearn_cnn_int8.mpy:
-	make -C src/tinymaix_cnn/ ARCH=$(ARCH) MPY_DIR=$(MPY_DIR_ABS) V=1 CONFIG=int8 clean dist
+	make -C src/tinymaix_cnn/ ARCH=$(ARCH) MPY_DIR=$(MPY_DIR_ABS) CFLAGS_EXTRA=${CFLAGS_EXTRA} V=1 CONFIG=int8 clean dist
 
 $(MODULES_PATH)/emlearn_cnn_fp32.mpy:
-	make -C src/tinymaix_cnn/ ARCH=$(ARCH) MPY_DIR=$(MPY_DIR_ABS) V=1 CONFIG=fp32 clean dist
+	make -C src/tinymaix_cnn/ ARCH=$(ARCH) MPY_DIR=$(MPY_DIR_ABS) CFLAGS_EXTRA=${CFLAGS_EXTRA} V=1 CONFIG=fp32 clean dist
 
 $(MODULES_PATH)/emlearn_kmeans.mpy:
-	make -C src/emlearn_kmeans/ ARCH=$(ARCH) MPY_DIR=$(MPY_DIR_ABS) V=1 clean dist
+	make -C src/emlearn_kmeans/ ARCH=$(ARCH) MPY_DIR=$(MPY_DIR_ABS) CFLAGS_EXTRA=${CFLAGS_EXTRA} V=1 clean dist
 
 $(MODULES_PATH)/emlearn_iir_q15.mpy:
-	make -C src/emlearn_iir_q15/ ARCH=$(ARCH) MPY_DIR=$(MPY_DIR_ABS) V=1 clean dist
+	make -C src/emlearn_iir_q15/ ARCH=$(ARCH) MPY_DIR=$(MPY_DIR_ABS) CFLAGS_EXTRA=${CFLAGS_EXTRA} V=1 clean dist
 
 $(MODULES_PATH)/emlearn_arrayutils.mpy:
-	make -C src/emlearn_arrayutils/ ARCH=$(ARCH) MPY_DIR=$(MPY_DIR_ABS) V=1 clean dist
+	make -C src/emlearn_arrayutils/ ARCH=$(ARCH) MPY_DIR=$(MPY_DIR_ABS) CFLAGS_EXTRA=${CFLAGS_EXTRA} V=1 clean dist
 
 $(MODULES_PATH)/emlearn_linreg.mpy:
-	make -C src/emlearn_linreg/ ARCH=$(ARCH) MPY_DIR=$(MPY_DIR_ABS) V=1 clean dist
+	make -C src/emlearn_linreg/ ARCH=$(ARCH) MPY_DIR=$(MPY_DIR_ABS) CFLAGS_EXTRA=${CFLAGS_EXTRA} V=1 clean dist
 
 emlearn_trees.results: $(MODULES_PATH)/emlearn_trees.mpy
 	MICROPYPATH=$(MODULES_PATH) $(MICROPYTHON_BIN) tests/test_trees.py
