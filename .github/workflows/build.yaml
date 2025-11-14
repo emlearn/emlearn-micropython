@@ -210,7 +210,7 @@ jobs:
         mv ./dist/ports/unix/micropython ./dist/ports/macos/micropython
     - name: Build .mpy modules and run tests Unix/x64
       # natmod build with linking seems broken on Mac OS, exception in mpy_ld.py, ELFError, magic number does not match
-      run: echo SKIP make check ARCH=x64 V=1
+      run: make check ARCH=x64 V=1
 
     - name: Archive dist artifacts
       uses: actions/upload-artifact@v4
