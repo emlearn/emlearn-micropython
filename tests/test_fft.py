@@ -43,5 +43,6 @@ def test_fft_run():
 
     # FIXME: use some reasonable input data and assert the output data
 
-test_fft_del()
-test_fft_run()
+if __name__ == '__main__':
+    test_fft_del()
+    test_fft_run()

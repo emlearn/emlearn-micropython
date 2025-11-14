@@ -37,8 +37,8 @@ def test_arrayutils_linear_map_float_int16():
     print('linear_map int16>float>int16', length, d/1000.0)
     assert_almost_equal(out, int16)
 
-
-test_arrayutils_linear_map_float_int16()
+if __name__ == '__main__':
+    test_arrayutils_linear_map_float_int16()
 
 # Other functionality
 # reinterpret

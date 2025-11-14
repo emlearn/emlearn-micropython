@@ -62,6 +62,7 @@ def test_kmeans_many_features():
     assert min(assignments) >= 0
     assert max(assignments) < n_clusters
 
-test_kmeans_two_clusters()
-test_kmeans_many_features()
+if __name__ == '__main__':
+    test_kmeans_two_clusters()
+    test_kmeans_many_features()
 

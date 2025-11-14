@@ -61,6 +61,15 @@ NOTE: Tested on Linux and Mac OS. Not tested on Windows Subsystem for Linux (WSL
 make check_unix
 ```
 
+You should see each of the test functions in tests/ being ran,
+and then a summary at the end with something like:
+
+```
+...
+Passed: 17
+Failed: 0
+```
+
 #### Run tests on PC using dynamic native modules
 
 This runs tests by building as dynamic native modules (.mpy files),
@@ -75,6 +84,14 @@ To build and run tests of dynamic native modules on host
 make check
 ```
 
+You should see each of the test functions in tests/ being ran,
+and then a summary at the end with something like:
+
+```
+...
+Passed: 17
+Failed: 0
+```
 
 #### Build for device
 
@@ -91,6 +108,24 @@ Install it on device
 mpremote cp dist/armv6m*/emlearn_trees.mpy :emlearn_trees.mpy
 ```
 
+#### Running tests on device
+
+NOTE: Assumes that the .mpy files have been built first (in dist/).
+
+We use `mpremote mount`, which allows the device to access files on the PC/host filesystem. This means we do not have to copy the modules or files across.
+
+```
+mpremote mount . run tests/test_all.py
+```
+
+You should see each of the test functions in tests/ being ran,
+and then a summary at the end with something like:
+
+```
+...
+Passed: 17
+Failed: 0
+```
 
 ## Building documentation
 

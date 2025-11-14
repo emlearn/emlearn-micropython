@@ -28,62 +28,40 @@ PORT_DIST_DIR=./dist/ports/$(PORT)/$(BOARD)
 
 UNIX_MICROPYTHON = ./dist/ports/unix/micropython
 
-$(MODULES_PATH)/emlearn_trees.mpy:
-	make -C src/emlearn_trees/ ARCH=$(ARCH) MPY_DIR=$(MPY_DIR_ABS) CFLAGS_EXTRA=${CFLAGS_EXTRA} V=1 clean dist
 
-$(MODULES_PATH)/emlearn_neighbors.mpy:
-	make -C src/emlearn_neighbors/ ARCH=$(ARCH) MPY_DIR=$(MPY_DIR_ABS) CFLAGS_EXTRA=${CFLAGS_EXTRA} V=1 clean dist
+# List of modules
+MODULES = emlearn_trees \
+	emlearn_neighbors \
+	emlearn_iir \
+	emlearn_fft \
+	emlearn_kmeans \
+	emlearn_iir_q15 \
+	emlearn_arrayutils \
+	emlearn_linreg \
+	emlearn_cnn_int8 \
+	emlearn_cnn_fp32
 
-$(MODULES_PATH)/emlearn_iir.mpy:
-	make -C src/emlearn_iir/ ARCH=$(ARCH) MPY_DIR=$(MPY_DIR_ABS) CFLAGS_EXTRA=${CFLAGS_EXTRA} V=1 clean dist
+# Generate list of .mpy files
+MODULE_MPYS = $(addprefix $(MODULES_PATH)/,$(addsuffix .mpy,$(MODULES)))
 
-$(MODULES_PATH)/emlearn_fft.mpy:
-	make -C src/emlearn_fft/ ARCH=$(ARCH) MPY_DIR=$(MPY_DIR_ABS) CFLAGS_EXTRA=${CFLAGS_EXTRA} V=1 clean dist
+# Special cases
+emlearn_cnn_int8_SRC = src/tinymaix_cnn
+emlearn_cnn_int8_CONFIG = CONFIG=int8
+emlearn_cnn_fp32_SRC = src/tinymaix_cnn
+emlearn_cnn_fp32_CONFIG = CONFIG=fp32
 
-$(MODULES_PATH)/emlearn_cnn_int8.mpy:
-	make -C src/tinymaix_cnn/ ARCH=$(ARCH) MPY_DIR=$(MPY_DIR_ABS) CFLAGS_EXTRA=${CFLAGS_EXTRA} V=1 CONFIG=int8 clean dist
+# Generate list of .mpy files
+MODULE_MPYS = $(addprefix $(MODULES_PATH)/,$(addsuffix .mpy,$(MODULES)))
 
-$(MODULES_PATH)/emlearn_cnn_fp32.mpy:
-	make -C src/tinymaix_cnn/ ARCH=$(ARCH) MPY_DIR=$(MPY_DIR_ABS) CFLAGS_EXTRA=${CFLAGS_EXTRA} V=1 CONFIG=fp32 clean dist
+# Build dynamic native module
+# defaults to
+$(MODULES_PATH)/%.mpy:
+	make -C $(or $($(*)_SRC),src/$*) \
+		ARCH=$(ARCH) MPY_DIR=$(MPY_DIR_ABS) CFLAGS_EXTRA=${CFLAGS_EXTRA} \
+		V=1 $($(*)_CONFIG) clean dist
 
-$(MODULES_PATH)/emlearn_kmeans.mpy:
-	make -C src/emlearn_kmeans/ ARCH=$(ARCH) MPY_DIR=$(MPY_DIR_ABS) CFLAGS_EXTRA=${CFLAGS_EXTRA} V=1 clean dist
-
-$(MODULES_PATH)/emlearn_iir_q15.mpy:
-	make -C src/emlearn_iir_q15/ ARCH=$(ARCH) MPY_DIR=$(MPY_DIR_ABS) CFLAGS_EXTRA=${CFLAGS_EXTRA} V=1 clean dist
-
-$(MODULES_PATH)/emlearn_arrayutils.mpy:
-	make -C src/emlearn_arrayutils/ ARCH=$(ARCH) MPY_DIR=$(MPY_DIR_ABS) CFLAGS_EXTRA=${CFLAGS_EXTRA} V=1 clean dist
-
-$(MODULES_PATH)/emlearn_linreg.mpy:
-	make -C src/emlearn_linreg/ ARCH=$(ARCH) MPY_DIR=$(MPY_DIR_ABS) CFLAGS_EXTRA=${CFLAGS_EXTRA} V=1 clean dist
-
-emlearn_trees.results: $(MODULES_PATH)/emlearn_trees.mpy
-	MICROPYPATH=$(MODULES_PATH) $(MICROPYTHON_BIN) tests/test_trees.py
-
-emlearn_neighbors.results: $(MODULES_PATH)/emlearn_neighbors.mpy
-	MICROPYPATH=$(MODULES_PATH) $(MICROPYTHON_BIN) tests/test_neighbors.py
-
-emlearn_iir.results: $(MODULES_PATH)/emlearn_iir.mpy
-	MICROPYPATH=$(MODULES_PATH) $(MICROPYTHON_BIN) tests/test_iir.py
-
-emlearn_fft.results: $(MODULES_PATH)/emlearn_fft.mpy
-	MICROPYPATH=$(MODULES_PATH) $(MICROPYTHON_BIN) tests/test_fft.py
-
-emlearn_cnn.results: $(MODULES_PATH)/emlearn_cnn_int8.mpy $(MODULES_PATH)/emlearn_cnn_fp32.mpy
-	MICROPYPATH=$(MODULES_PATH) $(MICROPYTHON_BIN) tests/test_cnn.py
-
-emlearn_kmeans.results: $(MODULES_PATH)/emlearn_kmeans.mpy
-	MICROPYPATH=$(MODULES_PATH) $(MICROPYTHON_BIN) tests/test_kmeans.py
-
-emlearn_iir_q15.results: $(MODULES_PATH)/emlearn_iir_q15.mpy
-	MICROPYPATH=$(MODULES_PATH) $(MICROPYTHON_BIN) tests/test_iir_q15.py
-
-emlearn_arrayutils.results: $(MODULES_PATH)/emlearn_arrayutils.mpy
-	MICROPYPATH=$(MODULES_PATH) $(MICROPYTHON_BIN) tests/test_arrayutils.py
-
-emlearn_linreg.results: $(MODULES_PATH)/emlearn_linreg.mpy
-	MICROPYPATH=$(MODULES_PATH) $(MICROPYTHON_BIN) tests/test_linreg.py
+check_unix_natmod: $(MODULE_MPYS)
+	MICROPYPATH=$(MODULES_PATH) $(MICROPYTHON_BIN) tests/test_all.py
 
 $(PORT_DIR):
 	mkdir -p $@
@@ -95,11 +73,8 @@ $(UNIX_MICROPYTHON): $(PORT_DIR)
 unix: $(UNIX_MICROPYTHON)
 
 check_unix: $(UNIX_MICROPYTHON)
-	$(UNIX_MICROPYTHON) tests/test_trees.py
-	$(UNIX_MICROPYTHON) tests/test_iir.py
-	$(UNIX_MICROPYTHON) tests/test_fft.py
-	$(UNIX_MICROPYTHON) tests/test_arrayutils.py
-	echo SKIP $(UNIX_MICROPYTHON) tests/test_cnn.py
+	$(UNIX_MICROPYTHON) tests/test_all.py test_iir,test_fft,test_arrayutils
+	# TODO: enable more modules
 
 rp2: $(PORT_DIR)
 	make -C $(MPY_DIR)/ports/rp2 V=1 USER_C_MODULES=$(C_MODULES_SRC_PATH)/micropython.cmake FROZEN_MANIFEST=$(MANIFEST_PATH) CFLAGS_EXTRA='-Wno-unused-function -Wno-unused-function' -j4
@@ -130,8 +105,8 @@ release:
 	zip -r $(RELEASE_NAME).zip $(RELEASE_NAME)
 	#cp $(RELEASE_NAME).zip emlearn-micropython-latest.zip
 
-check: emlearn_trees.results emlearn_neighbors.results emlearn_iir.results emlearn_iir_q15.results emlearn_fft.results emlearn_kmeans.results emlearn_arrayutils.results emlearn_cnn.results emlearn_linreg.results
+check: check_unix_natmod
 
-dist: $(MODULES_PATH)/emlearn_trees.mpy $(MODULES_PATH)/emlearn_neighbors.mpy $(MODULES_PATH)/emlearn_iir.mpy $(MODULES_PATH)/emlearn_iir_q15.mpy $(MODULES_PATH)/emlearn_fft.mpy $(MODULES_PATH)/emlearn_kmeans.mpy $(MODULES_PATH)/emlearn_arrayutils.mpy $(MODULES_PATH)/emlearn_cnn_int8.mpy $(MODULES_PATH)/emlearn_cnn_fp32.mpy $(MODULES_PATH)/emlearn_linreg.mpy
+dist: $(MODULE_MPYS)
 
 

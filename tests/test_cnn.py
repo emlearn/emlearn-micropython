@@ -83,8 +83,8 @@ def test_cnn_mnist_int8():
 
 def test_cnn_mnist_fp32():
     check_cnn_mnist(emlearn_cnn_fp32, MNIST_MODEL_FP32)
-    
 
-test_cnn_create()
-test_cnn_mnist_int8()
-test_cnn_mnist_fp32()
+if __name__ == '__main__':
+    test_cnn_create()
+    test_cnn_mnist_int8()
+    test_cnn_mnist_fp32()
