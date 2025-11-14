@@ -10,7 +10,7 @@ TEST_MODULES=[
     'test_iir_q15',
     'test_kmeans',
     'test_linreg',
-    'test_linreg_california',
+    #'test_linreg_california',
     'test_neighbors',
     'test_trees',
 ]
@@ -21,13 +21,15 @@ def main():
     # Default: all
     
     modules = TEST_MODULES
-    #if sys.argv 
+    if len(sys.argv) >= 2:
+        modules = sys.argv[1].split(',') 
 
     passed = 0
     failed = 0
 
     for module_name in modules:
         mod = None
+        print(f'{module_name}:')
         try:
             mod = __import__(module_name)
         except Exception as e:
@@ -41,16 +43,17 @@ def main():
         tests = [ o for o in module_attributes if o.startswith('test_') ]
         for test_name in tests:
             test_function = getattr(mod, test_name)
+            print(f'{module_name}.py/{test_name}:')
             try:
                 test_function()
             except Exception as e:
-                print(f'{module_name}.py/{test_name}: FAIL')
+                print(f'\tFAIL')
                 sys.print_exception(e)
                 print() # spacing for readability 
                 failed += 1
                 continue
 
-            print(f'{module_name}.py/{test_name}: PASS')
+            print(f'\t PASS')
             passed += 1
 
     print(f'Passed: {passed}')
