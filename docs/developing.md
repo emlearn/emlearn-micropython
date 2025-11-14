@@ -91,6 +91,15 @@ Install it on device
 mpremote cp dist/armv6m*/emlearn_trees.mpy :emlearn_trees.mpy
 ```
 
+#### Running tests on device
+
+NOTE: Assumes that the .mpy files have been built first (in dist/).
+
+We use `mpremote mount`, which allows the device to access files on the PC/host filesystem. This means we do not have to copy the modules or files across.
+
+```
+mpremote mount . run tests/test_all.py
+```
 
 ## Building documentation
 
