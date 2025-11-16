@@ -7,15 +7,14 @@ import npyfile
 
 from timebased import calculate_features_xyz, DATA_TYPECODE, N_FEATURES
 
-def compute_dataset_features(data: npyfile.Reader,
+def compute_dataset_features(data: npyfile.Reader, window_length,
         skip_samples=0, limit_samples=None, verbose=0):
 
     # Check that data is expected format
     shape = data.shape
-    assert len(shape) == 3, shape
-    n_samples, window_length, n_axes = shape
+    assert len(shape) == 2, shape
+    n_samples, n_axes = shape
     assert n_axes == 3, shape
-    #assert window_length == 128, shape
 
     # We expect data to be h/int16
     assert data.typecode == DATA_TYPECODE, data.typecode
@@ -31,6 +30,11 @@ def compute_dataset_features(data: npyfile.Reader,
 
     data_chunks = data.read_data_chunks(chunk_size, offset=chunk_size*skip_samples)
     for arr in data_chunks:
+
+        print('cc', len(arr))
+        if len(arr) < chunk_size:
+            # short read, last data piece, ignore
+            continue
 
         # process the data
         # De-interleave data from XYZ1 XYZ2... into separate continious X,Y,Z
@@ -71,16 +75,20 @@ def main():
 
     out_typecode = 'f'
     n_features = N_FEATURES
+    window_length = 128
     
     features_array = array.array(out_typecode, (0 for _ in range(n_features)))
 
     with npyfile.Reader(in_path) as data:
-        n_samples, window_length, n_axes = data.shape
+        n_samples, n_axes = data.shape
 
-        out_shape = (n_samples, n_features)
+        n_windows = n_samples // window_length
+
+        out_shape = (n_windows, n_features)
         with npyfile.Writer(out_path, out_shape, out_typecode) as out:
 
             generator = compute_dataset_features(data,
+                window_length=window_length,
                 skip_samples=skip_samples,
                 limit_samples=limit_samples,
             )

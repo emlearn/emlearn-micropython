@@ -7,6 +7,7 @@ import tempfile
 import subprocess
 import json
 import itertools
+from typing import Optional
 
 import yaml
 import pandas
@@ -101,83 +102,29 @@ def evaluate(windows : pandas.DataFrame, groupby : str, hyperparameters : dict,
 
 
 
-def assign_window_label(labels, majority=0.66):
-    """
-    Assign the most common label to window, if it is above the @majority threshold
-    Otherwise return NA
-    """
-    counts = labels.value_counts(dropna=True)
-    threshold = majority * len(labels)
-    if counts.iloc[0] > threshold:
-        return counts.index[0]
-    else:
-        return None
-
-
-def timebased_features(windows : list[pandas.DataFrame],
-        columns : list[str],
-        python_bin='python') -> pandas.DataFrame:
-
-    #print('w', len(windows), columns)
-
-    here = os.path.dirname(__file__)
-    feature_extraction_script = os.path.join(here, 'compute_features.py')
-
-    data = numpy.stack([ d[columns] for d in windows ])
-    assert data.dtype == numpy.int16
-    assert data.shape[2] == 3, data.shape
-
-    #log.debug('data-range',
-    #    upper=numpy.quantile(data, 0.99),
-    #    lower=numpy.quantile(data, 0.01),
-    #)
-
-    with tempfile.TemporaryDirectory() as tempdir:
-        data_path = os.path.join(tempdir, 'data.npy')
-        features_path = os.path.join(tempdir, 'features.npy')
-
-        # Persist output
-        numpy.save(data_path, data)
-
-        # Run MicroPython program
-        args = [
-            python_bin,
-            feature_extraction_script,
-            data_path,
-            features_path,
-        ]
-        cmd = ' '.join(args)
-        #log.debug('run-timebased', cmd=cmd)
-        try:
-            out = subprocess.check_output(args)
-        except subprocess.CalledProcessError as e:
-            log.error('micropython-error', out=e.stdout, err=e.stderr)
-            raise e
-
-        # Load output
-        out = numpy.load(features_path)
-        assert len(out) == len(data)
-
-        # TODO: add feature names
-        df = pandas.DataFrame(out)
-
-    return df
-
-
 class DataProcessorProgram():
 
-    def __init__(self, executable : str,
+    def __init__(self, program : list[str],
             options : dict = {},
             input_option : str = '--input',
             output_option : str = '--output',
-            serialization : str = 'csv'
+            serialization : str = 'csv',
+            timeout : float = 10.0,
+            column_order : Optional[list[str]] = None,
         ):
 
-        self.executable = executable
+        self.program = program
         self.options = options
         self.input_option = input_option
         self.output_option = output_option
         self.serialization = serialization
+        self.timeout = timeout
+        self.column_order = column_order
+
+        supported = set(['npy', 'csv'])
+        if not serialization in supported:
+            raise ValueError(f'Unsupported serialization {serialization}. Valid: {supported}')
+
 
     def process(self, data : pandas.DataFrame) -> pandas.DataFrame:
         """
@@ -190,30 +137,33 @@ class DataProcessorProgram():
         The windows are usually overlapping in time.
         """
 
-        assert self.serialization == 'csv' # TODO: also support .npy
+
         extension = self.serialization
 
-        # FIXME: unhardcode. Maybe allow specifying column_order ?
-        data['gyro_x'] = 0
-        data['gyro_y'] = 0
-        data['gyro_z'] = 0
-        data = data.reset_index()
-        ser_columns = ['time', 'acc_x', 'acc_y', 'acc_z', 'gyro_x', 'gyro_y', 'gyro_z']
-        data = data[ser_columns]
-
-        log.debug('custom-features-start', columns=list(data.columns))
+        mod = data.copy()
+        if self.column_order is not None:
+            mod = mod.reset_index()
+            mod = mod[self.column_order]
 
         with tempfile.TemporaryDirectory() as tempdir:
+            #tempdir = 'temp' # XXX, debug
+
             data_path = os.path.join(tempdir, f'data.{extension}')
             features_path = os.path.join(tempdir, f'features.{extension}')
 
             # Persist the data
-            data.to_csv(data_path, index=False)
+            if self.serialization == 'npy':
+                # make sure C order, and non-sparse
+                arr = numpy.ascontiguousarray(mod)
+                arr = arr.astype(numpy.int16)
+                numpy.save(data_path, arr)
+            elif self.serialization == 'csv':
+                mod.to_csv(data_path, index=False)
+            else:
+                raise NotImplementedError(self.serialization)
 
             # Build arguments
-            args = [
-                self.executable,
-            ]
+            args = [] + self.program
 
             # Input and output
             if self.input_option:
@@ -232,23 +182,33 @@ class DataProcessorProgram():
 
             cmd = ' '.join(args)
             try:
-                out = subprocess.check_output(args)
-            except subprocess.CalledProcessError as e:
+                out = subprocess.check_output(args, timeout=self.timeout)
+            except (subprocess.CalledProcessError, subprocess.TimeoutExpired) as e:
+                code = getattr(e, 'returncode', None)
                 log.error('preprocessor-error',
-                    cmd=cmd, out=e.stdout, code=e.returncode, err=e.stderr)
+                    cmd=cmd, out=e.stdout, err=e.stderr, code=code)
                 raise e
 
             # Load output
-            out = pandas.read_csv(features_path)
+            if self.serialization == 'npy':
+                # TODO: support feature names. Separat output file, with --features
+                out = numpy.load(features_path)
+                windows = pandas.DataFrame(out)
+                span = (data.index.max() - data.index.min()).total_seconds()
+                dt = span / len(windows) # XXX: make correct
+                windows['time'] = dt * numpy.arange(len(windows))
+            elif self.serialization == 'csv':
+                windows = pandas.read_csv(features_path)
+            else:
+                raise NotImplementedError(self.serialization)
 
-            # TODO: add feature names
-            windows = pandas.DataFrame(out)
+        windows['time'] = pandas.to_timedelta(windows['time'], unit='s')
 
         # post-conditions
-        time_in = data['time'] / pandas.Timedelta(seconds=1)
+        time_in = data.index
         time_out = windows['time']
 
-        window_duration = 1.0 # XXX: hardcoded
+        window_duration = pandas.Timedelta(5.0, unit='s') # XXX: hardcoded
         start_delta = time_out.min() - time_in.min()
         assert abs(start_delta) <= window_duration, (start_delta, time_out.min(), time_in.min())
         end_delta = time_out.max() - time_in.max()
@@ -256,63 +216,44 @@ class DataProcessorProgram():
 
         return windows
 
-class TimebasedFeatureExtractor():
+class TimebasedFeatureExtractor(DataProcessorProgram):
 
-    def __init__(self):
+    def __init__(self, python_bin='python', **kwargs):
+        super().__init__(self, input_option='', output_option='', serialization='npy', **kwargs)
 
         here = os.path.dirname(__file__)
         feature_extraction_script = os.path.join(here, 'compute_features.py')
+        self.program = [ python_bin, feature_extraction_script ]
+
+    def process(self, data):
+        return super().process(data)
 
 
 
 def extract_features(sensordata : pandas.DataFrame,
     columns : list[str],
-    groupby,
-    window_length = 128,
-    window_hop = 64,
-    features='timebased',
-    quant_div = 4,
-    quant_depth = 6,
+    groupby : list[str],
+    extractor,
     sensitivity = 2.0, # how many g range the int16 sensor data has
     label_column='activity',
     time_column='time',
+    parallel_jobs : int = 4 ,
+    verbose = 1,
     ) -> pandas.DataFrame:
     """
     Convert sensor data into fixed-sized time windows and extact features
     """
 
-    # TODO: pass in the entire feature extractor
-    if features == 'quant':
-        raise NotImplementedError
-    elif features == 'timebased':
-        raise NotImplementedError # FIXME, bring back
-        feature_extractor = lambda w: timebased_features(w, columns=columns)
-    elif features == 'custom':
-
-        # FIXME: unhardcode columns
-        log.debug('sensordata', columns=sensordata.columns, index=sensordata.index.names)
-        #data['time'] = 0
-        #data = sensordata
-        #data = data.reset_index()
-        #data = data[ser_columns]
-        #data = data.set_index(groupby)
-        #sensordata = data
-
-        # FIXME: unhardcode
-        executable = '/home/jon/projects/emlearn/examples/motion_recognition/build/motion_preprocess'
-        options = {}
-
-        # FIXME: respect window_length, window_hop
-        feature_extractor = DataProcessorProgram(executable=executable, options=options)
-    else:
-        raise ValueError(f"Unsupported features: {features}")
-
-
     # Process one whole stream of sensor data at a time
     # the feature extraction process might have time/history dependent logic,
     # such as filters estimating gravity, background levels etc
-
     def process_one(idx, stream : pandas.DataFrame) -> pandas.DataFrame:
+    
+        if verbose >= 4:
+            log.debug('process-one-start',
+                samples=len(stream),
+                idx=idx,
+            )
 
         # drop invalid data
         stream = stream.dropna(subset=columns)
@@ -325,16 +266,13 @@ def extract_features(sensordata : pandas.DataFrame,
         # potentially zero-fill ?
 
         # Extract features
-        windows = feature_extractor.process(stream)
+        windows = extractor.process(stream)
 
         # Convert features to 16-bit integers
         # XXX: Assuming that they are already in resonable scale
         # TODO: consider moving the quantization to inside timebased
         feature_columns = list(set(windows.columns) - set([time_column]))
         windows.loc[:,feature_columns] = windows[feature_columns].astype(numpy.int16)
-
-        # Attach labels
-        windows[label_column] = assign_window_label(stream[label_column])
 
         # Combine with identifying information
         # time should come from data processing
@@ -346,12 +284,14 @@ def extract_features(sensordata : pandas.DataFrame,
             windows[idx_column] = idx_value
 
         windows = windows.set_index(index_columns)
-        log.debug('process-one-done',
-            columns=list(windows.columns),
-            index_columns=list(windows.index.names),
-            windows=len(windows),
-            samples=len(stream),
-        )
+        if verbose >= 4:
+
+            log.debug('process-one-done',
+                columns=list(windows.columns),
+                index_columns=list(windows.index.names),
+                windows=len(windows),
+                samples=len(stream),
+            )
         return windows
     
     #win['window'] = win.index[0]
@@ -371,19 +311,18 @@ def extract_features(sensordata : pandas.DataFrame,
     jobs = [ joblib.delayed(process_one)(idx, df) for idx, df in sections]
 
     log.debug('process-parallel', jobs=len(jobs))
-    n_jobs = 4
 
     start_time = time.time()
-    features_values = joblib.Parallel(n_jobs=n_jobs)(jobs)
+    features_values = joblib.Parallel(n_jobs=parallel_jobs)(jobs)
     out = pandas.concat(features_values)
-    duration = round(time.time - start_time(), 3)
+    duration = round(time.time() - start_time, 3)
 
     log.debug('process-parallel-done', rows=len(out), duration=duration)
 
 
     return out
 
-def export_model(path, out):
+def export_model(path, out, name='motion'):
 
     with open(path, "rb") as f:
         classifier = pickle.load(f)
@@ -392,7 +331,7 @@ def export_model(path, out):
         class_mapping = dict(zip(classes, range(len(classifier.classes_))))
 
         cmodel = emlearn.convert(classifier)
-        cmodel.save(name='harmodel', format='csv', file=out)
+        cmodel.save(name=name, format='csv', file=out)
 
 
 def load_config(file_path):
@@ -400,6 +339,33 @@ def load_config(file_path):
     with open(file_path, 'r') as f:
         data = yaml.safe_load(f)
     return data
+
+def label_windows(sensordata,
+        windows,
+        groupby,
+        label_column,
+        window_duration : pandas.Timedelta,
+        majority=0.66) -> pandas.DataFrame:
+
+    windows = windows.copy()
+    # default to unknown=NA
+    windows[label_column] = None
+
+    for idx, ww in windows.groupby(groupby):
+        data = sensordata.loc[idx]
+        
+        for idx, w in ww.iterrows():
+            window_end = idx[-1] # XXX: assuming this is time
+            window_start = window_end - window_duration
+
+            labels = data.loc[window_start:window_end, label_column]
+            threshold = majority * len(labels)
+            counts = labels.value_counts(dropna=True)
+            label = counts.index[0] if counts.iloc[0] > threshold else None
+            windows.loc[idx, label_column] = label
+
+    return windows
+
 
 def run_pipeline(run, hyperparameters, dataset,
         config,
@@ -411,7 +377,6 @@ def run_pipeline(run, hyperparameters, dataset,
     ):
 
     dataset_config = load_config(config)
-
 
     if not os.path.exists(out_dir):
         os.makedirs(out_dir)
@@ -443,16 +408,52 @@ def run_pipeline(run, hyperparameters, dataset,
         features=features,
     )
     window_length = model_settings['window_length']
+    samplerate = model_settings.get('samplerate', 100)
+
+    window_duration = (window_length / samplerate)
+
+    # Setup feature extraction
+    if features == 'timebased':
+        columns = ['acc_x', 'acc_y', 'acc_z']
+        extractor = TimebasedFeatureExtractor(column_order=columns)
+
+    elif features == 'custom':
+        # FIXME: unhardcode path
+        executable = ['/home/jon/projects/emlearn/examples/motion_recognition/build/motion_preprocess']
+        # FIXME: respect window_length, window_hop
+        options = dict(
+            #window_length=window_length,
+            #window_hop=window_hop,
+        )
+        columns = ['time', 'acc_x', 'acc_y', 'acc_z', 'gyro_x', 'gyro_y', 'gyro_z']
+        extractor = DataProcessorProgram(program=executable,
+            options=options, column_order=columns)
+
+        # Feature extractor expects these to be set
+        data['gyro_x'] = 0.0
+        data['gyro_y'] = 0.0
+        data['gyro_z'] = 0.0
+    else:
+        raise ValueError(f"Unsupported features: {features}")
+
     features = extract_features(data,
+        extractor=extractor,
         columns=data_columns,
-        groupby=groups,             
-        features=features,
+        groupby=groups,
         sensitivity=sensitivity,
-        window_length=window_length,
-        window_hop=model_settings['window_hop'],
         label_column=label_column,
         time_column=time_column,
     )
+
+    # Attach labels
+    features = label_windows(data, features,
+        groupby=groups,
+        label_column=label_column,
+        window_duration=pandas.Timedelta(window_duration, unit='s'),
+    )
+
+    print(features.columns)
+
     labeled = numpy.count_nonzero(features[label_column].notna())
 
     feature_extraction_duration = time.time() - feature_extraction_start
@@ -462,6 +463,8 @@ def run_pipeline(run, hyperparameters, dataset,
         labeled_instances=labeled,
         duration=feature_extraction_duration,
     )
+
+    # FIXME: keep the windows in evaluation, only ignore for training
 
     # Drop windows without labels
     features = features[features[label_column].notna()]
