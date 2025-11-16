@@ -100,41 +100,6 @@ def evaluate(windows : pandas.DataFrame, groupby : str, hyperparameters : dict,
     return cv_results, estimator, splits, scores, figures
 
 
-def extract_windows(sensordata : pandas.DataFrame,
-    window_length : int,
-    window_hop : int,
-    groupby : list[str],
-    time_column = 'time',
-    ):
-
-    groups = sensordata.groupby(groupby, observed=True)
-
-
-    for group_idx, group_df in groups:
-
-        windows = []
-
-        # make sure order is correct
-        group_df = group_df.reset_index().set_index(time_column).sort_index()
-
-        # create windows
-        win_start = 0
-        length = len(group_df)
-        while win_start < length:
-            win_end = win_start + window_length
-            # ignore partial window at the end
-            if win_end > length:
-                break
-            
-            win = group_df.iloc[win_start:win_end].copy()
-            win['window'] = win.index[0]
-            assert len(win) == window_length, (len(win), window_length)
-   
-            windows.append(win)
-
-            win_start += window_hop
-
-        yield windows
 
 def assign_window_label(labels, majority=0.66):
     """
@@ -199,95 +164,106 @@ def timebased_features(windows : list[pandas.DataFrame],
     return df
 
 
-def custom_features(windows : list[pandas.DataFrame],
-        columns : list[str],
-        executable : str = '',
-        options : dict = {},
-        input_option : str = '--input',
-        output_option : str = '--output',
-        serialization : str = 'csv') -> pandas.DataFrame:
-    """
-    Run a program (executable) to compute features
+class DataProcessorProgram():
 
-    """
+    def __init__(self, executable : str,
+            options : dict = {},
+            input_option : str = '--input',
+            output_option : str = '--output',
+            serialization : str = 'csv'
+        ):
 
-    assert serialization == 'csv' # TODO: also support .npy
-    extension = serialization
+        self.executable = executable
+        self.options = options
+        self.input_option = input_option
+        self.output_option = output_option
+        self.serialization = serialization
 
-    # Filter columns
-    data = pandas.concat([ d for d in windows ])
+    def process(self, data : pandas.DataFrame) -> pandas.DataFrame:
+        """
+        Run a program (executable) to compute features
 
-    # FIXME: unhardcode
-    data['time'] = 0
-    data['gyro_x'] = 0
-    data['gyro_y'] = 0
-    data['gyro_z'] = 0
-    columns = ['time', 'acc_x', 'acc_y', 'acc_z', 'gyro_x', 'gyro_y', 'gyro_z']
+        Takes a DataFrame with sensor data as input.
+        The sensor data should be continous and regular in time.
+   
+        Returns windows with features.
+        The windows are usually overlapping in time.
+        """
 
-    data = data[columns]
+        assert self.serialization == 'csv' # TODO: also support .npy
+        extension = self.serialization
 
-    log.debug('custom-features-start', columns=list(data.columns))
+        # FIXME: unhardcode. Maybe allow specifying column_order ?
+        data['gyro_x'] = 0
+        data['gyro_y'] = 0
+        data['gyro_z'] = 0
+        data = data.reset_index()
+        ser_columns = ['time', 'acc_x', 'acc_y', 'acc_z', 'gyro_x', 'gyro_y', 'gyro_z']
+        data = data[ser_columns]
 
-    with tempfile.TemporaryDirectory() as tempdir:
-        data_path = os.path.join(tempdir, f'data.{extension}')
-        features_path = os.path.join(tempdir, f'features.{extension}')
+        log.debug('custom-features-start', columns=list(data.columns))
 
-        # Persist the data
-        data.to_csv(data_path, index=False)
+        with tempfile.TemporaryDirectory() as tempdir:
+            data_path = os.path.join(tempdir, f'data.{extension}')
+            features_path = os.path.join(tempdir, f'features.{extension}')
 
-        # Build arguments
-        args = [
-            executable,
-        ]
+            # Persist the data
+            data.to_csv(data_path, index=False)
 
-        # Input and output
-        if input_option:
-             args += [ input_option, data_path ]
-        else:
-             args += [ data_path ]
+            # Build arguments
+            args = [
+                self.executable,
+            ]
 
-        if output_option:
-            args += [ output_option, features_path ]
-        else:
-            args += [ features_path ]
+            # Input and output
+            if self.input_option:
+                 args += [ self.input_option, data_path ]
+            else:
+                 args += [ data_path ]
 
-        # Other options
-        for k, v in options.items():
-            args += [ f'--{k}', v ]
+            if self.output_option:
+                args += [ self.output_option, features_path ]
+            else:
+                args += [ features_path ]
 
-        cmd = ' '.join(args)
-        try:
-            out = subprocess.check_output(args)
-        except subprocess.CalledProcessError as e:
-            log.error('preprocessor-error',
-                cmd=cmd, out=e.stdout, code=e.returncode, err=e.stderr)
-            raise e
+            # Other options
+            for k, v in self.options.items():
+                args += [ f'--{k}', v ]
 
-        # Load output
-        out = pandas.read_csv(features_path)
-        assert len(out) == len(data)
+            cmd = ' '.join(args)
+            try:
+                out = subprocess.check_output(args)
+            except subprocess.CalledProcessError as e:
+                log.error('preprocessor-error',
+                    cmd=cmd, out=e.stdout, code=e.returncode, err=e.stderr)
+                raise e
 
-        # TODO: add feature names
-        df = pandas.DataFrame(out)
+            # Load output
+            out = pandas.read_csv(features_path)
 
-    # post-conditions
-    # one feature vector per window
-    assert len(df) == len(windows), (len(df), len(windows))
+            # TODO: add feature names
+            windows = pandas.DataFrame(out)
 
-    return df
+        # post-conditions
+        time_in = data['time'] / pandas.Timedelta(seconds=1)
+        time_out = windows['time']
+
+        window_duration = 1.0 # XXX: hardcoded
+        start_delta = time_out.min() - time_in.min()
+        assert abs(start_delta) <= window_duration, (start_delta, time_out.min(), time_in.min())
+        end_delta = time_out.max() - time_in.max()
+        assert abs(end_delta) <= window_duration, (end_delta, time_out.max(), time_in.max())
+
+        return windows
+
+class TimebasedFeatureExtractor():
+
+    def __init__(self):
+
+        here = os.path.dirname(__file__)
+        feature_extraction_script = os.path.join(here, 'compute_features.py')
 
 
-def batched_iterator(iterable, batch_size):
-    """Yield lists of size batch_size from iterable"""
-    iterator = iter(iterable)
-    while batch := list(itertools.islice(iterator, batch_size)):
-        yield batch
-
-def process_in_parallel_streaming(gen, process_item, batch_size=1000, n_jobs=-1):
-    for batch in batched_iterator(gen, batch_size):
-        yield from joblib.Parallel(n_jobs=n_jobs)(
-            joblib.delayed(process_item)(item) for item in batch
-        )
 
 def extract_features(sensordata : pandas.DataFrame,
     columns : list[str],
@@ -305,59 +281,106 @@ def extract_features(sensordata : pandas.DataFrame,
     Convert sensor data into fixed-sized time windows and extact features
     """
 
+    # TODO: pass in the entire feature extractor
     if features == 'quant':
         raise NotImplementedError
     elif features == 'timebased':
+        raise NotImplementedError # FIXME, bring back
         feature_extractor = lambda w: timebased_features(w, columns=columns)
     elif features == 'custom':
+
+        # FIXME: unhardcode columns
+        log.debug('sensordata', columns=sensordata.columns, index=sensordata.index.names)
+        #data['time'] = 0
+        #data = sensordata
+        #data = data.reset_index()
+        #data = data[ser_columns]
+        #data = data.set_index(groupby)
+        #sensordata = data
 
         # FIXME: unhardcode
         executable = '/home/jon/projects/emlearn/examples/motion_recognition/build/motion_preprocess'
         options = {}
 
-        feature_extractor = lambda w: custom_features(w, columns=columns, executable=executable, options=options)
+        # FIXME: respect window_length, window_hop
+        feature_extractor = DataProcessorProgram(executable=executable, options=options)
     else:
         raise ValueError(f"Unsupported features: {features}")
 
-    # Split into fixed-length windows
-    features_values = []
 
-    def process_one(windows) -> pandas.DataFrame:
+    # Process one whole stream of sensor data at a time
+    # the feature extraction process might have time/history dependent logic,
+    # such as filters estimating gravity, background levels etc
+
+    def process_one(idx, stream : pandas.DataFrame) -> pandas.DataFrame:
+
         # drop invalid data
-        windows = [ w for w in windows if not w[columns].isnull().values.any() ]
+        stream = stream.dropna(subset=columns)
 
         # Convert from floats in "g" to the sensor scaling in int16
-        data_windows = [ ((w[columns] / sensitivity) * (2**15-1)).astype(numpy.int16) for w in windows ]
+        stream.loc[:, columns] = \
+            ((stream.loc[:, columns] / sensitivity) * (2**15-1)).astype(numpy.int16)
+
+        # FIXME: make sure time-series is regular
+        # potentially zero-fill ?
 
         # Extract features
-        df = feature_extractor(data_windows)
+        windows = feature_extractor.process(stream)
 
         # Convert features to 16-bit integers
         # XXX: Assuming that they are already in resonable scale
         # TODO: consider moving the quantization to inside timebased
-        quant = df.values.astype(numpy.int16)
-        df.loc[:,:] = quant
+        feature_columns = list(set(windows.columns) - set([time_column]))
+        windows.loc[:,feature_columns] = windows[feature_columns].astype(numpy.int16)
 
         # Attach labels
-        df[label_column] = [ assign_window_label(w[label_column]) for w in windows ]
+        windows[label_column] = assign_window_label(stream[label_column])
 
         # Combine with identifying information
-        index_columns = list(groupby + ['window'])
-        for idx_column in index_columns:
-            df[idx_column] = [w[idx_column].iloc[0] for w in windows]
-        df = df.set_index(index_columns)
+        # time should come from data processing
+        assert time_column in windows
 
-        return df
+        # the group is our job to manage
+        index_columns = list(groupby) + [time_column]
+        for idx_column, idx_value in zip(groupby, idx):
+            windows[idx_column] = idx_value
 
+        windows = windows.set_index(index_columns)
+        log.debug('process-one-done',
+            columns=list(windows.columns),
+            index_columns=list(windows.index.names),
+            windows=len(windows),
+            samples=len(stream),
+        )
+        return windows
     
-    data_generator = extract_windows(sensordata, window_length, window_hop, groupby=groupby, time_column=time_column)
-    feature_generator = process_in_parallel_streaming(data_generator, process_one, batch_size=10)
+    #win['window'] = win.index[0]
+    # PERF: may be possible to parellize within a sensordata stream,
+    # but then need each section to have a run-in period that is long enough
+    # for any time-dependent logic to stabilize, and to merge while ignoring the run-in
+    def split_sections(data, groupby : list[str], time_column='time'):
+        groups = sensordata.groupby(groupby, observed=True)
+        for group_idx, group_df in groups:
 
-    for df in feature_generator:
+            # ensure sorted by time
+            group_df = group_df.reset_index().set_index(time_column).sort_index()
 
-        features_values.append(df)
+            yield group_idx, group_df
 
+    sections = split_sections(sensordata, groupby=groupby, time_column=time_column)
+    jobs = [ joblib.delayed(process_one)(idx, df) for idx, df in sections]
+
+    log.debug('process-parallel', jobs=len(jobs))
+    n_jobs = 4
+
+    start_time = time.time()
+    features_values = joblib.Parallel(n_jobs=n_jobs)(jobs)
     out = pandas.concat(features_values)
+    duration = round(time.time - start_time(), 3)
+
+    log.debug('process-parallel-done', rows=len(out), duration=duration)
+
+
     return out
 
 def export_model(path, out):
