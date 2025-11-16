@@ -198,6 +198,85 @@ def timebased_features(windows : list[pandas.DataFrame],
 
     return df
 
+
+def custom_features(windows : list[pandas.DataFrame],
+        columns : list[str],
+        executable : str = '',
+        options : dict = {},
+        input_option : str = '--input',
+        output_option : str = '--output',
+        serialization : str = 'csv') -> pandas.DataFrame:
+    """
+    Run a program (executable) to compute features
+
+    """
+
+    assert serialization == 'csv' # TODO: also support .npy
+    extension = serialization
+
+    # Filter columns
+    data = pandas.concat([ d for d in windows ])
+
+    # FIXME: unhardcode
+    data['time'] = 0
+    data['gyro_x'] = 0
+    data['gyro_y'] = 0
+    data['gyro_z'] = 0
+    columns = ['time', 'acc_x', 'acc_y', 'acc_z', 'gyro_x', 'gyro_y', 'gyro_z']
+
+    data = data[columns]
+
+    log.debug('custom-features-start', columns=list(data.columns))
+
+    with tempfile.TemporaryDirectory() as tempdir:
+        data_path = os.path.join(tempdir, f'data.{extension}')
+        features_path = os.path.join(tempdir, f'features.{extension}')
+
+        # Persist the data
+        data.to_csv(data_path, index=False)
+
+        # Build arguments
+        args = [
+            executable,
+        ]
+
+        # Input and output
+        if input_option:
+             args += [ input_option, data_path ]
+        else:
+             args += [ data_path ]
+
+        if output_option:
+            args += [ output_option, features_path ]
+        else:
+            args += [ features_path ]
+
+        # Other options
+        for k, v in options.items():
+            args += [ f'--{k}', v ]
+
+        cmd = ' '.join(args)
+        try:
+            out = subprocess.check_output(args)
+        except subprocess.CalledProcessError as e:
+            log.error('preprocessor-error',
+                cmd=cmd, out=e.stdout, code=e.returncode, err=e.stderr)
+            raise e
+
+        # Load output
+        out = pandas.read_csv(features_path)
+        assert len(out) == len(data)
+
+        # TODO: add feature names
+        df = pandas.DataFrame(out)
+
+    # post-conditions
+    # one feature vector per window
+    assert len(df) == len(windows), (len(df), len(windows))
+
+    return df
+
+
 def batched_iterator(iterable, batch_size):
     """Yield lists of size batch_size from iterable"""
     iterator = iter(iterable)
@@ -230,6 +309,13 @@ def extract_features(sensordata : pandas.DataFrame,
         raise NotImplementedError
     elif features == 'timebased':
         feature_extractor = lambda w: timebased_features(w, columns=columns)
+    elif features == 'custom':
+
+        # FIXME: unhardcode
+        executable = '/home/jon/projects/emlearn/examples/motion_recognition/build/motion_preprocess'
+        options = {}
+
+        feature_extractor = lambda w: custom_features(w, columns=columns, executable=executable, options=options)
     else:
         raise ValueError(f"Unsupported features: {features}")
 
@@ -331,6 +417,7 @@ def run_pipeline(run, hyperparameters, dataset,
     feature_extraction_start = time.time()
     log.info('feature-extraction-start',
         dataset=dataset,
+        features=features,
     )
     window_length = model_settings['window_length']
     features = extract_features(data,
