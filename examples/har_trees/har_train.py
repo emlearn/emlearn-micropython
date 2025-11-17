@@ -178,7 +178,7 @@ class DataProcessorProgram():
 
             # Other options
             for k, v in self.options.items():
-                args += [ f'--{k}', v ]
+                args += [ f'--{k}', str(v) ]
 
             cmd = ' '.join(args)
             try:
@@ -194,11 +194,16 @@ class DataProcessorProgram():
                 # TODO: support feature names. Separat output file, with --features
                 out = numpy.load(features_path)
                 windows = pandas.DataFrame(out)
+                # FIXME: support reading times, not infer
                 span = (data.index.max() - data.index.min()).total_seconds()
-                dt = span / len(windows) # XXX: make correct
+                dt = span / len(windows)
+                log.debug('preprocess', windows=len(windows), dt=dt)
                 windows['time'] = dt * numpy.arange(len(windows))
             elif self.serialization == 'csv':
                 windows = pandas.read_csv(features_path)
+                span = (data.index.max() - data.index.min()).total_seconds()
+                dt = span / len(windows)
+                log.debug('preprocess', windows=len(windows), dt=dt)
             else:
                 raise NotImplementedError(self.serialization)
 
@@ -208,7 +213,7 @@ class DataProcessorProgram():
         time_in = data.index
         time_out = windows['time']
 
-        window_duration = pandas.Timedelta(5.0, unit='s') # XXX: hardcoded
+        window_duration = pandas.Timedelta(4.0, unit='s') # XXX: hardcoded
         start_delta = time_out.min() - time_in.min()
         assert abs(start_delta) <= window_duration, (start_delta, time_out.min(), time_in.min())
         end_delta = time_out.max() - time_in.max()
@@ -219,7 +224,7 @@ class DataProcessorProgram():
 class TimebasedFeatureExtractor(DataProcessorProgram):
 
     def __init__(self, python_bin='python', **kwargs):
-        super().__init__(self, input_option='', output_option='', serialization='npy', **kwargs)
+        super().__init__(self, serialization='npy', **kwargs)
 
         here = os.path.dirname(__file__)
         feature_extraction_script = os.path.join(here, 'compute_features.py')
@@ -234,6 +239,7 @@ def extract_features(sensordata : pandas.DataFrame,
     columns : list[str],
     groupby : list[str],
     extractor,
+    samplerate = 50,
     sensitivity = 2.0, # how many g range the int16 sensor data has
     label_column='activity',
     time_column='time',
@@ -300,12 +306,44 @@ def extract_features(sensordata : pandas.DataFrame,
     # for any time-dependent logic to stabilize, and to merge while ignoring the run-in
     def split_sections(data, groupby : list[str], time_column='time'):
         groups = sensordata.groupby(groupby, observed=True)
-        for group_idx, group_df in groups:
+        for group_idx, df in groups:
 
             # ensure sorted by time
-            group_df = group_df.reset_index().set_index(time_column).sort_index()
+            df = df.reset_index()
 
-            yield group_idx, group_df
+            # convert to time-delta, if neeeded
+            if pandas.api.types.is_datetime64_dtype(df[time_column]):
+                df[time_column] = df[time_column] - df[time_column].min() 
+
+            df = df.set_index(time_column).sort_index()
+
+            expected_freq = pandas.Timedelta(1/samplerate, unit='s')
+            diff = df.index.to_series().diff()
+            holes = diff[diff > expected_freq]
+            irregular = diff[diff != expected_freq].dropna()
+
+            # Convert to regular time-series
+            times = pandas.timedelta_range(df.index.min(), df.index.max(), freq=expected_freq)
+            df = df.reindex(times)
+
+            missing = df[columns].isna().any(axis=1)
+            missing_ratio = numpy.count_nonzero(missing) / len(df)
+            if missing_ratio > 0.01:
+                log.debug('section-missing-data',
+                    idx=group_idx,
+                    rows=len(df[missing]),
+                    ratio=missing_ratio,
+                    irregular=len(irregular),
+                )
+
+            # Fill holes (if any)
+            df = df.ffill()
+
+            assert pandas.api.types.is_timedelta64_dtype(df.index)
+
+            df[time_column] = df.index
+
+            yield group_idx, df
 
     sections = split_sections(sensordata, groupby=groupby, time_column=time_column)
     jobs = [ joblib.delayed(process_one)(idx, df) for idx, df in sections]
@@ -351,9 +389,21 @@ def label_windows(sensordata,
     # default to unknown=NA
     windows[label_column] = None
 
+    print(sensordata.head())
+
+    sensor_groups = {idx: df for idx, df in sensordata.groupby(groupby, group_keys=False, as_index=False) }
+
+    log.debug('label-windows', groups=groupby, g=list(sensor_groups.keys()))
+
     for idx, ww in windows.groupby(groupby):
-        data = sensordata.loc[idx]
-        
+        data = sensor_groups[idx]
+        #log.debug('label-window', idx=idx, index_dtype=data.index.dtype)        
+        data = data.reset_index().set_index('time') # XXX: Why is this needed?
+
+        # convert to time-delta, if neeeded
+        if pandas.api.types.is_datetime64_dtype(data.index):
+            data.index = data.index - data.index.min() 
+
         for idx, w in ww.iterrows():
             window_end = idx[-1] # XXX: assuming this is time
             window_start = window_end - window_duration
@@ -397,6 +447,9 @@ def run_pipeline(run, hyperparameters, dataset,
     time_column = dataset_config.get('time_column', 'time')
     sensitivity = dataset_config.get('sensitivity', 4.0)
 
+    print('dd', sorted(data.columns))
+    print('dt', data.dtypes)
+
     data[label_column] = data[label_column].astype(str)
 
     data_load_duration = time.time() - data_load_start
@@ -408,26 +461,43 @@ def run_pipeline(run, hyperparameters, dataset,
         features=features,
     )
     window_length = model_settings['window_length']
-    samplerate = model_settings.get('samplerate', 100)
-
+    samplerate = dataset_config.get('samplerate', 100)
+    window_hop = model_settings['window_hop']
+    
     window_duration = (window_length / samplerate)
 
-    # Setup feature extraction
+    remap = {
+        'x': 'acc_x',
+        'y': 'acc_y',
+        'z': 'acc_z',
+    }
     if features == 'timebased':
-        columns = ['acc_x', 'acc_y', 'acc_z']
-        extractor = TimebasedFeatureExtractor(column_order=columns)
+        # XXX: hack
+        remap = {
+            'acc_x': 'x',
+            'acc_y': 'y',
+            'acc_z': 'z',
+        }
+    data = data.rename(columns=remap)
+
+    # Setup feature extraction
+    extract_options = dict(
+        window_length=window_length,
+        hop_length=window_hop,
+        samplerate=samplerate,
+    )
+    if features == 'timebased':
+        columns = ['x', 'y', 'z']
+        extractor = TimebasedFeatureExtractor(column_order=columns, options=extract_options)
 
     elif features == 'custom':
         # FIXME: unhardcode path
         executable = ['/home/jon/projects/emlearn/examples/motion_recognition/build/motion_preprocess']
-        # FIXME: respect window_length, window_hop
-        options = dict(
-            #window_length=window_length,
-            #window_hop=window_hop,
-        )
+
         columns = ['time', 'acc_x', 'acc_y', 'acc_z', 'gyro_x', 'gyro_y', 'gyro_z']
+        data_columns = [ c for c in columns if not c == 'time' ]
         extractor = DataProcessorProgram(program=executable,
-            options=options, column_order=columns)
+            options=extract_options, column_order=columns)
 
         # Feature extractor expects these to be set
         data['gyro_x'] = 0.0
@@ -443,6 +513,7 @@ def run_pipeline(run, hyperparameters, dataset,
         sensitivity=sensitivity,
         label_column=label_column,
         time_column=time_column,
+        samplerate=samplerate,
     )
 
     # Attach labels
@@ -452,7 +523,7 @@ def run_pipeline(run, hyperparameters, dataset,
         window_duration=pandas.Timedelta(window_duration, unit='s'),
     )
 
-    print(features.columns)
+    print(features.head())
 
     labeled = numpy.count_nonzero(features[label_column].notna())
 
