@@ -189,6 +189,11 @@ class DataProcessorProgram():
                     cmd=cmd, out=e.stdout, err=e.stderr, code=code)
                 raise e
 
+            log.debug('preprocessor-run',
+                cmd=cmd,
+                #out=out,
+            )
+
             # Load output
             if self.serialization == 'npy':
                 # TODO: support feature names. Separat output file, with --features
@@ -223,14 +228,24 @@ class DataProcessorProgram():
 
 class TimebasedFeatureExtractor(DataProcessorProgram):
 
-    def __init__(self, python_bin='python', **kwargs):
+    def __init__(self, sensitivity=4.0, python_bin='python', **kwargs):
         super().__init__(self, serialization='npy', **kwargs)
 
         here = os.path.dirname(__file__)
         feature_extraction_script = os.path.join(here, 'compute_features.py')
         self.program = [ python_bin, feature_extraction_script ]
 
+        self.sensitivity = sensitivity
+
     def process(self, data):
+
+        data = data.copy()
+        columns = self.column_order
+    
+        # Convert from floats in "g" to the sensor scaling in int16
+        data.loc[:, columns] = \
+            ((data.loc[:, columns] / self.sensitivity) * (2**15-1)).astype(numpy.int16)
+
         return super().process(data)
 
 
@@ -240,7 +255,6 @@ def extract_features(sensordata : pandas.DataFrame,
     groupby : list[str],
     extractor,
     samplerate = 50,
-    sensitivity = 2.0, # how many g range the int16 sensor data has
     label_column='activity',
     time_column='time',
     parallel_jobs : int = 4 ,
@@ -264,21 +278,8 @@ def extract_features(sensordata : pandas.DataFrame,
         # drop invalid data
         stream = stream.dropna(subset=columns)
 
-        # Convert from floats in "g" to the sensor scaling in int16
-        stream.loc[:, columns] = \
-            ((stream.loc[:, columns] / sensitivity) * (2**15-1)).astype(numpy.int16)
-
-        # FIXME: make sure time-series is regular
-        # potentially zero-fill ?
-
         # Extract features
         windows = extractor.process(stream)
-
-        # Convert features to 16-bit integers
-        # XXX: Assuming that they are already in resonable scale
-        # TODO: consider moving the quantization to inside timebased
-        feature_columns = list(set(windows.columns) - set([time_column]))
-        windows.loc[:,feature_columns] = windows[feature_columns].astype(numpy.int16)
 
         # Combine with identifying information
         # time should come from data processing
@@ -312,8 +313,8 @@ def extract_features(sensordata : pandas.DataFrame,
             df = df.reset_index()
 
             # convert to time-delta, if neeeded
-            if pandas.api.types.is_datetime64_dtype(df[time_column]):
-                df[time_column] = df[time_column] - df[time_column].min() 
+            #if pandas.api.types.is_datetime64_dtype(df[time_column]):
+            #    df[time_column] = df[time_column] - df[time_column].min() 
 
             df = df.set_index(time_column).sort_index()
 
@@ -401,8 +402,8 @@ def label_windows(sensordata,
         data = data.reset_index().set_index('time') # XXX: Why is this needed?
 
         # convert to time-delta, if neeeded
-        if pandas.api.types.is_datetime64_dtype(data.index):
-            data.index = data.index - data.index.min() 
+        #if pandas.api.types.is_datetime64_dtype(data.index):
+        #    data.index = data.index - data.index.min() 
 
         for idx, w in ww.iterrows():
             window_end = idx[-1] # XXX: assuming this is time
@@ -416,6 +417,60 @@ def label_windows(sensordata,
 
     return windows
 
+def plot_timelines(sensordata, windows, groupby, sensor_columns, label_column):
+
+    # Plot
+    from plotting import make_timeline_plot
+
+    sensor_columns = [ c for c in sensor_columns if c.startswith('gyro_')] # XXX
+
+    sensor_groups = {idx: df for idx, df in sensordata.groupby(groupby, group_keys=False, as_index=False) }
+
+    log.debug('label-windows', groups=groupby, g=list(sensor_groups.keys()))
+
+    for idx, ww in windows.groupby(groupby, group_keys=False, as_index=False):
+        data = sensor_groups[idx]
+        #log.debug('label-window', idx=idx, index_dtype=data.index.dtype) 
+
+        # XXX: Why is this needed?  
+        data = data.reset_index().set_index('time')
+        ww = ww.reset_index().set_index('time')
+
+        # convert to seconds
+        #data.index = data.index / pandas.Timedelta(seconds=1)
+        #ww.index = ww.index / pandas.Timedelta(seconds=1)
+
+        feature_columns = list(ww.columns)
+
+        feature_columns = [
+            'motion_mag_rms', 'motion_mag_p2p', 'motion_x_rms', 'motion_y_rms', 'motion_z_rms',
+            'fft_0_4hz', 'fft_0_8hz', 'fft_1_2hz', 'fft_1_6hz', 'fft_1_10hz', 'fft_2_3hz', 'fft_2_7hz', 'fft_3_1hz', 'fft_3_5hz']
+
+        line_features  = [
+            #'orientation_x', 'orientation_y', 'orientation_z',
+            'motion_mag_rms'
+        ]
+
+        #print('pp', ww[o])
+
+        idx_name = '_'.join([str(s) for s in idx]   )
+        plot_path  = f'plot_{idx_name}.png'
+        # Make a plot
+        width = 1600
+        aspect = 2.0
+        height = width/aspect
+        fig = make_timeline_plot(data, ww,
+            sensor_columns=sensor_columns,
+            label_column=label_column,
+            line_feature_columns=line_features,
+            heatmap_feature_columns=feature_columns,
+            colors=None,
+            class_names=['class_0', 'class_1'], # FIXME: pass
+            predictions=None, # FIXME: pass separate
+            width=width, aspect=aspect)
+
+        fig.write_image(plot_path, scale=1.5, width=width, height=height)
+        print('Wrote plot', plot_path)
 
 def run_pipeline(run, hyperparameters, dataset,
         config,
@@ -436,9 +491,6 @@ def run_pipeline(run, hyperparameters, dataset,
     data_load_start = time.time()
     log.info('data-load-start', dataset=dataset)
     data = pandas.read_parquet(data_path)
-
-    #print(data.index.names)
-    #print(data.columns)
 
     groups = dataset_config['groups']
     data_columns = dataset_config['data_columns']
@@ -471,14 +523,17 @@ def run_pipeline(run, hyperparameters, dataset,
         'y': 'acc_y',
         'z': 'acc_z',
     }
-    if features == 'timebased':
-        # XXX: hack
-        remap = {
-            'acc_x': 'x',
-            'acc_y': 'y',
-            'acc_z': 'z',
-        }
     data = data.rename(columns=remap)
+
+
+    # convert to time-delta, if neeeded
+    def convert_time(data):
+        if pandas.api.types.is_datetime64_dtype(data.index):
+            data.index = data.index - data.index.min()
+        return data
+
+    data = data.groupby(groups, as_index=False, group_keys=False).apply(convert_time)
+
 
     # Setup feature extraction
     extract_options = dict(
@@ -487,8 +542,9 @@ def run_pipeline(run, hyperparameters, dataset,
         samplerate=samplerate,
     )
     if features == 'timebased':
-        columns = ['x', 'y', 'z']
-        extractor = TimebasedFeatureExtractor(column_order=columns, options=extract_options)
+        #columns = ['x', 'y', 'z']
+        columns = ['acc_x', 'acc_y', 'acc_z']
+        extractor = TimebasedFeatureExtractor(sensitivity=sensitivity, column_order=columns, options=extract_options)
 
     elif features == 'custom':
         # FIXME: unhardcode path
@@ -510,10 +566,10 @@ def run_pipeline(run, hyperparameters, dataset,
         extractor=extractor,
         columns=data_columns,
         groupby=groups,
-        sensitivity=sensitivity,
         label_column=label_column,
         time_column=time_column,
         samplerate=samplerate,
+        #parallel_jobs=1,
     )
 
     # Attach labels
@@ -522,8 +578,6 @@ def run_pipeline(run, hyperparameters, dataset,
         label_column=label_column,
         window_duration=pandas.Timedelta(window_duration, unit='s'),
     )
-
-    print(features.head())
 
     labeled = numpy.count_nonzero(features[label_column].notna())
 
@@ -534,6 +588,9 @@ def run_pipeline(run, hyperparameters, dataset,
         labeled_instances=labeled,
         duration=feature_extraction_duration,
     )
+
+    #plot_timelines(data, features, groupby=groups,
+    #    sensor_columns=data_columns, label_column=label_column)
 
     # FIXME: keep the windows in evaluation, only ignore for training
 
