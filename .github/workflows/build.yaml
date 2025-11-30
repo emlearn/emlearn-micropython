@@ -29,8 +29,9 @@ jobs:
     - name: Setup MicroPython X86
       working-directory: micropython
       run: |
-        CFLAGS_EXTRA='-Wno-error' source tools/ci.sh && ci_unix_32bit_setup && ci_unix_standard_build
-        mv ./ports/unix/build-standard/ ./ports/unix/build-nomodules/
+        source tools/ci.sh && ci_unix_32bit_setup
+        echo SKIP CFLAGS_EXTRA='-Wno-error' ci_unix_standard_build
+        echo SKIP mv ./ports/unix/build-standard/ ./ports/unix/build-nomodules/
     - name: Build custom firmware with user modules, and tests. Unix/x64
       run: |
         make check_unix V=1
