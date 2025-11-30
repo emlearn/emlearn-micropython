@@ -15,6 +15,14 @@ LINK_RUNTIME=1
 
 DIST_DIR := ../../dist/$(ARCH)_$(MPY_ABI_VERSION)
 
+
+ifeq ($(ARCH),rv32imc)
+    CFLAGS_MATH := -DUSE_BUILTIN_SQRTF
+else
+    CFLAGS_MATH := -DUSE_IEEE_SQRTF=1
+endif
+
+
 # Name of module
 MOD = emlearn_plsr
 
@@ -32,6 +40,6 @@ $(DIST_DIR):
 $(DIST_FILE): $(MOD).mpy $(DIST_DIR)
 	cp $< $@
 
-CFLAGS += -I$(EMLEARN_DIR) -Wno-unused-function
+CFLAGS += -I$(EMLEARN_DIR) -Wno-unused-function $(CFLAGS_MATH)
 
 dist: $(DIST_FILE)
