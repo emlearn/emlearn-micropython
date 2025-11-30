@@ -186,6 +186,10 @@ jobs:
     - uses: actions/checkout@v4
       with:
         submodules: true
+
+    - name: Configure XCode SDK version
+      run: sudo xcode-select -s /Applications/Xcode_26.1.1.app/Contents/Developer
+
     - name: Install OS dependencies
       run:  brew install pkg-config libffi 
     - uses: actions/setup-python@v5
