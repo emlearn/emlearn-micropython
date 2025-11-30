@@ -4,7 +4,7 @@
 #include <string.h>
 
 // NOTE: make sure we do not use sqrtf() wrapper which uses errno, does not work in native module
-#define sqrtf __ieee754_sqrtf
+#define sqrtf(x) __builtin_sqrtf(x)
 
 #include "eml_plsr.h"
 
