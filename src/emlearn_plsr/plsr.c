@@ -1,8 +1,9 @@
-// MicroPython native module wrapper for EML PLS Regression
+// MicroPython native module wrapper for PLS Regression
 #include "py/dynruntime.h"
 
 #include <string.h>
 
+// NOTE: make sure we do not use sqrtf() wrapper which uses errno, does not work in native module
 #define sqrtf __ieee754_sqrtf
 
 #include "eml_plsr.h"
@@ -16,12 +17,6 @@ void *memset(void *s, int c, size_t n) {
     return mp_fun_table.memset_(s, c, n);
 }
 #endif
-
-// Hack for errno missing
-__attribute__((visibility("default")))
-int errno;
-int* __errno(void) { return &errno; }
-int* __errno_location(void) { return &errno; }
 
 
 // MicroPython type for PLSR model
@@ -98,65 +93,6 @@ static mp_obj_t plsr_model_del(mp_obj_t self_obj) {
 }
 static MP_DEFINE_CONST_FUN_OBJ_1(plsr_model_del_obj, plsr_model_del);
 
-// Fit the model
-static mp_obj_t plsr_model_fit(size_t n_args, const mp_obj_t *args) {
-    // Args: self, X, y, max_iter (optional), tolerance (optional)
-    if (n_args < 3 || n_args > 5) {
-        mp_raise_ValueError(MP_ERROR_TEXT("Expected 3-5 arguments: self, X, y, [max_iter], [tolerance]"));
-    }
-    
-    mp_obj_plsr_model_t *o = MP_OBJ_TO_PTR(args[0]);
-    eml_plsr_t *self = &o->model;
-
-    // Extract X buffer
-    mp_buffer_info_t X_bufinfo;
-    mp_get_buffer_raise(args[1], &X_bufinfo, MP_BUFFER_READ);
-    if (X_bufinfo.typecode != 'f') {
-        mp_raise_ValueError(MP_ERROR_TEXT("X expecting float32 array"));
-    }
-    const float *X = X_bufinfo.buf;
-    const int X_len = X_bufinfo.len / sizeof(float);
-
-    // Extract y buffer
-    mp_buffer_info_t y_bufinfo;
-    mp_get_buffer_raise(args[2], &y_bufinfo, MP_BUFFER_READ);
-    if (y_bufinfo.typecode != 'f') {
-        mp_raise_ValueError(MP_ERROR_TEXT("y expecting float32 array"));
-    }
-    const float *y = y_bufinfo.buf;
-    const int y_len = y_bufinfo.len / sizeof(float);
-
-    // Validate dimensions
-    if (X_len != o->n_samples * o->n_features) {
-        mp_raise_ValueError(MP_ERROR_TEXT("X dimensions don't match model"));
-    }
-    if (y_len != o->n_samples) {
-        mp_raise_ValueError(MP_ERROR_TEXT("y dimensions don't match model"));
-    }
-
-    // Get optional parameters
-    uint16_t max_iter = 100;  // Default
-    float tolerance = 1e-6f;   // Default
-    
-    if (n_args >= 4) {
-        max_iter = mp_obj_get_int(args[3]);
-    }
-    if (n_args >= 5) {
-        tolerance = mp_obj_get_float_to_f(args[4]);
-    }
-
-    // Perform training
-    EmlError err = eml_plsr_fit(self, X, y, max_iter, tolerance);
-
-    if (err == EmlPostconditionFailed) {
-        mp_raise_ValueError(MP_ERROR_TEXT("PLSR did not converge"));
-    } else if (err != EmlOk) {
-        mp_raise_ValueError(MP_ERROR_TEXT("PLSR training failed"));
-    }
-
-    return mp_const_none;
-}
-static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(plsr_model_fit_obj, 3, 5, plsr_model_fit);
 
 // Start iterative fitting
 static mp_obj_t plsr_model_fit_start(size_t n_args, const mp_obj_t *args) {
@@ -311,39 +247,6 @@ static mp_obj_t plsr_model_get_convergence_metric(mp_obj_t self_obj) {
 }
 static MP_DEFINE_CONST_FUN_OBJ_1(plsr_model_get_convergence_metric_obj, plsr_model_get_convergence_metric);
 
-// Get current iteration
-static mp_obj_t plsr_model_get_current_iter(mp_obj_t self_obj) {
-    mp_obj_plsr_model_t *o = MP_OBJ_TO_PTR(self_obj);
-    eml_plsr_t *self = &o->model;
-
-    return mp_obj_new_int(self->current_iter);
-}
-static MP_DEFINE_CONST_FUN_OBJ_1(plsr_model_get_current_iter_obj, plsr_model_get_current_iter);
-
-// Get number of components
-static mp_obj_t plsr_model_get_n_components(mp_obj_t self_obj) {
-    mp_obj_plsr_model_t *o = MP_OBJ_TO_PTR(self_obj);
-
-    return mp_obj_new_int(o->n_components);
-}
-static MP_DEFINE_CONST_FUN_OBJ_1(plsr_model_get_n_components_obj, plsr_model_get_n_components);
-
-// Get number of features
-static mp_obj_t plsr_model_get_n_features(mp_obj_t self_obj) {
-    mp_obj_plsr_model_t *o = MP_OBJ_TO_PTR(self_obj);
-
-    return mp_obj_new_int(o->n_features);
-}
-static MP_DEFINE_CONST_FUN_OBJ_1(plsr_model_get_n_features_obj, plsr_model_get_n_features);
-
-// Get number of samples
-static mp_obj_t plsr_model_get_n_samples(mp_obj_t self_obj) {
-    mp_obj_plsr_model_t *o = MP_OBJ_TO_PTR(self_obj);
-
-    return mp_obj_new_int(o->n_samples);
-}
-static MP_DEFINE_CONST_FUN_OBJ_1(plsr_model_get_n_samples_obj, plsr_model_get_n_samples);
-
 // Module setup
 mp_map_elem_t plsr_model_locals_dict_table[8];
 static MP_DEFINE_CONST_DICT(plsr_model_locals_dict, plsr_model_locals_dict_table);
@@ -368,11 +271,7 @@ mp_obj_t mpy_init(mp_obj_fun_bc_t *self, size_t n_args, size_t n_kw, mp_obj_t *a
     plsr_model_locals_dict_table[5] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR_is_converged), MP_OBJ_FROM_PTR(&plsr_model_is_converged_obj) };
     plsr_model_locals_dict_table[6] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR_is_complete), MP_OBJ_FROM_PTR(&plsr_model_is_complete_obj) };
     plsr_model_locals_dict_table[7] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR_get_convergence_metric), MP_OBJ_FROM_PTR(&plsr_model_get_convergence_metric_obj) };
-#if 0    
-    plsr_model_locals_dict_table[8] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR_get_n_components), MP_OBJ_FROM_PTR(&plsr_model_get_n_components_obj) };
-    plsr_model_locals_dict_table[9] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR_get_n_features), MP_OBJ_FROM_PTR(&plsr_model_get_n_features_obj) };
-    plsr_model_locals_dict_table[10] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR_get_n_samples), MP_OBJ_FROM_PTR(&plsr_model_get_n_samples_obj) };
-#endif
+
 
     MP_OBJ_TYPE_SET_SLOT(&plsr_model_type, locals_dict, (void*)&plsr_model_locals_dict, 8);
 
