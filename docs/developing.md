@@ -61,6 +61,12 @@ NOTE: Tested on Linux and Mac OS. Not tested on Windows Subsystem for Linux (WSL
 make check_unix
 ```
 
+If this fails to build due to compiled warnings from inside MicroPython code, try
+```
+make check_unix CFLAGS_EXTRA=-Wno-error
+```
+
+
 You should see each of the test functions in tests/ being ran,
 and then a summary at the end with something like:
 
