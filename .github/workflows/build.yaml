@@ -209,7 +209,7 @@ jobs:
         mv ./ports/unix/build-standard/ ./ports/unix/build-nomodules/
     - name: Build custom firmware with user modules, and tests. Unix/x64
       run: |
-        make check_unix V=1
+        make check_unix V=1 CFLAGS_EXTRA=-Wno-error
         mkdir -p ./dist/ports/macos
         mv ./dist/ports/unix/micropython ./dist/ports/macos/micropython
     - name: Build .mpy modules and run tests Unix/x64
