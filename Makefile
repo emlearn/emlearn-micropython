@@ -39,6 +39,7 @@ MODULES = emlearn_trees \
 	emlearn_linreg \
 	emlearn_logreg \
 	emlearn_extratrees \
+	emlearn_plsr \
 	emlearn_cnn_int8 \
 	emlearn_cnn_fp32
 
