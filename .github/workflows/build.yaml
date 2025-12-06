@@ -247,7 +247,9 @@ jobs:
     - name: Setup MicroPython
       working-directory: micropython
       run: |
-        source tools/ci.sh && ci_webassembly_setup
+        npm install terser
+        git clone https://github.com/emscripten-core/emsdk.git
+        (cd emsdk && ./emsdk install 4.0.21 && ./emsdk activate 4.0.21)
     - name: Build Webassembly
       run: |
         source ${MPY_DIR}/emsdk/emsdk_env.sh
