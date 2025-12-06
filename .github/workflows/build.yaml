@@ -250,6 +250,7 @@ jobs:
         npm install terser
         git clone https://github.com/emscripten-core/emsdk.git
         (cd emsdk && ./emsdk install 4.0.21 && ./emsdk activate 4.0.21)
+        make -C mpy-cross CFLAGS_EXTRA=-Wno-error
     - name: Build Webassembly
       run: |
         source ${MPY_DIR}/emsdk/emsdk_env.sh
