@@ -38,6 +38,7 @@ MODULES = emlearn_trees \
 	emlearn_iir_q15 \
 	emlearn_arrayutils \
 	emlearn_linreg \
+	emlearn_plsr \
 	emlearn_cnn_int8 \
 	emlearn_cnn_fp32
 
