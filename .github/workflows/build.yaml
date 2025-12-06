@@ -251,6 +251,7 @@ jobs:
     - name: Build Webassembly
       run: |
         source ${MPY_DIR}/emsdk/emsdk_env.sh
+        make -C ${MPY_DIR}/ports/webassembly submodules
         make webassembly V=1
     - name: Archive dist artifacts
       uses: actions/upload-artifact@v4
