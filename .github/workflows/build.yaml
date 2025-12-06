@@ -241,7 +241,7 @@ jobs:
       with:
         repository: jonnor/micropython
         path: micropython
-        ref: master
+        ref: webassembly-extra-cflags
     - name: Install Python dependencies
       run: pip install -r requirements.txt
     - name: Setup MicroPython
