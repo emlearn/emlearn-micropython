@@ -73,8 +73,9 @@ $(UNIX_MICROPYTHON): $(PORT_DIR)
 unix: $(UNIX_MICROPYTHON)
 
 $(WEBASSEMBLY_MICROPYTHON): $(PORT_DIR)
+	emcc --version
 	mkdir -p $(PORT_DIR)/../webassembly
-	make -C $(MPY_DIR)/ports/webassembly V=1 USER_C_MODULES=$(C_MODULES_SRC_PATH) FROZEN_MANIFEST=$(MANIFEST_PATH) CFLAGS_EXTRA="-Wno-unused-function -Wno-unused-function ${CFLAGS_EXTRA}" -j4
+	make -C $(MPY_DIR)/ports/webassembly VARIANT=standard V=1 USER_C_MODULES=$(C_MODULES_SRC_PATH) FROZEN_MANIFEST=$(MANIFEST_PATH) CFLAGS_EXTRA="-Wno-unused-function -Wno-unused-function ${CFLAGS_EXTRA}" -j4
 	cp $(MPY_DIR)/ports/webassembly/build-standard/micropython.mjs $@
 	cp $(MPY_DIR)/ports/webassembly/build-standard/micropython.wasm dist/ports/webassembly/
 
