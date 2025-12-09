@@ -86,7 +86,7 @@ Install modules and run script
 ```
 export PATH=./:$PATH
 echo which micropython
-curl -o npyfile.py https://github.com/jonnor/micropython-npyfile/raw/refs/heads/master/npyfile.py
+curl -o npyfile.py https://raw.githubusercontent.com/jonnor/micropython-npyfile/refs/heads/master/npyfile.py
 python create_plot.py
 ```
 
