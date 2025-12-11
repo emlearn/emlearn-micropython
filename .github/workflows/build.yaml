@@ -21,9 +21,9 @@ jobs:
         python-version: '3.10'
     - uses: actions/checkout@v4
       with:
-        repository: jonnor/micropython
+        repository: micropython/micropython
         path: micropython
-        ref: v1.26.1-emlearn
+        ref: v1.27.0
     - name: Install Python dependencies
       run: pip install -r requirements.txt
     - name: Setup MicroPython X86
@@ -60,9 +60,9 @@ jobs:
         python-version: '3.10'
     - uses: actions/checkout@v4
       with:
-        repository: jonnor/micropython
+        repository: micropython/micropython
         path: micropython
-        ref: v1.26.1-emlearn
+        ref: v1.27.0
     - name: Install Python dependencies
       run: pip install -r requirements.txt
     - name: Setup MicroPython ARM
@@ -105,9 +105,9 @@ jobs:
         python-version: '3.10'
     - uses: actions/checkout@v4
       with:
-        repository: jonnor/micropython
+        repository: micropython/micropython
         path: micropython
-        ref: v1.26.1-emlearn
+        ref: v1.27.0
     - name: Install Python dependencies
       run: pip install -r requirements.txt
 
@@ -149,9 +149,9 @@ jobs:
         python-version: '3.10'
     - uses: actions/checkout@v4
       with:
-        repository: jonnor/micropython
+        repository: micropython/micropython
         path: micropython
-        ref: v1.26.1-emlearn
+        ref: v1.27.0
     - name: Install Python dependencies
       run: pip install -r requirements.txt
 
@@ -197,9 +197,9 @@ jobs:
         python-version: '3.10'
     - uses: actions/checkout@v4
       with:
-        repository: jonnor/micropython
+        repository: micropython/micropython
         path: micropython
-        ref: v1.26.1-emlearn
+        ref: v1.27.0
     - name: Install Python dependencies
       run: pip install -r requirements.txt
     - name: Setup MicroPython X86
@@ -279,14 +279,23 @@ jobs:
         mkdir -p dist/
         cp -r artifacts/*/* dist/
 
-    - name: Deploy to Github Pages
-      if: "github.ref_name == 'master' || github.ref_type == 'tag'"
+    - name: Deploy to Github Pages (tag/version)
+      if: "github.ref_type == 'tag'"
       uses: peaceiris/actions-gh-pages@v3
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         publish_dir: ./dist
         keep_files: true
         destination_dir: builds/${{ github.ref_name }}
+
+    - name: Deploy to Github Pages (latest)
+      if: "github.ref_type == 'tag'"
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ./dist
+        keep_files: true
+        destination_dir: builds/latest
 
   docs:
 
