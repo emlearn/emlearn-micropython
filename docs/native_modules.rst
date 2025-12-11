@@ -91,7 +91,7 @@ The directory structure is as follows:
     https://emlearn.github.io/emlearn-micropython/builds/$VERSION/$ARCH_$ABI/$MODULE.mpy
 
     where:
-    VERSION=master|0.9.0
+    VERSION=master|0.10.0
     MODULE=emlearn_trees
     ARCH=xtensawin
     ABI=6.3
