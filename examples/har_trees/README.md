@@ -70,7 +70,7 @@ cd emlearn-micropython/examples/har_trees
 
 Install the dependencies
 ```console
-micropython -m mip install https://emlearn.github.io/emlearn-micropython/builds/master/x64_6.3/emlearn_trees.mpy
+micropython -m mip install https://emlearn.github.io/emlearn-micropython/builds/latest/x64_6.3/emlearn_trees.mpy
 
 micropython har_run.py
 ```
@@ -93,7 +93,7 @@ Make sure to have MicroPython installed on device.
 
 Install the dependencies
 ```console
-mpremote mip install https://emlearn.github.io/emlearn-micropython/builds/master/xtensawin_6.3/emlearn_trees.mpy
+mpremote mip install https://emlearn.github.io/emlearn-micropython/builds/latest/xtensawin_6.3/emlearn_trees.mpy
 mpremote mip install github:jonnor/micropython-npyfile
 mpremote mip install github:jonnor/micropython-zipfile
 ```

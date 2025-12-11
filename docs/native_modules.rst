@@ -91,7 +91,7 @@ The directory structure is as follows:
     https://emlearn.github.io/emlearn-micropython/builds/$VERSION/$ARCH_$ABI/$MODULE.mpy
 
     where:
-    VERSION=master|0.10.0
+    VERSION=latest|0.10.0
     MODULE=emlearn_trees
     ARCH=xtensawin
     ABI=6.3
@@ -107,5 +107,5 @@ For example, to install ``emlearn_trees`` for MicroPython 1.25 (ABI 6.3) on ESP3
 
 ::
 
-    mpremote mip install https://emlearn.github.io/emlearn-micropython/builds/master/xtensawin_6.3/emlearn_trees.mpy
+    mpremote mip install https://emlearn.github.io/emlearn-micropython/builds/latest/xtensawin_6.3/emlearn_trees.mpy
 
