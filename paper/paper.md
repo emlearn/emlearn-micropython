@@ -49,7 +49,7 @@ with MicroPython can be inefficient [@plauska_performance_2023; @ionescu_investi
 This also limits the effectiveness of tools that generate Python code, such as m2cgen [@m2cgen].
 
 The library ulab [@ulab] implements efficient numeric computing facilities for MicroPython,
-including the core parts of numpy [@numpy], plus some parts of scipy [@scipy].
+including the core parts of NumPy [@numpy], plus some parts of SciPy [@scipy].
 However, as of 2025, there are no implementations of machine learning algorithms available in ulab.
 
 OpenMV [@OpenMV] is a project for machine-vision/computer-vision applications using high-end microcontrollers.
@@ -76,7 +76,7 @@ The emlearn-micropython software package provides a selection of machine learnin
 along with some functions for digital signal processing.
 The algorithms have been selected based on what is useful and commonly used in embedded systems for processing sensor data.
 The implementations are designed to be compatible with established packages,
-notably scikit-learn [@scikit-learn], Keras [@keras] and scipy [@scipy].
+notably scikit-learn [@scikit-learn], Keras [@keras] and SciPy [@scipy].
 \autoref{table_emlearn_micropython_modules} provides a listing of the provided functionality.
 
 The software is distributed as MicroPython native modules [@micropython_native_module],
