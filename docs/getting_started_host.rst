@@ -62,7 +62,7 @@ This example uses the ``emlearn_trees`` module, so that is what we will install.
 
 .. code-block:: console
 
-    micropython -m mip install https://emlearn.github.io/emlearn-micropython/builds/master/x64_6.3/emlearn_trees.mpy
+    micropython -m mip install https://emlearn.github.io/emlearn-micropython/builds/latest/x64_6.3/emlearn_trees.mpy
 
 Create model in Python
 ===========================

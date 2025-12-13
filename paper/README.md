@@ -50,8 +50,8 @@ NOTE: not supported on Mac OS (due to https://github.com/micropython/micropython
 Install the modules
 ```
 micropython -m mip install github:jonnor/micropython-npyfile
-micropython -m mip install https://emlearn.github.io/emlearn-micropython/builds/master/x64_6.3/emlearn_trees.mpy
-micropython -m mip install https://emlearn.github.io/emlearn-micropython/builds/master/x64_6.3/emlearn_fft.mpy
+micropython -m mip install https://emlearn.github.io/emlearn-micropython/builds/latest/x64_6.3/emlearn_trees.mpy
+micropython -m mip install https://emlearn.github.io/emlearn-micropython/builds/latest/x64_6.3/emlearn_fft.mpy
 ```
 
 Run the script
@@ -69,11 +69,11 @@ This is the only method that works on Mac OS at the moment.
 
 Alternative 1: Download prebuilt binary (Mac OS)
 ```
-curl -o micropython https://emlearn.github.io/emlearn-micropython/builds/master/ports/macos/micropython
+curl -o micropython https://emlearn.github.io/emlearn-micropython/builds/latest/ports/macos/micropython
 ```
 Alternative 1: Download prebuilt binary (Linux)
 ```
-curl -o micropython https://emlearn.github.io/emlearn-micropython/builds/master/ports/linux/micropython
+curl -o micropython https://emlearn.github.io/emlearn-micropython/builds/latest/ports/linux/micropython
 ```
 
 Alternative 2: Use locally built micropython Unix port. Must first be built per [developing.md](https://github.com/emlearn/emlearn-micropython/blob/master/docs/developing.md#run-tests-on-pc-using-external-modules-build).
@@ -86,7 +86,7 @@ Install modules and run script
 ```
 export PATH=./:$PATH
 echo which micropython
-curl -o npyfile.py https://github.com/jonnor/micropython-npyfile/raw/refs/heads/master/npyfile.py
+curl -o npyfile.py https://raw.githubusercontent.com/jonnor/micropython-npyfile/refs/heads/master/npyfile.py
 python create_plot.py
 ```
 

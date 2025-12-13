@@ -27,7 +27,7 @@ PORT_BUILD_DIR=$(MPY_DIR)/ports/$(PORT)/build-$(BOARD)
 PORT_DIST_DIR=./dist/ports/$(PORT)/$(BOARD)
 
 UNIX_MICROPYTHON = ./dist/ports/unix/micropython
-
+WEBASSEMBLY_MICROPYTHON = ./dist/ports/webassembly/micropython.mjs
 
 # List of modules
 MODULES = emlearn_trees \
@@ -71,6 +71,17 @@ $(UNIX_MICROPYTHON): $(PORT_DIR)
 	cp $(MPY_DIR)/ports/unix/build-standard/micropython $@
 
 unix: $(UNIX_MICROPYTHON)
+
+$(WEBASSEMBLY_MICROPYTHON): $(PORT_DIR)
+	emcc --version
+	mkdir -p $(PORT_DIR)/../webassembly
+	make -C $(MPY_DIR)/ports/webassembly VARIANT=standard V=1 USER_C_MODULES=$(C_MODULES_SRC_PATH) FROZEN_MANIFEST=$(MANIFEST_PATH) CFLAGS_EXTRA="-Wno-unused-function -Wno-unused-function ${CFLAGS_EXTRA}" -j4
+	cp $(MPY_DIR)/ports/webassembly/build-standard/micropython.mjs $@
+	cp $(MPY_DIR)/ports/webassembly/build-standard/micropython.wasm dist/ports/webassembly/
+
+
+webassembly: $(WEBASSEMBLY_MICROPYTHON)
+
 
 check_unix: $(UNIX_MICROPYTHON)
 	$(UNIX_MICROPYTHON) tests/test_all.py test_iir,test_fft,test_arrayutils

@@ -30,8 +30,8 @@ jobs:
     - name: Install MicroPython modules
       run: |
         micropython -m mip install github:jonnor/micropython-npyfile
-        micropython -m mip install https://emlearn.github.io/emlearn-micropython/builds/master/x64_6.3/emlearn_trees.mpy
-        micropython -m mip install https://emlearn.github.io/emlearn-micropython/builds/master/x64_6.3/emlearn_fft.mpy
+        micropython -m mip install https://emlearn.github.io/emlearn-micropython/builds/latest/x64_6.3/emlearn_trees.mpy
+        micropython -m mip install https://emlearn.github.io/emlearn-micropython/builds/latest/x64_6.3/emlearn_fft.mpy
     - name: Run example
       working-directory: paper
       run: python create_plot.py

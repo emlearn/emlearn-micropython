@@ -43,13 +43,13 @@ For ESP32 use the ``xtensawin`` architecture.
 
 .. code-block:: console
 
-    mpremote mip install https://emlearn.github.io/emlearn-micropython/builds/master/xtensawin_6.3/emlearn_trees.mpy
+    mpremote mip install https://emlearn.github.io/emlearn-micropython/builds/latest/xtensawin_6.3/emlearn_trees.mpy
 
 For ARM Cortex M4F/M33/M7 etc use the ``armv7emsp`` architecture.
 
 .. code-block:: console
 
-    mpremote mip install https://emlearn.github.io/emlearn-micropython/builds/master/armv7emsp_6.3/emlearn_trees.mpy
+    mpremote mip install https://emlearn.github.io/emlearn-micropython/builds/latest/armv7emsp_6.3/emlearn_trees.mpy
 
 For more details about architectures for native modules, see `MicroPython mpyfiles documentation <https://docs.micropython.org/en/latest/reference/mpyfiles.html#versioning-and-compatibility-of-mpy-files>`_
 
