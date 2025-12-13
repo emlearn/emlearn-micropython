@@ -18,9 +18,10 @@ Builds on [emlearn](https://emlearn.org), a C99 library for Machine Learning on 
 **Minimally useful**
 
 - Initial set of Machine Learning and Digital Signal Processing modules available, including example projects.
-- Supports most MicroPython ports using runtime installable native modules
+- Supports most MicroPython ports using runtime installable native modules (.mpy files)
+- Can also be included into a custom MicroPython build using external C modules
 - Primarily tested on `x64` (Unix port) and `xtensawin` (ESP32/ESP32-S3/etc).
-- Some devices only supported using external, notably armv6m/Cortex-M0/RP2040
+
 
 ## Features
 
