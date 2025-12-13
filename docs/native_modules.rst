@@ -20,7 +20,7 @@ The correct .mpy files to use depends on the CPU architecture of your microcontr
 Information is also available in the official documentation: `MicroPython: .mpy files <https://docs.micropython.org/en/latest/reference/mpyfiles.html#versioning-and-compatibility-of-mpy-files>`_.
 
 The following are **supported** as native modules at this time:
-``x64``, ``armv7m``, ``arm6vm`, ``armv7emsp``, ``xtensawin``, ``rv32imc``.
+``x64``, ``armv7m``, ``arm6vm``, ``armv7emsp``, ``xtensawin``, ``rv32imc``.
 
 The following are **not supported**: ``xtensa``, ``x86``.
 For these you will instead need to use :ref:`external_modules`.

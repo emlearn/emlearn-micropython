@@ -37,6 +37,7 @@ You need a git checkout of emlearn-micropython.
 For example as a git submodule in your project.
 
 ::
+
     git clone https://github.com/emlearn/emlearn-micropython.git
 
 
@@ -56,6 +57,7 @@ Example build
 For platforms that use a cmake-based build system.
 
 ::
+
 	make USER_C_MODULES=./emlearn-micropython/src/micropython.cmake \
         FROZEN_MANIFEST=./emlearn-micropython/src/manifest.py \
         CFLAGS_EXTRA='-Wno-unused-function -Wno-unused-function'
