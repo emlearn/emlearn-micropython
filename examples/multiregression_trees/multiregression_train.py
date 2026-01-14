@@ -9,6 +9,7 @@ from sklearn.metrics import mean_squared_error, r2_score, mean_absolute_percenta
 import urllib.request
 import zipfile
 import os.path
+import tempfile
 
 from sklearn.multioutput import MultiOutputRegressor
 
@@ -76,6 +77,27 @@ def convert_multiregressor(multi, out_dir, format=None, prefix='regressor', **kw
         converted.save(file=p, **kwargs)
 
 
+def predict(data, model_dir):
+    """
+    Make predictions using MicroPython model
+    """
+    
+    with tempfile.TemporaryDirectory() as temp_dir:
+        #temp_dir = d.name
+        temp_dir = '' # XXX: temp
+
+        input_path = os.path.join(temp_dir, 'input.npy')
+        output_path = os.path.join(temp_dir, 'output.npy')
+
+        arr = np.ascontiguousarray(data.values).astype(np.int16)
+        assert len(arr.shape) == 2
+        np.save(input_path, arr, allow_pickle=False)
+
+        #subprocess.check_output()    
+
+        out = np.load(output_path)
+        return outs
+
 
 def main():
 
@@ -102,12 +124,27 @@ def main():
 
     print("Performance Metrics:")
     print("-" * 60)
-    y_pred = pd.DataFrame(pipeline.predict(X_test), columns=y_train.columns)
+
+
+    y_pred_orig = pd.DataFrame(pipeline.predict(X_test), columns=y_train.columns)
+
+
+    X_test_scaled = pipeline.named_steps['scaler'].transform(X_test)
+
+    print(X_test.head())
+
+    print(y_pred_orig.head())
+
+    y_pred_converted = pd.DataFrame(predict(X_test_scaled, model_dir), columns=y_train.columns)
+
+    y_pred = y_pred_converted
+
     for i, target in enumerate(y.columns):
+
         rmse = np.sqrt(mean_squared_error(y_test[target], y_pred[target]))
         r2 = r2_score(y_test[target], y_pred[target])
         mape = mean_absolute_percentage_error(y_test[target], y_pred[target]) * 100
-        
+
         print(f"{target:12} | RMSE: {rmse:8.3f} | MAPE: {mape:6.2f}% | R²: {r2:6.3f}")
 
 if __name__ == '__main__':

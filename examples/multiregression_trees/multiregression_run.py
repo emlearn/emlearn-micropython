@@ -23,7 +23,7 @@ class MultiRegressor():
     def load(self, path):
         """Load a directory of model files"""
 
-        for filename in os.listdir(path):
+        for filename in sorted(os.listdir(path)):
             if not filename.endswith('.csv'):
                 print('Warning: Ignoring unknown file in model directory', filename)
                 continue
@@ -41,7 +41,7 @@ class MultiRegressor():
     def predict(self, features : array.array, outputs : array.array):
         assert len(self.models), 'no models'
 
-        for i, model in self.models():
+        for i, model in enumerate(self.models):
             model.predict(features, self._output)
             outputs[i] = self._output[0]
 
@@ -54,14 +54,14 @@ def main():
     outputs = array.array('f', [0.0 for _ in range(len(model.models))])
 
     import npyfile
-    (n_samples, n_features), data = npyfile.load('data.npy')
+    (n_samples, n_features), data = npyfile.load('input.npy')
 
     # TODO: write output to a file
     for row in range(n_samples):
         offset = row*n_features
         f = data[offset:offset+n_features]
         model.predict(f, outputs)
-
+        print(f, outputs)
     
 
 if __name__ == '__main__':
