@@ -48,10 +48,10 @@ class MultiRegressor():
 def main():
     
     # FIXME: read paths from sys.argv
-    model = MultiRegressor()
+    model = MultiRegressor(max_nodes=10000)
     model.load('models')
 
-    outputs = array.array('f', [0.0 for _ in range(model.models)])  
+    outputs = array.array('f', [0.0 for _ in range(len(model.models))])
 
     import npyfile
     (n_samples, n_features), data = npyfile.load('data.npy')
