@@ -6,7 +6,7 @@
 #include "py/runtime.h"
 #endif
 
-#define EML_TREES_REGRESSION_ENABLE 0
+#define EML_TREES_REGRESSION_ENABLE 1
 #include <eml_trees.h>
 
 #include <string.h>
@@ -70,7 +70,8 @@ static mp_obj_t builder_new(mp_obj_t trees_obj, mp_obj_t nodes_obj, mp_obj_t lea
     // create storage for trees
     EmlTreesNode *nodes = m_new(EmlTreesNode, self->max_nodes);
     int32_t *roots = m_new(int32_t, self->max_trees);
-    uint8_t *leaves = m_new(uint8_t, self->max_leaves);
+    // NOTE: allocating worst-case for leaf_bits=32
+    uint8_t *leaves = m_new(uint8_t, self->max_leaves*4);
 
 #if EMLEARN_MICROPYTHON_DEBUG
     mp_printf(&mp_plat_print, "emltrees nodes=%p roots=%p builder=%p\n", nodes, roots, self);
@@ -87,7 +88,7 @@ static mp_obj_t builder_new(mp_obj_t trees_obj, mp_obj_t nodes_obj, mp_obj_t lea
     self->trees.leaves = leaves;
 
     // NOTE: these are set later, in setdata()
-    self->trees.n_classes = 0;
+    self->trees.n_classes = -1;
     self->trees.n_features = 0;
 
     return MP_OBJ_FROM_PTR(o);
@@ -103,7 +104,7 @@ static mp_obj_t builder_del(mp_obj_t trees_obj) {
     // free allocated data
     m_del(EmlTreesNode, self->trees.nodes, self->max_nodes);
     m_del(int32_t, self->trees.tree_roots, self->max_nodes);
-    m_del(uint8_t, self->trees.leaves, self->max_leaves);
+    m_del(uint8_t, self->trees.leaves, self->max_leaves*4);
 
 #if EMLEARN_MICROPYTHON_DEBUG
     mp_printf(&mp_plat_print, "emltrees del \n");
@@ -217,12 +218,16 @@ static mp_obj_t builder_get_outputs(mp_obj_t self_obj) {
     mp_obj_trees_builder_t *o = MP_OBJ_TO_PTR(self_obj);
     EmlTreesBuilder *self = &o->builder;
 
-    const int n_classes = self->trees.n_classes;
-    if (n_classes == 0) {
+    int n_outputs = self->trees.n_classes;
+    if (n_outputs < 0) {
         mp_raise_ValueError(MP_ERROR_TEXT("model not loaded"));
     }
+    if (n_outputs == 0 && self->trees.leaf_bits == 32) {
+        // regression
+        n_outputs = 1;
+    }
 
-    return mp_obj_new_int(n_classes);
+    return mp_obj_new_int(n_outputs);
 }
 static MP_DEFINE_CONST_FUN_OBJ_1(builder_get_outputs_obj, builder_get_outputs);
 
@@ -254,7 +259,7 @@ static mp_obj_t builder_predict(mp_obj_t self_obj, mp_obj_t features_obj, mp_obj
     );
 #endif
 
-    if (n_features == 0 || n_outputs == 0) {        
+    if (n_features == 0 || n_outputs < 0) {
         mp_raise_ValueError(MP_ERROR_TEXT("model not loaded"));
     }
 
@@ -269,11 +274,17 @@ static mp_obj_t builder_predict(mp_obj_t self_obj, mp_obj_t features_obj, mp_obj
 
     // call model
     // NOTE: also handles checking of input and output lengths
-    const EmlError err = \
-        eml_trees_predict_proba(&self->trees, features, n_features, output_buffer, output_length);
+    EmlError err;
+    if (self->trees.leaf_bits == 32) {
+        err = eml_trees_regress(&self->trees, features, n_features, \
+            output_buffer, output_length);
+    } else {
+        err = eml_trees_predict_proba(&self->trees, features, n_features, \
+            output_buffer, output_length);
+    }
 
     if (err != EmlOk) {
-        mp_raise_msg(&mp_type_RuntimeError, MP_ERROR_TEXT("eml_trees_predict_proba error"));
+        mp_raise_msg(&mp_type_RuntimeError, MP_ERROR_TEXT("eml_trees_predict error"));
     }
 
     return mp_const_none;

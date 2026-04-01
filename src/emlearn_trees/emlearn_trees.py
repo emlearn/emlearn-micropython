@@ -47,7 +47,7 @@ def load_model(builder, f):
             n_features = int(tok[1])
         elif kind == 'c':
             n_classes = int(tok[1])
-        elif kind == 'lf':
+        elif kind == 'lb':
             leaf_bits = int(tok[1])
         else:        
             # unknown value
