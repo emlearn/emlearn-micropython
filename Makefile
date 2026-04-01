@@ -16,10 +16,9 @@ C_MODULES_SRC_PATH = $(abspath ./src)
 
 ifeq ($(PORT),unix)
     MANIFEST_PATH=$(abspath ./src/manifest_unix.py)
-else
-    MANIFEST_PATH=$(abspath ./src/manifest.py)
 endif
 
+WEBASSEMBLY_MANIFEST_PATH=$(abspath ./src/manifest_webassembly.py)
 
 MODULES_PATH = ./dist/$(ARCH)_$(MPY_ABI_VERSION)
 PORT_DIR = ./dist/ports/$(PORT)
@@ -75,9 +74,9 @@ unix: $(UNIX_MICROPYTHON)
 $(WEBASSEMBLY_MICROPYTHON): $(PORT_DIR)
 	emcc --version
 	mkdir -p $(PORT_DIR)/../webassembly
-	make -C $(MPY_DIR)/ports/webassembly VARIANT=standard V=1 USER_C_MODULES=$(C_MODULES_SRC_PATH) FROZEN_MANIFEST=$(MANIFEST_PATH) CFLAGS_EXTRA="-Wno-unused-function -Wno-unused-function ${CFLAGS_EXTRA}" -j4
-	cp $(MPY_DIR)/ports/webassembly/build-standard/micropython.mjs $@
-	cp $(MPY_DIR)/ports/webassembly/build-standard/micropython.wasm dist/ports/webassembly/
+	make -C $(MPY_DIR)/ports/webassembly VARIANT=pyscript V=1 USER_C_MODULES=$(C_MODULES_SRC_PATH) FROZEN_MANIFEST=$(WEBASSEMBLY_MANIFEST_PATH) CFLAGS_EXTRA="-Wno-unused-function -Wno-unused-function ${CFLAGS_EXTRA}" -j4
+	cp $(MPY_DIR)/ports/webassembly/build-pyscript/micropython.mjs $@
+	cp $(MPY_DIR)/ports/webassembly/build-pyscript/micropython.wasm dist/ports/webassembly/
 
 
 webassembly: $(WEBASSEMBLY_MICROPYTHON)
