@@ -28,6 +28,7 @@ TEST_MODULES=[
     'test_linreg',
     'test_linreg_california',
     'test_logreg',
+    'test_logreg_realdata',
     'test_neighbors',
     'test_trees',
 ]
