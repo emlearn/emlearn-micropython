@@ -27,6 +27,7 @@ TEST_MODULES=[
     'test_kmeans',
     'test_linreg',
     'test_linreg_california',
+    'test_logreg',
     'test_neighbors',
     'test_trees',
 ]

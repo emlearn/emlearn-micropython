@@ -37,6 +37,7 @@ MODULES = emlearn_trees \
 	emlearn_iir_q15 \
 	emlearn_arrayutils \
 	emlearn_linreg \
+	emlearn_logreg \
 	emlearn_cnn_int8 \
 	emlearn_cnn_fp32
 
@@ -105,6 +106,7 @@ clean:
 	make -C src/emlearn_trees/ ARCH=$(ARCH) MPY_DIR=$(MPY_DIR_ABS) V=1 clean
 	make -C src/emlearn_neighbors/ ARCH=$(ARCH) MPY_DIR=$(MPY_DIR_ABS) V=1 clean
 	make -C src/emlearn_iir/ ARCH=$(ARCH) MPY_DIR=$(MPY_DIR_ABS) V=1 clean
+	make -C src/emlearn_logreg/ ARCH=$(ARCH) MPY_DIR=$(MPY_DIR_ABS) V=1 clean
 	rm -rf ./dist
 
 RELEASE_NAME = emlearn-micropython-$(VERSION)

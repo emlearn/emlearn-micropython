@@ -5,5 +5,6 @@
 module("emlearn_trees.py", base_path='./emlearn_trees')
 module("emlearn_fft.py", base_path='./emlearn_fft')
 module("emlearn_linreg.py", base_path='./emlearn_linreg')
+module("logreg.py", base_path='./emlearn_logreg')
 
 #include("$(PORT_DIR)/boards/manifest.py")
