@@ -31,6 +31,10 @@ TEST_MODULES=[
     'test_logreg_cancer',
     'test_neighbors',
     'test_trees',
+    'test_extratrees',
+    'test_extratrees_xor',
+    'test_extratrees_cancer',
+    'test_extratrees_wine',
 ]
 
 def main():
