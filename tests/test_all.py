@@ -26,7 +26,7 @@ TEST_MODULES=[
     'test_iir_q15',
     'test_kmeans',
     'test_linreg',
-    #'test_linreg_california',
+    'test_linreg_california',
     'test_neighbors',
     'test_trees',
 ]
