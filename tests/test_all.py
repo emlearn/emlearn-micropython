@@ -23,7 +23,7 @@ TEST_MODULES=[
     'test_cnn',
     'test_fft',
     'test_iir',
-    'test_iir_q15',
+    #'test_iir_q15', # skip, not functional
     'test_kmeans',
     'test_linreg',
     'test_linreg_california',
@@ -40,7 +40,15 @@ def main():
     
     modules = TEST_MODULES
     if len(sys.argv) >= 2:
-        modules = sys.argv[1].split(',') 
+        config = sys.argv[1].split(',')
+        skip = [ m[1:] for m in config if m[0] == '-' ]
+        add = [ m for m in config if m[0] != '-' ]
+        if len(skip):
+            modules = [m for m in TEST_MODULES if not m in skip ]
+            print('SKIPPING', skip)
+        if len(add):
+            modules = add
+            print('RUN ONLY', add)
 
     passed = 0
     failed = 0

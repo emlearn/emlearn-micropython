@@ -50,32 +50,82 @@ emlearn_cnn_int8_CONFIG = CONFIG=int8
 emlearn_cnn_fp32_SRC = src/tinymaix_cnn
 emlearn_cnn_fp32_CONFIG = CONFIG=fp32
 
+# Source directories for each module
+emlearn_trees_SRC = src/emlearn_trees
+emlearn_neighbors_SRC = src/emlearn_neighbors
+emlearn_iir_SRC = src/emlearn_iir
+emlearn_fft_SRC = src/emlearn_fft
+emlearn_kmeans_SRC = src/emlearn_kmeans
+emlearn_iir_q15_SRC = src/emlearn_iir_q15
+emlearn_arrayutils_SRC = src/emlearn_arrayutils
+emlearn_linreg_SRC = src/emlearn_linreg
+emlearn_logreg_SRC = src/emlearn_logreg
+
+# Dependencies for each .mpy file: .c, .h, .py files, and Makefile
+$(foreach mod,$(MODULES),\
+  $(eval $(MODULES_PATH)/$(mod).mpy: \
+    $(wildcard $($(mod)_SRC)/*.c) \
+    $(wildcard $($(mod)_SRC)/*.h) \
+    $(wildcard $($(mod)_SRC)/*.py) \
+    $($(mod)_SRC)/Makefile))
+
+# CNN modules share the same build directory, so they must build sequentially
+# Ensure int8 builds after fp32 to avoid race conditions
+$(MODULES_PATH)/emlearn_cnn_int8.mpy: $(MODULES_PATH)/emlearn_cnn_fp32.mpy
+
 # Generate list of .mpy files
 MODULE_MPYS = $(addprefix $(MODULES_PATH)/,$(addsuffix .mpy,$(MODULES)))
 
-# Build dynamic native module
-# defaults to
+# Build dynamic native module (without forced clean)
 $(MODULES_PATH)/%.mpy:
-	make -C $(or $($(*)_SRC),src/$*) \
-		ARCH=$(ARCH) MPY_DIR=$(MPY_DIR_ABS) CFLAGS_EXTRA=${CFLAGS_EXTRA} \
-		V=1 $($(*)_CONFIG) clean dist
+	$(MAKE) -C $(or $($(*)_SRC),src/$*) \
+		ARCH=$(ARCH) MPY_DIR=$(MPY_DIR_ABS) CFLAGS_EXTRA=$(CFLAGS_EXTRA) \
+		V=1 $($(*)_CONFIG) dist
 
-check_unix_natmod: $(MODULE_MPYS)
+# CNN modules need clean build due to shared build directory
+# They must also build sequentially (fp32 first, then int8)
+$(MODULES_PATH)/emlearn_cnn_fp32.mpy:
+	$(MAKE) -C src/tinymaix_cnn \
+		ARCH=$(ARCH) MPY_DIR=$(MPY_DIR_ABS) CFLAGS_EXTRA=$(CFLAGS_EXTRA) \
+		V=1 CONFIG=fp32 clean
+	$(MAKE) -C src/tinymaix_cnn \
+		ARCH=$(ARCH) MPY_DIR=$(MPY_DIR_ABS) CFLAGS_EXTRA=$(CFLAGS_EXTRA) \
+		V=1 CONFIG=fp32 dist
+
+$(MODULES_PATH)/emlearn_cnn_int8.mpy: $(MODULES_PATH)/emlearn_cnn_fp32.mpy
+	$(MAKE) -C src/tinymaix_cnn \
+		ARCH=$(ARCH) MPY_DIR=$(MPY_DIR_ABS) CFLAGS_EXTRA=$(CFLAGS_EXTRA) \
+		V=1 CONFIG=int8 clean
+	$(MAKE) -C src/tinymaix_cnn \
+		ARCH=$(ARCH) MPY_DIR=$(MPY_DIR_ABS) CFLAGS_EXTRA=$(CFLAGS_EXTRA) \
+		V=1 CONFIG=int8 dist
+
+# Collect test files for dependency tracking
+TEST_PY := $(wildcard tests/test_*.py)
+
+check_unix_natmod: $(MODULE_MPYS) $(TEST_PY)
 	MICROPYPATH=$(MODULES_PATH) $(MICROPYTHON_BIN) tests/test_all.py
 
 $(PORT_DIR):
 	mkdir -p $@
 
-$(UNIX_MICROPYTHON): $(PORT_DIR)
-	make -C $(MPY_DIR)/ports/unix V=1 MICROPY_PY_FFI=0 USER_C_MODULES=$(C_MODULES_SRC_PATH) FROZEN_MANIFEST=$(MANIFEST_PATH) CFLAGS_EXTRA="-Wno-unused-function -Wno-unused-function ${CFLAGS_EXTRA}" -j4
+# Collect all source and build files under src/ for port builds
+SRC_C := $(shell find src -name "*.c" 2>/dev/null)
+SRC_H := $(shell find src -name "*.h" 2>/dev/null)
+SRC_PY := $(shell find src -name "*.py" 2>/dev/null)
+SRC_BUILD := src/micropython.cmake src/dynmodule.mk $(wildcard src/*/micropython.mk)
+SRC_ALL = $(SRC_C) $(SRC_H) $(SRC_PY) $(SRC_BUILD)
+
+$(UNIX_MICROPYTHON): $(PORT_DIR) $(SRC_ALL) src/manifest_unix.py
+	$(MAKE) -C $(MPY_DIR)/ports/unix V=1 MICROPY_PY_FFI=0 USER_C_MODULES=$(C_MODULES_SRC_PATH) FROZEN_MANIFEST=$(MANIFEST_PATH) CFLAGS_EXTRA="-Wno-unused-function -Wno-unused-function $(CFLAGS_EXTRA)" -j4
 	cp $(MPY_DIR)/ports/unix/build-standard/micropython $@
 
 unix: $(UNIX_MICROPYTHON)
 
-$(WEBASSEMBLY_MICROPYTHON): $(PORT_DIR)
+$(WEBASSEMBLY_MICROPYTHON): $(PORT_DIR) $(SRC_ALL) src/manifest_webassembly.py
 	emcc --version
 	mkdir -p $(PORT_DIR)/../webassembly
-	make -C $(MPY_DIR)/ports/webassembly VARIANT=pyscript V=1 USER_C_MODULES=$(C_MODULES_SRC_PATH) FROZEN_MANIFEST=$(WEBASSEMBLY_MANIFEST_PATH) CFLAGS_EXTRA="-Wno-unused-function -Wno-unused-function ${CFLAGS_EXTRA}" -j4
+	$(MAKE) -C $(MPY_DIR)/ports/webassembly VARIANT=pyscript V=1 USER_C_MODULES=$(C_MODULES_SRC_PATH) FROZEN_MANIFEST=$(WEBASSEMBLY_MANIFEST_PATH) CFLAGS_EXTRA="-Wno-unused-function -Wno-unused-function $(CFLAGS_EXTRA)" -j4
 	cp $(MPY_DIR)/ports/webassembly/build-pyscript/micropython.mjs $@
 	cp $(MPY_DIR)/ports/webassembly/build-pyscript/micropython.wasm dist/ports/webassembly/
 
@@ -83,18 +133,17 @@ $(WEBASSEMBLY_MICROPYTHON): $(PORT_DIR)
 webassembly: $(WEBASSEMBLY_MICROPYTHON)
 
 
-check_unix: $(UNIX_MICROPYTHON)
-	$(UNIX_MICROPYTHON) tests/test_all.py test_iir,test_fft,test_arrayutils,test_linreg,test_logreg
-	# TODO: enable more modules
+check_unix: $(UNIX_MICROPYTHON) $(TEST_PY)
+	$(UNIX_MICROPYTHON) tests/test_all.py -test_cnn
 
-rp2: $(PORT_DIR)
-	make -C $(MPY_DIR)/ports/rp2 V=1 USER_C_MODULES=$(C_MODULES_SRC_PATH)/micropython.cmake FROZEN_MANIFEST=$(MANIFEST_PATH) CFLAGS_EXTRA='-Wno-unused-function -Wno-unused-function' -j4
+rp2: $(PORT_DIR) $(SRC_ALL) src/manifest_unix.py
+	$(MAKE) -C $(MPY_DIR)/ports/rp2 V=1 USER_C_MODULES=$(C_MODULES_SRC_PATH)/micropython.cmake FROZEN_MANIFEST=$(MANIFEST_PATH) CFLAGS_EXTRA='-Wno-unused-function -Wno-unused-function' -j4
 	mkdir -p ./dist/ports/rp2/RPI_PICO
 	cp -r $(MPY_DIR)/ports/rp2/build-RPI_PICO/firmware* ./dist/ports/rp2/RPI_PICO/
 
 
-extmod:
-	make -C $(MPY_DIR)/ports/esp32 V=1 BOARD=$(BOARD) USER_C_MODULES=$(C_MODULES_SRC_PATH)/micropython.cmake FROZEN_MANIFEST=$(MANIFEST_PATH) CFLAGS_EXTRA='-Wno-unused-function -Wno-unused-function' -j4
+extmod: $(SRC_ALL) src/manifest_unix.py
+	$(MAKE) -C $(MPY_DIR)/ports/esp32 V=1 BOARD=$(BOARD) USER_C_MODULES=$(C_MODULES_SRC_PATH)/micropython.cmake FROZEN_MANIFEST=$(MANIFEST_PATH) CFLAGS_EXTRA='-Wno-unused-function -Wno-unused-function' -j4
 	mkdir -p $(PORT_DIST_DIR)
 	cp -r $(PORT_BUILD_DIR)/firmware* $(PORT_DIST_DIR)
 	cp -r $(PORT_BUILD_DIR)/micropython* $(PORT_DIST_DIR)
