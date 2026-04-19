@@ -69,6 +69,10 @@ $(foreach mod,$(MODULES),\
     $(wildcard $($(mod)_SRC)/*.py) \
     $($(mod)_SRC)/Makefile))
 
+# CNN modules share the same build directory, so they must build sequentially
+# Ensure int8 builds after fp32 to avoid race conditions
+$(MODULES_PATH)/emlearn_cnn_int8.mpy: $(MODULES_PATH)/emlearn_cnn_fp32.mpy
+
 # Generate list of .mpy files
 MODULE_MPYS = $(addprefix $(MODULES_PATH)/,$(addsuffix .mpy,$(MODULES)))
 
@@ -77,6 +81,24 @@ $(MODULES_PATH)/%.mpy:
 	$(MAKE) -C $(or $($(*)_SRC),src/$*) \
 		ARCH=$(ARCH) MPY_DIR=$(MPY_DIR_ABS) CFLAGS_EXTRA=$(CFLAGS_EXTRA) \
 		V=1 $($(*)_CONFIG) dist
+
+# CNN modules need clean build due to shared build directory
+# They must also build sequentially (fp32 first, then int8)
+$(MODULES_PATH)/emlearn_cnn_fp32.mpy:
+	$(MAKE) -C src/tinymaix_cnn \
+		ARCH=$(ARCH) MPY_DIR=$(MPY_DIR_ABS) CFLAGS_EXTRA=$(CFLAGS_EXTRA) \
+		V=1 CONFIG=fp32 clean
+	$(MAKE) -C src/tinymaix_cnn \
+		ARCH=$(ARCH) MPY_DIR=$(MPY_DIR_ABS) CFLAGS_EXTRA=$(CFLAGS_EXTRA) \
+		V=1 CONFIG=fp32 dist
+
+$(MODULES_PATH)/emlearn_cnn_int8.mpy: $(MODULES_PATH)/emlearn_cnn_fp32.mpy
+	$(MAKE) -C src/tinymaix_cnn \
+		ARCH=$(ARCH) MPY_DIR=$(MPY_DIR_ABS) CFLAGS_EXTRA=$(CFLAGS_EXTRA) \
+		V=1 CONFIG=int8 clean
+	$(MAKE) -C src/tinymaix_cnn \
+		ARCH=$(ARCH) MPY_DIR=$(MPY_DIR_ABS) CFLAGS_EXTRA=$(CFLAGS_EXTRA) \
+		V=1 CONFIG=int8 dist
 
 # Collect test files for dependency tracking
 TEST_PY := $(wildcard tests/test_*.py)
