@@ -4,6 +4,7 @@ include("$(PORT_DIR)/variants/manifest.py")
 # emlearn .py modules
 module("emlearn_trees.py", base_path='./emlearn_trees')
 module("emlearn_fft.py", base_path='./emlearn_fft')
+module("emlearn_linreg.py", base_path='./emlearn_linreg')
 
 # The following are expected by pyscript
 # Ref https://github.com/micropython/micropython/blob/master/ports/webassembly/variants/pyscript/manifest.py
