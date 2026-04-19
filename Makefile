@@ -78,7 +78,10 @@ $(MODULES_PATH)/%.mpy:
 		ARCH=$(ARCH) MPY_DIR=$(MPY_DIR_ABS) CFLAGS_EXTRA=$(CFLAGS_EXTRA) \
 		V=1 $($(*)_CONFIG) dist
 
-check_unix_natmod: $(MODULE_MPYS)
+# Collect test files for dependency tracking
+TEST_PY := $(wildcard tests/test_*.py)
+
+check_unix_natmod: $(MODULE_MPYS) $(TEST_PY)
 	MICROPYPATH=$(MODULES_PATH) $(MICROPYTHON_BIN) tests/test_all.py
 
 $(PORT_DIR):
@@ -108,7 +111,7 @@ $(WEBASSEMBLY_MICROPYTHON): $(PORT_DIR) $(SRC_ALL) src/manifest_webassembly.py
 webassembly: $(WEBASSEMBLY_MICROPYTHON)
 
 
-check_unix: $(UNIX_MICROPYTHON)
+check_unix: $(UNIX_MICROPYTHON) $(TEST_PY)
 	$(UNIX_MICROPYTHON) tests/test_all.py test_iir,test_fft,test_arrayutils,test_linreg,test_logreg
 	# TODO: enable more modules
 
