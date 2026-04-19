@@ -313,36 +313,53 @@ static mp_obj_t logreg_model_set_weights(mp_obj_t self_obj, mp_obj_t weights_obj
 }
 static MP_DEFINE_CONST_FUN_OBJ_2(logreg_model_set_weights_obj, logreg_model_set_weights);
 
-static mp_obj_t logreg_model_get_bias(mp_obj_t self_obj) {
+static mp_obj_t logreg_model_get_bias(mp_obj_t self_obj, mp_obj_t out_obj) {
     mp_obj_logreg_model_t *o = MP_OBJ_TO_PTR(self_obj);
     logreg_model_t *self = &o->model;
 
-    mp_obj_t bias_obj = mp_obj_new_bytearray_by_ref(sizeof(float) * self->n_classes, self->biases);
-#if MICROPY_ENABLE_DYNRUNTIME
-    mp_obj_array_t *arr = MP_OBJ_TO_PTR(bias_obj);
-    arr->typecode = 'f';
-#else
-    ((mp_obj_base_t *)MP_OBJ_TO_PTR(bias_obj))->type = &mp_type_bytearray;
-#endif
-    return bias_obj;
+    mp_buffer_info_t bufinfo;
+    mp_get_buffer_raise(out_obj, &bufinfo, MP_BUFFER_WRITE);
+    if (bufinfo.typecode != 'f') {
+        mp_raise_ValueError(MP_ERROR_TEXT("expecting float32 array"));
+    }
+    const size_t n_out = bufinfo.len / sizeof(float);
+    if (n_out != self->n_classes) {
+        mp_raise_ValueError(MP_ERROR_TEXT("bias buffer wrong length"));
+    }
+
+    float *out = bufinfo.buf;
+    memcpy(out, self->biases, sizeof(float) * self->n_classes);
+
+    return mp_const_none;
 }
-static MP_DEFINE_CONST_FUN_OBJ_1(logreg_model_get_bias_obj, logreg_model_get_bias);
+static MP_DEFINE_CONST_FUN_OBJ_2(logreg_model_get_bias_obj, logreg_model_get_bias);
 
 static mp_obj_t logreg_model_set_bias(mp_obj_t self_obj, mp_obj_t bias_obj) {
     mp_obj_logreg_model_t *o = MP_OBJ_TO_PTR(self_obj);
     logreg_model_t *self = &o->model;
 
     mp_buffer_info_t bufinfo;
-    mp_get_buffer_raise(bias_obj, &bufinfo, MP_BUFFER_READ);
-    if (bufinfo.typecode != 'f') {
-        mp_raise_ValueError(MP_ERROR_TEXT("expecting float32 array"));
+    if (mp_get_buffer(bias_obj, &bufinfo, MP_BUFFER_READ)) {
+        if (bufinfo.typecode != 'f') {
+            mp_raise_ValueError(MP_ERROR_TEXT("expecting float32 array"));
+        }
+        const size_t n_bias = bufinfo.len / sizeof(float);
+        if (n_bias != self->n_classes) {
+            mp_raise_ValueError(MP_ERROR_TEXT("bias array size mismatch"));
+        }
+        const float *biases = bufinfo.buf;
+        memcpy(self->biases, biases, sizeof(float) * self->n_classes);
+    } else {
+        size_t len;
+        mp_obj_t *items;
+        mp_obj_get_array(bias_obj, &len, &items);
+        if (len != self->n_classes) {
+            mp_raise_ValueError(MP_ERROR_TEXT("bias array size mismatch"));
+        }
+        for (size_t i = 0; i < len; i++) {
+            self->biases[i] = mp_obj_get_float_to_f(items[i]);
+        }
     }
-    const size_t n_bias = bufinfo.len / sizeof(float);
-    if (n_bias != self->n_classes) {
-        mp_raise_ValueError(MP_ERROR_TEXT("bias array size mismatch"));
-    }
-    const float *biases = bufinfo.buf;
-    memcpy(self->biases, biases, sizeof(float) * self->n_classes);
 
     return mp_const_none;
 }

@@ -116,12 +116,9 @@ def read_weights(model):
 
 def read_bias(model):
     n_classes = model.get_n_classes()
-    src = model.get_bias()
     out = array.array('f', [0.0] * n_classes)
-    for idx in range(n_classes):
-        out[idx] = src[idx]
+    model.get_bias(out)
     return out
-
 
 def alloc_predict_buffers(model):
     n_classes = model.get_n_classes()
