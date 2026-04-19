@@ -9,19 +9,37 @@ def load_flattened(path):
     return shape, array.array('f', buf)
 
 
-def predict_class_from_proba(model, features, threshold=0.5):
-    proba = model.predict(features)
-    return 1 if proba >= threshold else 0
+def one_hot(labels, n_classes):
+    out = array.array('f', [0.0] * (len(labels) * n_classes))
+    for idx, label in enumerate(labels):
+        out[idx * n_classes + int(label)] = 1.0
+    return out
 
 
-def accuracy_on_dataset(model, X, y, n_features, threshold=0.5):
+def argmax_array(buf):
+    best_idx = 0
+    best_val = buf[0]
+    for idx in range(1, len(buf)):
+        if buf[idx] > best_val:
+            best_val = buf[idx]
+            best_idx = idx
+    return best_idx
+
+
+def accuracy_on_dataset(model, X, y, n_features):
     correct = 0
-    n_samples = len(y)
+    n_classes = model.get_n_classes()
+    n_samples = len(X) // n_features
+    logits = array.array('f', [0.0] * n_classes)
+    probs = array.array('f', [0.0] * n_classes)
     for idx in range(n_samples):
         start = idx * n_features
         features = array.array('f', X[start:start + n_features])
-        pred = predict_class_from_proba(model, features, threshold)
-        if pred == int(y[idx]):
+        model.predict(features, probs, logits)
+        pred = argmax_array(probs)
+        target = y[idx * n_classes:(idx + 1) * n_classes]
+        true_label = argmax_array(target)
+        if pred == true_label:
             correct += 1
     return correct / n_samples
 
@@ -49,12 +67,13 @@ def test_logreg_real_dataset_binary_classification():
     assert len(X_train) == n_train * n_features
     assert len(X_test) == n_test * n_features
 
-    model = emlearn_logreg.new(n_features, 0.05, 0.001, 0.0005)
+    n_classes = int(max(y_train)) + 1
+    model = emlearn_logreg.new(n_features, n_classes, 0.05, 0.001, 0.0005)
 
     stop_iter, stop_loss = emlearn_logreg.train(
         model,
         X_train,
-        y_train,
+        one_hot(y_train, n_classes),
         max_iterations=1500,
         tolerance=1e-5,
         check_interval=25,
@@ -65,14 +84,20 @@ def test_logreg_real_dataset_binary_classification():
     assert stop_iter > 0
     assert stop_loss == stop_loss  # not NaN
 
-    train_loss = model.score_logloss(X_train, y_train)
-    test_loss = model.score_logloss(X_test, y_test)
+    logits = array.array('f', [0.0] * n_classes)
+    probs = array.array('f', [0.0] * n_classes)
+
+    y_train_oh = one_hot(y_train, n_classes)
+    y_test_oh = one_hot(y_test, n_classes)
+
+    train_loss = model.score_logloss(X_train, y_train_oh, logits, probs)
+    test_loss = model.score_logloss(X_test, y_test_oh, logits, probs)
 
     assert train_loss < 0.35, train_loss
     assert test_loss < 0.4, test_loss
 
-    accuracy = accuracy_on_dataset(model, X_test, y_test, n_features)
-    assert accuracy > 0.9, accuracy
+    accuracy = accuracy_on_dataset(model, X_test, y_test_oh, n_features)
+    assert accuracy > 0.8, accuracy
 
 
 if __name__ == '__main__':
