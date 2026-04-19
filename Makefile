@@ -134,8 +134,7 @@ webassembly: $(WEBASSEMBLY_MICROPYTHON)
 
 
 check_unix: $(UNIX_MICROPYTHON) $(TEST_PY)
-	$(UNIX_MICROPYTHON) tests/test_all.py test_iir,test_fft,test_arrayutils,test_linreg,test_logreg
-	# TODO: enable more modules
+	$(UNIX_MICROPYTHON) tests/test_all.py
 
 rp2: $(PORT_DIR) $(SRC_ALL) src/manifest_unix.py
 	$(MAKE) -C $(MPY_DIR)/ports/rp2 V=1 USER_C_MODULES=$(C_MODULES_SRC_PATH)/micropython.cmake FROZEN_MANIFEST=$(MANIFEST_PATH) CFLAGS_EXTRA='-Wno-unused-function -Wno-unused-function' -j4
