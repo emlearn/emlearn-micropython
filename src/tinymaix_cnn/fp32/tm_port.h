@@ -41,7 +41,7 @@ limitations under the License.
 #define TM_MAX_KCSIZE   (3*3*256)   //max kernel_size*channels //cost TM_MAX_KSIZE*sizeof(mtype_t) Byte
 
 #define TM_INLINE       __attribute__((always_inline)) static inline
-#define TM_WEAK         __attribute__((weak))
+#define TM_WEAK         static
 
 // Disable "static" (non-const) globals, since they are not supported by MicroPython mpy_ld.py
 // But when building multiple variants, we need static to avoid duplicate definitions

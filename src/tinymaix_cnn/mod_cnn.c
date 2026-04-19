@@ -5,6 +5,11 @@
 #include "py/runtime.h"
 #endif
 
+// Check that only one CONFIG is defined
+#if defined(CONFIG_FP32) && defined(CONFIG_INT8)
+#error "Only one of CONFIG_FP32 or CONFIG_INT8 should be defined"
+#endif
+
 // Define unique symbol names based on CONFIG
 #ifdef CONFIG_FP32
 #define CNN_TYPE mod_cnn_fp32_type
@@ -23,8 +28,17 @@
 // Forward declaration for tm_port.h
 void CNN_FREE(void *ptr);
 
-// TinyMaix config
-#include "./tm_port.h"
+// TinyMaix config - include from the config directory
+// Only include if not already included by wrapper
+#ifndef __TM_PORT_H
+#ifdef CONFIG_INT8
+#include "./int8/tm_port.h"
+#elif defined(CONFIG_FP32)
+#include "./fp32/tm_port.h"
+#else
+#include "./int8/tm_port.h"  // default
+#endif
+#endif
 
 #include <tinymaix.h>
 
@@ -52,7 +66,7 @@ void *memset(void *s, int c, size_t n) {
 
 // get model output shapes
 //mdl: model handle; in: input mat; out: output mat
-int TM_WEAK tm_get_outputs(tm_mdl_t* mdl, tm_mat_t* out, int out_length)
+static int tm_get_outputs(tm_mdl_t* mdl, tm_mat_t* out, int out_length)
 {
     // NOTE: based on tm_run, but without actually executing
     int out_idx = 0;
