@@ -50,15 +50,33 @@ emlearn_cnn_int8_CONFIG = CONFIG=int8
 emlearn_cnn_fp32_SRC = src/tinymaix_cnn
 emlearn_cnn_fp32_CONFIG = CONFIG=fp32
 
+# Source directories for each module
+emlearn_trees_SRC = src/emlearn_trees
+emlearn_neighbors_SRC = src/emlearn_neighbors
+emlearn_iir_SRC = src/emlearn_iir
+emlearn_fft_SRC = src/emlearn_fft
+emlearn_kmeans_SRC = src/emlearn_kmeans
+emlearn_iir_q15_SRC = src/emlearn_iir_q15
+emlearn_arrayutils_SRC = src/emlearn_arrayutils
+emlearn_linreg_SRC = src/emlearn_linreg
+emlearn_logreg_SRC = src/emlearn_logreg
+
+# Dependencies for each .mpy file: .c, .h, .py files, and Makefile
+$(foreach mod,$(MODULES),\
+  $(eval $(MODULES_PATH)/$(mod).mpy: \
+    $(wildcard $($(mod)_SRC)/*.c) \
+    $(wildcard $($(mod)_SRC)/*.h) \
+    $(wildcard $($(mod)_SRC)/*.py) \
+    $($(mod)_SRC)/Makefile))
+
 # Generate list of .mpy files
 MODULE_MPYS = $(addprefix $(MODULES_PATH)/,$(addsuffix .mpy,$(MODULES)))
 
-# Build dynamic native module
-# defaults to
+# Build dynamic native module (without forced clean)
 $(MODULES_PATH)/%.mpy:
-	make -C $(or $($(*)_SRC),src/$*) \
-		ARCH=$(ARCH) MPY_DIR=$(MPY_DIR_ABS) CFLAGS_EXTRA=${CFLAGS_EXTRA} \
-		V=1 $($(*)_CONFIG) clean dist
+	$(MAKE) -C $(or $($(*)_SRC),src/$*) \
+		ARCH=$(ARCH) MPY_DIR=$(MPY_DIR_ABS) CFLAGS_EXTRA=$(CFLAGS_EXTRA) \
+		V=1 $($(*)_CONFIG) dist
 
 check_unix_natmod: $(MODULE_MPYS)
 	MICROPYPATH=$(MODULES_PATH) $(MICROPYTHON_BIN) tests/test_all.py
