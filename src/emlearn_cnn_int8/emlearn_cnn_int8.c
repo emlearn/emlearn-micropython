@@ -7,6 +7,9 @@
 /* Define CONFIG_INT8 first */
 #define CONFIG_INT8
 
+// for external module we need static
+#define TM_STATIC static
+
 /* Include the int8 tm_port.h directly */
 #include "../tinymaix_cnn/int8/tm_port.h"
 

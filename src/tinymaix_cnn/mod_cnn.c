@@ -36,7 +36,7 @@ void CNN_FREE(void *ptr);
 #elif defined(CONFIG_FP32)
 #include "./fp32/tm_port.h"
 #else
-#include "./int8/tm_port.h"  // default
+#error "No config defined"
 #endif
 #endif
 

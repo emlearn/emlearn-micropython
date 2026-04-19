@@ -7,6 +7,9 @@
 /* Define CONFIG_FP32 first */
 #define CONFIG_FP32
 
+// for external module we need static
+#define TM_STATIC static
+
 /* Include the fp32 tm_port.h directly */
 #include "../tinymaix_cnn/fp32/tm_port.h"
 
