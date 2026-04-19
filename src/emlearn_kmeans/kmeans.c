@@ -1,5 +1,9 @@
 // Include the header file to get access to the MicroPython API
+#ifdef MICROPY_ENABLE_DYNRUNTIME
 #include "py/dynruntime.h"
+#else
+#include "py/runtime.h"
+#endif
 
 #include <string.h>
 #include <stdint.h>
@@ -91,9 +95,10 @@ euclidean_argmin(mp_obj_t vectors_obj, mp_obj_t point_obj) {
         mp_obj_new_int(min_index),
         mp_obj_new_int(min_dist),
     }));
- }
+}
 static MP_DEFINE_CONST_FUN_OBJ_2(euclidian_argmin_obj, euclidean_argmin);
 
+#ifdef MICROPY_ENABLE_DYNRUNTIME
 
 // This is the entry point and is called when the module is imported
 mp_obj_t mpy_init(mp_obj_fun_bc_t *self, size_t n_args, size_t n_kw, mp_obj_t *args) {
@@ -105,5 +110,23 @@ mp_obj_t mpy_init(mp_obj_fun_bc_t *self, size_t n_args, size_t n_kw, mp_obj_t *a
     // This must be last, it restores the globals dict
     MP_DYNRUNTIME_INIT_EXIT
 }
+
+#else
+
+// Define module object.
+static const mp_rom_map_elem_t emlearn_kmeans_globals_table[] = {
+    { MP_ROM_QSTR(MP_QSTR_euclidean_argmin), MP_ROM_PTR(&euclidian_argmin_obj) },
+};
+static MP_DEFINE_CONST_DICT(emlearn_kmeans_globals, emlearn_kmeans_globals_table);
+
+const mp_obj_module_t emlearn_kmeans_cmodule = {
+    .base = { &mp_type_module },
+    .globals = (mp_obj_dict_t *)&emlearn_kmeans_globals,
+};
+
+// External module name is XXX_c to allow .py file to be the entrypoint
+MP_REGISTER_MODULE(MP_QSTR_emlearn_kmeans_c, emlearn_kmeans_cmodule);
+
+#endif
 
 
