@@ -1,13 +1,13 @@
-# emlearn_cnn_fp32 wrapper for Unix port
-# This wrapper sets CONFIG_FP32 before including mod_cnn.c
+# emlearn_cnn_int8 wrapper for Unix port
+# This wrapper sets CONFIG_INT8 before including mod_cnn.c
 
 CNN_SRC := $(USERMOD_DIR)/../tinymaix_cnn
 
-# Add wrapper C file which defines CONFIG_FP32
-SRC_USERMOD_C += $(USERMOD_DIR)/emlearn_cnn_fp32.c
+# Add wrapper C file which defines CONFIG_INT8
+SRC_USERMOD_C += $(USERMOD_DIR)/emlearn_cnn_int8.c
 
 # Include paths - need to include tm_port.h location
-CFLAGS_USERMOD += -I$(CNN_SRC)/fp32
+CFLAGS_USERMOD += -I$(CNN_SRC)/int8
 CFLAGS_USERMOD += -I$(CNN_SRC)/../../dependencies/TinyMaix/include
 CFLAGS_USERMOD += -I$(CNN_SRC)/../../dependencies/TinyMaix/src
 

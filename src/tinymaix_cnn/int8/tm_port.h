@@ -44,11 +44,16 @@ limitations under the License.
 #define TM_WEAK         __attribute__((weak))
 
 // Disable "static" (non-const) globals, since they are not supported by MicroPython mpy_ld.py
-#define TM_STATIC       
+// But when building multiple variants, we need static to avoid duplicate definitions
+#ifdef CONFIG_INT8
+#define TM_STATIC static
+#else
+#define TM_STATIC
+#endif       
 
 // Use MicroPython for dynamic allocation
 #define tm_malloc(x)   m_malloc(x)
-#define tm_free(x)     mod_cnn_free(x)
+#define tm_free(x)     CNN_FREE(x)
 
 // FIXME: set theese to use MicroPython primitives
 

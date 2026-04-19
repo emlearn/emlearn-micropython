@@ -5,8 +5,23 @@
 #include "py/runtime.h"
 #endif
 
+// Define unique symbol names based on CONFIG
+#ifdef CONFIG_FP32
+#define CNN_TYPE mod_cnn_fp32_type
+#define CNN_CMODULE mod_cnn_fp32_cmodule
+#define CNN_FREE mod_cnn_fp32_free
+#elif defined(CONFIG_INT8)
+#define CNN_TYPE mod_cnn_int8_type
+#define CNN_CMODULE mod_cnn_int8_cmodule
+#define CNN_FREE mod_cnn_int8_free
+#else
+#define CNN_TYPE mod_cnn_int8_type
+#define CNN_CMODULE mod_cnn_int8_cmodule
+#define CNN_FREE mod_cnn_int8_free
+#endif
 
-void mod_cnn_free(void *ptr);
+// Forward declaration for tm_port.h
+void CNN_FREE(void *ptr);
 
 // TinyMaix config
 #include "./tm_port.h"
@@ -81,18 +96,18 @@ typedef struct _mp_obj_mod_cnn_t {
 } mp_obj_mod_cnn_t;
 
 #if MICROPY_ENABLE_DYNRUNTIME
-mp_obj_full_type_t mod_cnn_type;
+mp_obj_full_type_t CNN_TYPE;
 #else
-static const mp_obj_type_t mod_cnn_type;
+static const mp_obj_type_t CNN_TYPE;
 #endif
 
 
-void mod_cnn_free(void *ptr)
+void CNN_FREE(void *ptr)
 {
 #if MICROPY_ENABLE_DYNRUNTIME
     return m_free(ptr);
 #else
-    return m_del(void *, ptr, 0); // XXX: not sure if safe
+    return m_del(void *, ptr, 0);
 #endif
 }
 
@@ -116,7 +131,7 @@ static mp_obj_t mod_cnn_new(mp_obj_t model_data_obj) {
     const int model_data_length = bufinfo.len / sizeof(*model_data_buffer);
 
     // Construct object
-    mp_obj_mod_cnn_t *o = mp_obj_malloc(mp_obj_mod_cnn_t, (mp_obj_type_t *)&mod_cnn_type);
+    mp_obj_mod_cnn_t *o = mp_obj_malloc(mp_obj_mod_cnn_t, (mp_obj_type_t *)&CNN_TYPE);
     tm_mdl_t *model = &o->model;
 
     // Copy the model data
@@ -283,15 +298,15 @@ mp_obj_t mpy_init(mp_obj_fun_bc_t *self, size_t n_args, size_t n_kw, mp_obj_t *a
 
     mp_store_global(MP_QSTR_new, MP_OBJ_FROM_PTR(&mod_cnn_new_obj));
 
-    mod_cnn_type.base.type = (void*)&mp_fun_table.type_type;
-    mod_cnn_type.flags = MP_TYPE_FLAG_ITER_IS_CUSTOM;
-    mod_cnn_type.name = MP_QSTR_tinymaixcnn;
+    CNN_TYPE.base.type = (void*)&mp_fun_table.type_type;
+    CNN_TYPE.flags = MP_TYPE_FLAG_ITER_IS_CUSTOM;
+    CNN_TYPE.name = MP_QSTR_tinymaixcnn;
     // methods
     mod_locals_dict_table[0] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR_run), MP_OBJ_FROM_PTR(&mod_cnn_run_obj) };
     mod_locals_dict_table[1] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR___del__), MP_OBJ_FROM_PTR(&mod_cnn_del_obj) };
     mod_locals_dict_table[2] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR_output_dimensions), MP_OBJ_FROM_PTR(&mod_cnn_output_dimensions_obj) };
 
-    MP_OBJ_TYPE_SET_SLOT(&mod_cnn_type, locals_dict, (void*)&mod_locals_dict, 2);
+    MP_OBJ_TYPE_SET_SLOT(&CNN_TYPE, locals_dict, (void*)&mod_locals_dict, 2);
 
     // This must be last, it restores the globals dict
     MP_DYNRUNTIME_INIT_EXIT
@@ -308,7 +323,7 @@ static MP_DEFINE_CONST_DICT(mod_cnn_locals_dict, mod_cnn_locals_dict_table);
 
 
 static MP_DEFINE_CONST_OBJ_TYPE(
-    mod_cnn_type,
+    CNN_TYPE,
     MP_QSTR_tinymaix_cnn,
     MP_TYPE_FLAG_NONE,
     locals_dict, &mod_cnn_locals_dict
@@ -320,17 +335,17 @@ static const mp_rom_map_elem_t mod_cnn_globals_table[] = {
 };
 static MP_DEFINE_CONST_DICT(mod_cnn_globals, mod_cnn_globals_table);
 
-const mp_obj_module_t mod_cnn_cmodule = {
+const mp_obj_module_t CNN_CMODULE = {
     .base = { &mp_type_module },
     .globals = (mp_obj_dict_t *)&mod_cnn_globals,
 };
 
 // Module name depends on CONFIG
 #ifdef CONFIG_FP32
-MP_REGISTER_MODULE(MP_QSTR_tinymaix_cnn_fp32_native, mod_cnn_cmodule);
+MP_REGISTER_MODULE(MP_QSTR_emlearn_cnn_fp32_native, CNN_CMODULE);
+#elif defined(CONFIG_INT8)
+MP_REGISTER_MODULE(MP_QSTR_emlearn_cnn_int8_native, CNN_CMODULE);
 #else
-MP_REGISTER_MODULE(MP_QSTR_emlearn_cnn_int8, mod_cnn_cmodule);
+MP_REGISTER_MODULE(MP_QSTR_emlearn_cnn_int8_native, CNN_CMODULE);
 #endif
 #endif
-
-
