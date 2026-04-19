@@ -160,12 +160,27 @@ def assert_raises_value_error(func, message='Expected ValueError'):
     raise AssertionError(message)
 
 
+def make_batch_factory(X, y, n_features, n_classes, batch_size):
+    n_samples = len(X) // n_features
+
+    def factory():
+        for start in range(0, n_samples, batch_size):
+            count = min(batch_size, n_samples - start)
+            feat_start = start * n_features
+            feat_end = feat_start + count * n_features
+            target_start = start * n_classes
+            target_end = target_start + count * n_classes
+            yield array.array('f', X[feat_start:feat_end]), array.array('f', y[target_start:target_end])
+
+    return factory
+
+
 def test_logreg_train_and_predict():
     X, y = make_dataset()
     model = emlearn_logreg.new(2, 2, 0.5, 0.0, 0.0)
 
     emlearn_logreg.train(model, X, y, max_iterations=400, tolerance=1e-5,
-                         check_interval=5, batch_size=2)
+                         check_interval=5)
 
     logits, probs = alloc_predict_buffers(model)
     run_predict(model, array.array('f', [1, 1]), logits, probs)
@@ -207,7 +222,7 @@ def test_logreg_train_minibatch_reduces_loss():
     initial_loss = model.score_logloss(X, y, logits, probs)
 
     emlearn_logreg.train(model, X, y, max_iterations=600, tolerance=1e-6,
-                         check_interval=10, batch_size=1)
+                         check_interval=10)
 
     final_loss = model.score_logloss(X, y, logits, probs)
     assert final_loss < initial_loss * 0.7, (initial_loss, final_loss)
@@ -270,7 +285,7 @@ def test_logreg_handles_ill_conditioned_features():
     initial_loss = model.score_logloss(X, y, logits, probs)
 
     emlearn_logreg.train(model, X, y, max_iterations=2000, tolerance=1e-6,
-                         check_interval=100, batch_size=4)
+                         check_interval=100)
 
     final_loss = model.score_logloss(X, y, logits, probs)
     assert final_loss < initial_loss, (initial_loss, final_loss)
@@ -289,7 +304,7 @@ def test_logreg_high_dimensional_sparse_case():
     initial_loss = model.score_logloss(X, y, logits, probs)
 
     emlearn_logreg.train(model, X, y, max_iterations=600, tolerance=1e-6,
-                         check_interval=30, batch_size=4)
+                         check_interval=30)
 
     final_loss = model.score_logloss(X, y, logits, probs)
 
@@ -310,6 +325,46 @@ def test_logreg_train_requires_targets():
     y = array.array('f')
 
     assert_raises_value_error(lambda: emlearn_logreg.train(model, X, y))
+
+
+def test_logreg_train_batches_matches_dense_training():
+    X, y = make_linearly_separable_dataset()
+    n_features = 2
+    n_classes = 2
+    batch_size = 2
+    model = emlearn_logreg.new(n_features, n_classes, 0.4, 0.01, 0.0)
+
+    def batch_factory():
+        return make_batch_factory(X, y, n_features, n_classes, batch_size)()
+
+    def scorer(m):
+        logits, probs = alloc_predict_buffers(m)
+        return m.score_logloss(X, y, logits, probs)
+
+    emlearn_logreg.train_batches(
+        model,
+        batch_factory,
+        max_iterations=200,
+        tolerance=1e-6,
+        check_interval=10,
+        score_batches=scorer,
+        score_limit=0.1,
+    )
+
+    logits, probs = alloc_predict_buffers(model)
+    final_loss = model.score_logloss(X, y, logits, probs)
+    assert final_loss < 0.1, final_loss
+
+
+def test_logreg_train_batches_validates_batches():
+    n_features = 2
+    n_classes = 2
+    model = emlearn_logreg.new(n_features, n_classes, 0.2, 0.0, 0.0)
+
+    def bad_factory_missing_batches():
+        return iter(())
+
+    assert_raises_value_error(lambda: emlearn_logreg.train_batches(model, bad_factory_missing_batches))
 
 
 def test_logreg_warm_start_sets_new_weights_and_bias():
@@ -346,7 +401,6 @@ def test_logreg_multiclass_softmax_train_set_accuracy():
         max_iterations=1200,
         tolerance=1e-6,
         check_interval=60,
-        batch_size=3,
     )
 
     for idx in range(len(y) // n_classes):
@@ -373,7 +427,6 @@ def test_logreg_multiclass_softmax_generalization():
         max_iterations=1200,
         tolerance=1e-6,
         check_interval=60,
-        batch_size=3,
     )
 
     test_points = [
@@ -399,5 +452,3 @@ if __name__ == '__main__':
     test_logreg_train_validates_dimensions()
     test_logreg_train_requires_targets()
     test_logreg_warm_start_sets_new_weights_and_bias()
-    test_logreg_one_vs_rest_classifies_training_samples()
-    test_logreg_one_vs_rest_generalizes_new_points()
