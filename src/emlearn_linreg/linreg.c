@@ -9,6 +9,7 @@
 
 #include "eml_linreg.c"
 
+#ifdef MICROPY_ENABLE_DYNRUNTIME
 // memset/memcpy for compatibility 
 #if !defined(__linux__)
 void *memcpy(void *dst, const void *src, size_t n) {
@@ -18,21 +19,22 @@ void *memset(void *s, int c, size_t n) {
     return mp_fun_table.memset_(s, c, n);
 }
 #endif
+#endif
 
-// MicroPython type for ElasticNet model
-typedef struct _mp_obj_elasticnet_model_t {
+// MicroPython type for linear regressionElasticNet model
+typedef struct _mp_obj_linreg_model_t {
     mp_obj_base_t base;
-    elastic_net_model_t model;
-} mp_obj_elasticnet_model_t;
+    eml_linreg_model model;
+} mp_obj_linreg_model_t;
 
 #if MICROPY_ENABLE_DYNRUNTIME
-mp_obj_full_type_t elasticnet_model_type;
+mp_obj_full_type_t linreg_model_type;
 #else
-static const mp_obj_type_t elasticnet_model_type;
+static const mp_obj_type_t linreg_model_type;
 #endif
 
 // Create a new instance
-static mp_obj_t elasticnet_model_new(size_t n_args, const mp_obj_t *args) {
+static mp_obj_t linreg_model_new(size_t n_args, const mp_obj_t *args) {
     // Args: n_features, alpha, l1_ratio, learning_rate
     if (n_args != 4) {
         mp_raise_ValueError(MP_ERROR_TEXT("Expected 4 arguments: n_features, alpha, l1_ratio, learning_rate"));
@@ -44,11 +46,11 @@ static mp_obj_t elasticnet_model_new(size_t n_args, const mp_obj_t *args) {
     float learning_rate = mp_obj_get_float_to_f(args[3]);
 
     // Allocate space
-    mp_obj_elasticnet_model_t *o = \
-        mp_obj_malloc(mp_obj_elasticnet_model_t, (mp_obj_type_t *)&elasticnet_model_type);
+    mp_obj_linreg_model_t *o = \
+        mp_obj_malloc(mp_obj_linreg_model_t, (mp_obj_type_t *)&linreg_model_type);
 
-    elastic_net_model_t *self = &o->model;
-    memset(self, 0, sizeof(elastic_net_model_t));
+    eml_linreg_model *self = &o->model;
+    memset(self, 0, sizeof(eml_linreg_model));
 
     // Configure model
     self->n_features = n_features;
@@ -67,12 +69,12 @@ static mp_obj_t elasticnet_model_new(size_t n_args, const mp_obj_t *args) {
     return MP_OBJ_FROM_PTR(o);
 }
 // Define a Python reference to the function above
-static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(elasticnet_model_new_obj, 4, 4, elasticnet_model_new);
+static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(linreg_model_new_obj, 4, 4, linreg_model_new);
 
 // Delete an instance
-static mp_obj_t elasticnet_model_del(mp_obj_t self_obj) {
-    mp_obj_elasticnet_model_t *o = MP_OBJ_TO_PTR(self_obj);
-    elastic_net_model_t *self = &o->model;   
+static mp_obj_t linreg_model_del(mp_obj_t self_obj) {
+    mp_obj_linreg_model_t *o = MP_OBJ_TO_PTR(self_obj);
+    eml_linreg_model *self = &o->model;   
 
     // Free allocated memory
     m_del(float, self->weights, self->n_features);
@@ -81,17 +83,17 @@ static mp_obj_t elasticnet_model_del(mp_obj_t self_obj) {
     return mp_const_none;
 }
 // Define a Python reference to the function above
-static MP_DEFINE_CONST_FUN_OBJ_1(elasticnet_model_del_obj, elasticnet_model_del);
+static MP_DEFINE_CONST_FUN_OBJ_1(linreg_model_del_obj, linreg_model_del);
 
 // Single training iteration
-static mp_obj_t elasticnet_model_step(size_t n_args, const mp_obj_t *args) {
+static mp_obj_t linreg_model_step(size_t n_args, const mp_obj_t *args) {
     // Args: self, X, y
     if (n_args != 3) {
         mp_raise_ValueError(MP_ERROR_TEXT("Expected 3 arguments: self, X, y"));
     }
     
-    mp_obj_elasticnet_model_t *o = MP_OBJ_TO_PTR(args[0]);
-    elastic_net_model_t *self = &o->model;
+    mp_obj_linreg_model_t *o = MP_OBJ_TO_PTR(args[0]);
+    eml_linreg_model *self = &o->model;
 
     // Extract X buffer
     mp_buffer_info_t X_bufinfo;
@@ -123,13 +125,13 @@ static mp_obj_t elasticnet_model_step(size_t n_args, const mp_obj_t *args) {
 
     return mp_const_none;
 }
-static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(elasticnet_model_step_obj, 3, 3, elasticnet_model_step);
+static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(linreg_model_step_obj, 3, 3, linreg_model_step);
 
 // Predict using the model
-static mp_obj_t elasticnet_model_predict(mp_obj_t self_obj, mp_obj_t features_obj) {
+static mp_obj_t linreg_model_predict(mp_obj_t self_obj, mp_obj_t features_obj) {
 
-    mp_obj_elasticnet_model_t *o = MP_OBJ_TO_PTR(self_obj);
-    elastic_net_model_t *self = &o->model;    
+    mp_obj_linreg_model_t *o = MP_OBJ_TO_PTR(self_obj);
+    eml_linreg_model *self = &o->model;    
 
     // Extract buffer pointer and verify typecode
     mp_buffer_info_t bufinfo;
@@ -149,12 +151,12 @@ static mp_obj_t elasticnet_model_predict(mp_obj_t self_obj, mp_obj_t features_ob
 
     return mp_obj_new_float_from_f(prediction);
 }
-static MP_DEFINE_CONST_FUN_OBJ_2(elasticnet_model_predict_obj, elasticnet_model_predict);
+static MP_DEFINE_CONST_FUN_OBJ_2(linreg_model_predict_obj, linreg_model_predict);
 
 // Get model weights
-static mp_obj_t elasticnet_model_get_weights(mp_obj_t self_obj, mp_obj_t out_obj) {
-    mp_obj_elasticnet_model_t *o = MP_OBJ_TO_PTR(self_obj);
-    elastic_net_model_t *self = &o->model;
+static mp_obj_t linreg_model_get_weights(mp_obj_t self_obj, mp_obj_t out_obj) {
+    mp_obj_linreg_model_t *o = MP_OBJ_TO_PTR(self_obj);
+    eml_linreg_model *self = &o->model;
 
     // Extract buffer pointer and verify typecode
     mp_buffer_info_t bufinfo;
@@ -174,33 +176,33 @@ static mp_obj_t elasticnet_model_get_weights(mp_obj_t self_obj, mp_obj_t out_obj
     return mp_const_none;
 }
 // Define a Python reference to the function above
-static MP_DEFINE_CONST_FUN_OBJ_2(elasticnet_model_get_weights_obj, elasticnet_model_get_weights);
+static MP_DEFINE_CONST_FUN_OBJ_2(linreg_model_get_weights_obj, linreg_model_get_weights);
 
 // Get number of features
-static mp_obj_t elasticnet_model_get_n_features(mp_obj_t self_obj) {
-    mp_obj_elasticnet_model_t *o = MP_OBJ_TO_PTR(self_obj);
-    elastic_net_model_t *self = &o->model;
+static mp_obj_t linreg_model_get_n_features(mp_obj_t self_obj) {
+    mp_obj_linreg_model_t *o = MP_OBJ_TO_PTR(self_obj);
+    eml_linreg_model *self = &o->model;
 
     return mp_obj_new_int(self->n_features);
 }
 // Define a Python reference to the function above
-static MP_DEFINE_CONST_FUN_OBJ_1(elasticnet_model_get_n_features_obj, elasticnet_model_get_n_features);
+static MP_DEFINE_CONST_FUN_OBJ_1(linreg_model_get_n_features_obj, linreg_model_get_n_features);
 
 // Get model bias
-static mp_obj_t elasticnet_model_get_bias(mp_obj_t self_obj) {
-    mp_obj_elasticnet_model_t *o = MP_OBJ_TO_PTR(self_obj);
-    elastic_net_model_t *self = &o->model;
+static mp_obj_t linreg_model_get_bias(mp_obj_t self_obj) {
+    mp_obj_linreg_model_t *o = MP_OBJ_TO_PTR(self_obj);
+    eml_linreg_model *self = &o->model;
 
     return mp_obj_new_float_from_f(self->bias);
 }
 // Define a Python reference to the function above
-static MP_DEFINE_CONST_FUN_OBJ_1(elasticnet_model_get_bias_obj, elasticnet_model_get_bias);
+static MP_DEFINE_CONST_FUN_OBJ_1(linreg_model_get_bias_obj, linreg_model_get_bias);
 
 
 // Set model bias
-static mp_obj_t elasticnet_model_set_bias(mp_obj_t self_obj, mp_obj_t bias_obj) {
-    mp_obj_elasticnet_model_t *o = MP_OBJ_TO_PTR(self_obj);
-    elastic_net_model_t *self = &o->model;
+static mp_obj_t linreg_model_set_bias(mp_obj_t self_obj, mp_obj_t bias_obj) {
+    mp_obj_linreg_model_t *o = MP_OBJ_TO_PTR(self_obj);
+    eml_linreg_model *self = &o->model;
 
     float bias = mp_obj_get_float_to_f(bias_obj);
     self->bias = bias;
@@ -208,12 +210,12 @@ static mp_obj_t elasticnet_model_set_bias(mp_obj_t self_obj, mp_obj_t bias_obj) 
     return mp_const_none;
 }
 // Define a Python reference to the function above
-static MP_DEFINE_CONST_FUN_OBJ_2(elasticnet_model_set_bias_obj, elasticnet_model_set_bias);
+static MP_DEFINE_CONST_FUN_OBJ_2(linreg_model_set_bias_obj, linreg_model_set_bias);
 
 // Set model weights
-static mp_obj_t elasticnet_model_set_weights(mp_obj_t self_obj, mp_obj_t weights_obj) {
-    mp_obj_elasticnet_model_t *o = MP_OBJ_TO_PTR(self_obj);
-    elastic_net_model_t *self = &o->model;
+static mp_obj_t linreg_model_set_weights(mp_obj_t self_obj, mp_obj_t weights_obj) {
+    mp_obj_linreg_model_t *o = MP_OBJ_TO_PTR(self_obj);
+    eml_linreg_model *self = &o->model;
 
     // Extract buffer pointer and verify typecode
     mp_buffer_info_t bufinfo;
@@ -233,18 +235,18 @@ static mp_obj_t elasticnet_model_set_weights(mp_obj_t self_obj, mp_obj_t weights
     return mp_const_none;
 }
 // Define a Python reference to the function above
-static MP_DEFINE_CONST_FUN_OBJ_2(elasticnet_model_set_weights_obj, elasticnet_model_set_weights);
+static MP_DEFINE_CONST_FUN_OBJ_2(linreg_model_set_weights_obj, linreg_model_set_weights);
 
 
 // Calculate MSE from X and y (saves memory by not storing predictions)
-static mp_obj_t elasticnet_model_score_mse(size_t n_args, const mp_obj_t *args) {
+static mp_obj_t linreg_model_score_mse(size_t n_args, const mp_obj_t *args) {
     // Args: self, X, y
     if (n_args != 3) {
         mp_raise_ValueError(MP_ERROR_TEXT("Expected 3 arguments: self, X, y"));
     }
     
-    mp_obj_elasticnet_model_t *o = MP_OBJ_TO_PTR(args[0]);
-    elastic_net_model_t *self = &o->model;
+    mp_obj_linreg_model_t *o = MP_OBJ_TO_PTR(args[0]);
+    eml_linreg_model *self = &o->model;
 
     // Extract X buffer
     mp_buffer_info_t X_bufinfo;
@@ -274,73 +276,73 @@ static mp_obj_t elasticnet_model_score_mse(size_t n_args, const mp_obj_t *args) 
 
     return mp_obj_new_float_from_f(mse);
 }
-static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(elasticnet_model_score_mse_obj, 3, 3, elasticnet_model_score_mse);
+static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(linreg_model_score_mse_obj, 3, 3, linreg_model_score_mse);
 
 
 #ifdef MICROPY_ENABLE_DYNRUNTIME
 
 // Module setup
-mp_map_elem_t elasticnet_model_locals_dict_table[9];
-static MP_DEFINE_CONST_DICT(elasticnet_model_locals_dict, elasticnet_model_locals_dict_table);
+mp_map_elem_t linreg_model_locals_dict_table[9];
+static MP_DEFINE_CONST_DICT(linreg_model_locals_dict, linreg_model_locals_dict_table);
 
 // Module setup entrypoint
 mp_obj_t mpy_init(mp_obj_fun_bc_t *self, size_t n_args, size_t n_kw, mp_obj_t *args) {
     MP_DYNRUNTIME_INIT_ENTRY
 
-    mp_store_global(MP_QSTR_new, MP_OBJ_FROM_PTR(&elasticnet_model_new_obj));
-    elasticnet_model_type.base.type = (void*)&mp_fun_table.type_type;
-    elasticnet_model_type.flags = MP_TYPE_FLAG_ITER_IS_CUSTOM;
-    elasticnet_model_type.name = MP_QSTR_elasticnet;
+    mp_store_global(MP_QSTR_new, MP_OBJ_FROM_PTR(&linreg_model_new_obj));
+    linreg_model_type.base.type = (void*)&mp_fun_table.type_type;
+    linreg_model_type.flags = MP_TYPE_FLAG_ITER_IS_CUSTOM;
+    linreg_model_type.name = MP_QSTR_linreg;
 
-    elasticnet_model_locals_dict_table[0] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR_predict), MP_OBJ_FROM_PTR(&elasticnet_model_predict_obj) };
-    elasticnet_model_locals_dict_table[1] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR_step), MP_OBJ_FROM_PTR(&elasticnet_model_step_obj) };
-    elasticnet_model_locals_dict_table[2] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR___del__), MP_OBJ_FROM_PTR(&elasticnet_model_del_obj) };
-    elasticnet_model_locals_dict_table[3] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR_get_weights), MP_OBJ_FROM_PTR(&elasticnet_model_get_weights_obj) };
-    elasticnet_model_locals_dict_table[4] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR_get_bias), MP_OBJ_FROM_PTR(&elasticnet_model_get_bias_obj) };
-    elasticnet_model_locals_dict_table[5] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR_get_n_features), MP_OBJ_FROM_PTR(&elasticnet_model_get_n_features_obj) };
-    elasticnet_model_locals_dict_table[6] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR_score_mse), MP_OBJ_FROM_PTR(&elasticnet_model_score_mse_obj) };
-    elasticnet_model_locals_dict_table[7] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR_set_bias), MP_OBJ_FROM_PTR(&elasticnet_model_set_bias_obj) };
-    elasticnet_model_locals_dict_table[8] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR_set_weights), MP_OBJ_FROM_PTR(&elasticnet_model_set_weights_obj) };
-    MP_OBJ_TYPE_SET_SLOT(&elasticnet_model_type, locals_dict, (void*)&elasticnet_model_locals_dict, 9);
+    linreg_model_locals_dict_table[0] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR_predict), MP_OBJ_FROM_PTR(&linreg_model_predict_obj) };
+    linreg_model_locals_dict_table[1] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR_step), MP_OBJ_FROM_PTR(&linreg_model_step_obj) };
+    linreg_model_locals_dict_table[2] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR___del__), MP_OBJ_FROM_PTR(&linreg_model_del_obj) };
+    linreg_model_locals_dict_table[3] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR_get_weights), MP_OBJ_FROM_PTR(&linreg_model_get_weights_obj) };
+    linreg_model_locals_dict_table[4] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR_get_bias), MP_OBJ_FROM_PTR(&linreg_model_get_bias_obj) };
+    linreg_model_locals_dict_table[5] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR_get_n_features), MP_OBJ_FROM_PTR(&linreg_model_get_n_features_obj) };
+    linreg_model_locals_dict_table[6] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR_score_mse), MP_OBJ_FROM_PTR(&linreg_model_score_mse_obj) };
+    linreg_model_locals_dict_table[7] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR_set_bias), MP_OBJ_FROM_PTR(&linreg_model_set_bias_obj) };
+    linreg_model_locals_dict_table[8] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR_set_weights), MP_OBJ_FROM_PTR(&linreg_model_set_weights_obj) };
+    MP_OBJ_TYPE_SET_SLOT(&linreg_model_type, locals_dict, (void*)&linreg_model_locals_dict, 9);
 
-    mp_store_global(MP_QSTR_elasticnet, MP_OBJ_FROM_PTR(&elasticnet_model_type));
+    mp_store_global(MP_QSTR_linreg, MP_OBJ_FROM_PTR(&linreg_model_type));
 
     MP_DYNRUNTIME_INIT_EXIT
 }
 
 #else // extmod
 
-static const mp_rom_map_elem_t elasticnet_model_locals_dict_table[] = {
-    { MP_ROM_QSTR(MP_QSTR_predict),      MP_ROM_PTR(&elasticnet_model_predict_obj) },
-    { MP_ROM_QSTR(MP_QSTR_step),         MP_ROM_PTR(&elasticnet_model_step_obj) },
-    { MP_ROM_QSTR(MP_QSTR___del__),      MP_ROM_PTR(&elasticnet_model_del_obj) },
-    { MP_ROM_QSTR(MP_QSTR_get_weights),  MP_ROM_PTR(&elasticnet_model_get_weights_obj) },
-    { MP_ROM_QSTR(MP_QSTR_get_bias),     MP_ROM_PTR(&elasticnet_model_get_bias_obj) },
-    { MP_ROM_QSTR(MP_QSTR_get_n_features), MP_ROM_PTR(&elasticnet_model_get_n_features_obj) },
-    { MP_ROM_QSTR(MP_QSTR_score_mse),    MP_ROM_PTR(&elasticnet_model_score_mse_obj) },
-    { MP_ROM_QSTR(MP_QSTR_set_bias),     MP_ROM_PTR(&elasticnet_model_set_bias_obj) },
-    { MP_ROM_QSTR(MP_QSTR_set_weights),  MP_ROM_PTR(&elasticnet_model_set_weights_obj) },
+static const mp_rom_map_elem_t linreg_model_locals_dict_table[] = {
+    { MP_ROM_QSTR(MP_QSTR_predict),      MP_ROM_PTR(&linreg_model_predict_obj) },
+    { MP_ROM_QSTR(MP_QSTR_step),         MP_ROM_PTR(&linreg_model_step_obj) },
+    { MP_ROM_QSTR(MP_QSTR___del__),      MP_ROM_PTR(&linreg_model_del_obj) },
+    { MP_ROM_QSTR(MP_QSTR_get_weights),  MP_ROM_PTR(&linreg_model_get_weights_obj) },
+    { MP_ROM_QSTR(MP_QSTR_get_bias),     MP_ROM_PTR(&linreg_model_get_bias_obj) },
+    { MP_ROM_QSTR(MP_QSTR_get_n_features), MP_ROM_PTR(&linreg_model_get_n_features_obj) },
+    { MP_ROM_QSTR(MP_QSTR_score_mse),    MP_ROM_PTR(&linreg_model_score_mse_obj) },
+    { MP_ROM_QSTR(MP_QSTR_set_bias),     MP_ROM_PTR(&linreg_model_set_bias_obj) },
+    { MP_ROM_QSTR(MP_QSTR_set_weights),  MP_ROM_PTR(&linreg_model_set_weights_obj) },
 };
-static MP_DEFINE_CONST_DICT(elasticnet_model_locals_dict, elasticnet_model_locals_dict_table);
+static MP_DEFINE_CONST_DICT(linreg_model_locals_dict, linreg_model_locals_dict_table);
 
 static MP_DEFINE_CONST_OBJ_TYPE(
-    elasticnet_model_type,
-    MP_QSTR_elasticnet,
+    linreg_model_type,
+    MP_QSTR_linreg,
     MP_TYPE_FLAG_ITER_IS_CUSTOM,
-    make_new, elasticnet_model_new,
-    locals_dict, &elasticnet_model_locals_dict
+    make_new, linreg_model_new,
+    locals_dict, &linreg_model_locals_dict
 );
 
-static const mp_rom_map_elem_t elasticnet_globals_table[] = {
-    { MP_ROM_QSTR(MP_QSTR_new),        MP_ROM_PTR(&elasticnet_model_new_obj) },
-    { MP_ROM_QSTR(MP_QSTR_elasticnet), MP_ROM_PTR(&elasticnet_model_type) },
+static const mp_rom_map_elem_t linreg_globals_table[] = {
+    { MP_ROM_QSTR(MP_QSTR_new),        MP_ROM_PTR(&linreg_model_new_obj) },
+    { MP_ROM_QSTR(MP_QSTR_linreg), MP_ROM_PTR(&linreg_model_type) },
 };
-static MP_DEFINE_CONST_DICT(elasticnet_globals, elasticnet_globals_table);
+static MP_DEFINE_CONST_DICT(linreg_globals, linreg_globals_table);
 
-const mp_obj_module_t elasticnet_cmodule = {
+const mp_obj_module_t linreg_cmodule = {
     .base = { &mp_type_module },
-    .globals = (mp_obj_dict_t *)&elasticnet_globals,
+    .globals = (mp_obj_dict_t *)&linreg_globals,
 };
-MP_REGISTER_MODULE(MP_QSTR_elasticnet_c, elasticnet_cmodule);
+MP_REGISTER_MODULE(MP_QSTR_emlearn_linreg_c, linreg_cmodule);
 
 #endif

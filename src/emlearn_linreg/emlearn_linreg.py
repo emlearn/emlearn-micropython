@@ -1,4 +1,5 @@
 
+from emlearn_linreg_c import *
 
 log_prefix = 'emlearn_linreg:'
 

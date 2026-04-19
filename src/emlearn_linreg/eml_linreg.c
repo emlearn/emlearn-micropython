@@ -1,7 +1,8 @@
 
 #include <math.h>
 
-// ElasticNet implementation (embedded from linreg.c)
+// FIXME: rename to linreg
+// ElasticNet implementation
 typedef struct {
     float* weights;           
     float* weight_gradients;  
@@ -10,7 +11,7 @@ typedef struct {
     float l1_ratio;           
     float alpha;              
     float learning_rate;      
-} elastic_net_model_t;
+} eml_linreg_model;
 
 // Soft thresholding function for L1 penalty
 static float soft_threshold(float x, float threshold) {
@@ -24,7 +25,7 @@ static float soft_threshold(float x, float threshold) {
 }
 
 // Calculate prediction for a single sample
-static float predict_sample(const elastic_net_model_t* model, const float* features) {
+static float predict_sample(const eml_linreg_model* model, const float* features) {
     float prediction = model->bias;
     for (uint16_t i = 0; i < model->n_features; i++) {
         prediction += model->weights[i] * features[i];
@@ -33,7 +34,7 @@ static float predict_sample(const elastic_net_model_t* model, const float* featu
 }
 
 // Single iteration of gradient descent
-static void elastic_net_iterate(elastic_net_model_t* model,
+static void elastic_net_iterate(eml_linreg_model* model,
                         const float* X,
                         const float* y,
                         uint16_t n_samples) {
@@ -81,7 +82,7 @@ static void elastic_net_iterate(elastic_net_model_t* model,
 }
 
 // Calculate mean squared error
-static float elastic_net_mse(const elastic_net_model_t* model,
+static float elastic_net_mse(const eml_linreg_model* model,
                      const float* X,
                      const float* y,
                      uint16_t n_samples) {
