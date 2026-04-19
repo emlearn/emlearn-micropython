@@ -4,18 +4,35 @@ import array
 import gc
 import npyfile
 
-def load_npy_int16(filename):
-    """Load .npy file and convert to int16 array"""
+DATA_DIR = 'examples/datasets/cancer/'
+DATA_FILES = {
+    'X_train': DATA_DIR + 'X_train.npy',
+    'y_train': DATA_DIR + 'y_train.npy',
+    'X_test': DATA_DIR + 'X_test.npy',
+    'y_test': DATA_DIR + 'y_test.npy',
+}
+
+def load_npy_features_int16(filename):
+    """Load .npy file and convert to int16 array (scaled from float32)"""
     shape, data = npyfile.load(filename)
-    return array.array('h', data)
+    # Scale float32 data to int16 range (multiply by 1000 and convert)
+    scaled = [int(v * 1000) for v in data]
+    return array.array('h', scaled)
+
+def load_npy_labels_int16(filename):
+    """Load .npy file and convert to int16 array (labels, no scaling)"""
+    shape, data = npyfile.load(filename)
+    # Labels are already integers (0.0, 1.0), just convert directly
+    labels = [int(v) for v in data]
+    return array.array('h', labels)
 
 def test_real_dataset():
     print("=== REAL DATASET TEST ===")
     
-    X_train_flat = load_npy_int16('X_train.npy')
-    y_train = load_npy_int16('y_train.npy') 
-    X_test_flat = load_npy_int16('X_test.npy')
-    y_test = load_npy_int16('y_test.npy')
+    X_train_flat = load_npy_features_int16(DATA_FILES['X_train'])
+    y_train = load_npy_labels_int16(DATA_FILES['y_train']) 
+    X_test_flat = load_npy_features_int16(DATA_FILES['X_test'])
+    y_test = load_npy_labels_int16(DATA_FILES['y_test'])
 
     
     n_features = 30

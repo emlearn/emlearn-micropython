@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Wine Quality test for MicroPython
+# Wine dataset test for MicroPython (sklearn Wine - 3 class classification)
 
 import array
 import gc
@@ -7,45 +7,66 @@ import time
 import npyfile
 import emlearn_extratrees
 
-def load_npy_int16(filename):
-    """Load .npy file and convert to int16 array"""
-    shape, data = npyfile.load(filename)
-    return array.array('h', data)
+DATA_DIR = 'examples/datasets/wine/'
+DATA_FILES = {
+    'X_train': DATA_DIR + 'X_train.npy',
+    'y_train': DATA_DIR + 'y_train.npy',
+    'X_test': DATA_DIR + 'X_test.npy',
+    'y_test': DATA_DIR + 'y_test.npy',
+}
 
-def test_wine_quality():
-    print("=== WINE QUALITY DATASET TEST ===")
+def load_npy_features_int16(filename):
+    """Load .npy file and convert to int16 array (scaled from float32)"""
+    shape, data = npyfile.load(filename)
+    # Scale float32 data to int16 range (multiply by 1000 and convert)
+    scaled = [int(v * 1000) for v in data]
+    return array.array('h', scaled)
+
+def load_npy_labels_int16(filename):
+    """Load .npy file and convert to int16 array (labels, no scaling)"""
+    shape, data = npyfile.load(filename)
+    # Labels are already integers (0.0, 1.0, 2.0), just convert directly
+    labels = [int(v) for v in data]
+    return array.array('h', labels)
+
+def test_wine():
+    print("=== WINE DATASET TEST (3-class) ===")
     
     # Load preprocessed data
     try:
-        X_train_flat = load_npy_int16('X_train.npy')
-        y_train = load_npy_int16('y_train.npy')
-        X_test_flat = load_npy_int16('X_test.npy')
-        y_test = load_npy_int16('y_test.npy')
+        X_train_flat = load_npy_features_int16(DATA_FILES['X_train'])
+        y_train = load_npy_labels_int16(DATA_FILES['y_train'])
+        X_test_flat = load_npy_features_int16(DATA_FILES['X_test'])
+        y_test = load_npy_labels_int16(DATA_FILES['y_test'])
     except:
-        print("Error: Run wine_quality_prep.py first")
+        print("Error: Run wine/prepare.py first")
         return
     
-    n_features = 12  # 11 wine features + wine_type
+    n_features = 13  # 13 wine features (alcohol, malic_acid, ash, etc.)
     n_train = len(y_train)
     n_test = len(y_test)
     
-    print(f"Loaded: {n_train} train, {n_test} test samples")
-    print(f"Features: {n_features} (alcohol, acidity, etc. + wine_type)")
-    print("Task: Predict good wine (quality >= 6) vs poor wine")
+    # Determine number of classes from data
+    n_classes = int(max(y_train)) + 1
     
-    # Create model - adjusted for large dataset constraints
+    print(f"Loaded: {n_train} train, {n_test} test samples")
+    print(f"Features: {n_features}")
+    print(f"Classes: {n_classes} (wine cultivars 0, 1, 2)")
+    print("Task: Classify wine cultivar")
+    
+    # Create model
     model = emlearn_extratrees.new(
-        12,    # n_features
-        2,     # n_classes
-        5,    # n_trees 
-        10,    # max_depth
-        3,     # min_samples_leaf
-        20,    # n_thresholds
-        0.20,  # subsample_ratio (much smaller: 15% of 5197 = ~780 samples)
-        0.8,   # feature_subsample_ratio
-        2000,  # max_nodes
-        10000,  # max_samples (matches subsample size)
-        42     # rng_seed
+        n_features,  # n_features
+        n_classes,   # n_classes
+        20,          # n_trees 
+        12,          # max_depth
+        2,           # min_samples_leaf
+        15,          # n_thresholds
+        0.8,         # subsample_ratio
+        1.0,         # feature_subsample_ratio
+        3000,        # max_nodes
+        500,         # max_samples
+        42           # rng_seed
     )
     
     train_start = time.ticks_ms()
@@ -57,8 +78,11 @@ def test_wine_quality():
 
     # Test
     correct = 0
-    tp, tn, fp, fn = 0, 0, 0, 0
-    probabilities = array.array('f', [0.0, 0.0])
+    probabilities = array.array('f', [0.0] * n_classes)
+    
+    # Track class-wise accuracy
+    class_correct = [0] * n_classes
+    class_total = [0] * n_classes
     
     for i in range(n_test):
         start_idx = i * n_features
@@ -68,48 +92,40 @@ def test_wine_quality():
         predicted = model.predict_proba(features, probabilities)
         actual = y_test[i]
         
+        # Track per-class stats
+        class_total[actual] += 1
         if predicted == actual:
             correct += 1
-        
-        # Confusion matrix
-        if predicted == 1 and actual == 1:
-            tp += 1
-        elif predicted == 0 and actual == 0:
-            tn += 1
-        elif predicted == 1 and actual == 0:
-            fp += 1
-        elif predicted == 0 and actual == 1:
-            fn += 1
+            class_correct[actual] += 1
         
         if i < 5:
-            conf = max(probabilities[0], probabilities[1])
-            wine_quality = "good" if actual == 1 else "poor"
-            pred_quality = "good" if predicted == 1 else "poor"
-            print(f"Sample {i}: pred={pred_quality}, actual={wine_quality}, conf={conf:.3f}")
+            conf = max(probabilities)
+            print(f"Sample {i}: pred={predicted}, actual={actual}, conf={conf:.3f}")
     
     accuracy = correct / n_test
-    precision = tp / (tp + fp) if (tp + fp) > 0 else 0
-    recall = tp / (tp + fn) if (tp + fn) > 0 else 0
-    f1 = 2 * precision * recall / (precision + recall) if (precision + recall) > 0 else 0
     
     print(f"\nResults:")
     print(f"Accuracy: {accuracy:.3f} ({correct}/{n_test})")
-    print(f"Precision: {precision:.3f}")
-    print(f"Recall: {recall:.3f}")
-    print(f"F1-Score: {f1:.3f}")
-    print(f"Confusion: TP={tp}, TN={tn}, FP={fp}, FN={fn}")
-    print(f"Target (sklearn): ~0.80")
     
-    if accuracy >= 0.78:
-        print("✅ EXCELLENT: Great performance on wine quality!")
-    elif accuracy >= 0.75:
+    # Per-class accuracy
+    print(f"\nPer-class accuracy:")
+    for c in range(n_classes):
+        if class_total[c] > 0:
+            class_acc = class_correct[c] / class_total[c]
+            print(f"  Class {c}: {class_acc:.3f} ({class_correct[c]}/{class_total[c]})")
+    
+    print(f"Target (sklearn ExtraTrees): ~0.95")
+    
+    if accuracy >= 0.90:
+        print("✅ EXCELLENT: Great wine classification!")
+    elif accuracy >= 0.85:
         print("✅ VERY GOOD: Strong wine classification!")
+    elif accuracy >= 0.80:
+        print("✅ GOOD: Solid wine classification!")
     elif accuracy >= 0.70:
-        print("✅ GOOD: Solid wine quality prediction!")
-    elif accuracy >= 0.65:
         print("⚠️  FAIR: Working but could improve")
     else:
         print("❌ POOR: Needs significant improvement")
 
 if __name__ == "__main__":
-    test_wine_quality()
+    test_wine()
