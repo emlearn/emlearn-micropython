@@ -1,12 +1,18 @@
 import array
 
+# When used as external C module, the .py is the top-level import,
+# and we need to merge the native module symbols at import time
+# When used as dynamic native modules (.mpy), .py and native code is merged at build time
+try:
+    from emlearn_linreg_c import *
+except ImportError as e:
+    pass
+
 log_prefix = 'emlearn_logreg:'
 
 
 def _make_buffer(n):
     return array.array('f', [0.0] * n)
-
-
 
 def train(model, X_train, y_train,
         max_iterations=200,

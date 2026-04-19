@@ -78,15 +78,11 @@ typedef struct _mp_obj_logreg_model_t {
     logreg_model_t model;
 } mp_obj_logreg_model_t;
 
-#ifdef MICROPY_ENABLE_DYNRUNTIME
+#if MICROPY_ENABLE_DYNRUNTIME
 mp_obj_full_type_t logreg_model_type;
 #else
 static const mp_obj_type_t logreg_model_type;
 #endif
-
-// Forward declaration for locals dict
-mp_map_elem_t logreg_model_locals_dict_table[10];
-static MP_DEFINE_CONST_DICT(logreg_model_locals_dict, logreg_model_locals_dict_table);
 
 // Create a new instance
 static mp_obj_t logreg_model_new(size_t n_args, const mp_obj_t *args) {
@@ -114,9 +110,9 @@ static mp_obj_t logreg_model_new(size_t n_args, const mp_obj_t *args) {
     self->lambda_l1 = lambda_l1;
 
     const size_t weight_count = (size_t)n_features * (size_t)n_classes;
-    self->weights = (float *)m_malloc(sizeof(float) * weight_count);
-    self->weight_gradients = (float *)m_malloc(sizeof(float) * weight_count);
-    self->biases = (float *)m_malloc(sizeof(float) * n_classes);
+    self->weights = m_new(float, weight_count);
+    self->weight_gradients = m_new(float, weight_count);
+    self->biases = m_new(float, n_classes);
 
     memset(self->weights, 0, weight_count * sizeof(float));
     memset(self->biases, 0, n_classes * sizeof(float));
@@ -130,8 +126,9 @@ static mp_obj_t logreg_model_del(mp_obj_t self_obj) {
     mp_obj_logreg_model_t *o = MP_OBJ_TO_PTR(self_obj);
     logreg_model_t *self = &o->model;
 
-    m_free(self->weights);
-    m_free(self->weight_gradients);
+    m_del(float, self->weights, (size_t)self->n_features * (size_t)self->n_classes);
+    m_del(float, self->weight_gradients, (size_t)self->n_features * (size_t)self->n_classes);
+    m_del(float, self->biases, self->n_classes);
 
     return mp_const_none;
 }
@@ -320,9 +317,14 @@ static mp_obj_t logreg_model_get_bias(mp_obj_t self_obj) {
     mp_obj_logreg_model_t *o = MP_OBJ_TO_PTR(self_obj);
     logreg_model_t *self = &o->model;
 
-    mp_obj_array_t *arr = MP_OBJ_TO_PTR(mp_obj_new_bytearray_by_ref(sizeof(float) * self->n_classes, self->biases));
+    mp_obj_t bias_obj = mp_obj_new_bytearray_by_ref(sizeof(float) * self->n_classes, self->biases);
+#if MICROPY_ENABLE_DYNRUNTIME
+    mp_obj_array_t *arr = MP_OBJ_TO_PTR(bias_obj);
     arr->typecode = 'f';
-    return MP_OBJ_FROM_PTR(arr);
+#else
+    ((mp_obj_base_t *)MP_OBJ_TO_PTR(bias_obj))->type = &mp_type_bytearray;
+#endif
+    return bias_obj;
 }
 static MP_DEFINE_CONST_FUN_OBJ_1(logreg_model_get_bias_obj, logreg_model_get_bias);
 
@@ -424,6 +426,12 @@ static mp_obj_t logreg_model_score_logloss(size_t n_args, const mp_obj_t *args) 
 }
 static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(logreg_model_score_logloss_obj, 5, 5, logreg_model_score_logloss);
 
+#if MICROPY_ENABLE_DYNRUNTIME
+
+// Forward declaration for locals dict
+mp_map_elem_t logreg_model_locals_dict_table[10];
+static MP_DEFINE_CONST_DICT(logreg_model_locals_dict, logreg_model_locals_dict_table);
+
 // Module setup entrypoint
 mp_obj_t mpy_init(mp_obj_fun_bc_t *self, size_t n_args, size_t n_kw, mp_obj_t *args) {
     MP_DYNRUNTIME_INIT_ENTRY
@@ -449,3 +457,41 @@ mp_obj_t mpy_init(mp_obj_fun_bc_t *self, size_t n_args, size_t n_kw, mp_obj_t *a
 
     MP_DYNRUNTIME_INIT_EXIT
 }
+
+#else
+
+static const mp_rom_map_elem_t logreg_model_locals_dict_table[] = {
+    { MP_ROM_QSTR(MP_QSTR_predict), MP_ROM_PTR(&logreg_model_predict_obj) },
+    { MP_ROM_QSTR(MP_QSTR_step), MP_ROM_PTR(&logreg_model_step_obj) },
+    { MP_ROM_QSTR(MP_QSTR___del__), MP_ROM_PTR(&logreg_model_del_obj) },
+    { MP_ROM_QSTR(MP_QSTR_get_weights), MP_ROM_PTR(&logreg_model_get_weights_obj) },
+    { MP_ROM_QSTR(MP_QSTR_set_weights), MP_ROM_PTR(&logreg_model_set_weights_obj) },
+    { MP_ROM_QSTR(MP_QSTR_get_bias), MP_ROM_PTR(&logreg_model_get_bias_obj) },
+    { MP_ROM_QSTR(MP_QSTR_set_bias), MP_ROM_PTR(&logreg_model_set_bias_obj) },
+    { MP_ROM_QSTR(MP_QSTR_get_n_features), MP_ROM_PTR(&logreg_model_get_n_features_obj) },
+    { MP_ROM_QSTR(MP_QSTR_get_n_classes), MP_ROM_PTR(&logreg_model_get_n_classes_obj) },
+    { MP_ROM_QSTR(MP_QSTR_score_logloss), MP_ROM_PTR(&logreg_model_score_logloss_obj) },
+};
+static MP_DEFINE_CONST_DICT(logreg_model_locals_dict, logreg_model_locals_dict_table);
+
+static MP_DEFINE_CONST_OBJ_TYPE(
+    logreg_model_type,
+    MP_QSTR_logreg,
+    MP_TYPE_FLAG_ITER_IS_CUSTOM,
+    make_new, logreg_model_new,
+    locals_dict, &logreg_model_locals_dict
+);
+
+static const mp_rom_map_elem_t logreg_globals_table[] = {
+    { MP_ROM_QSTR(MP_QSTR_new), MP_ROM_PTR(&logreg_model_new_obj) },
+    { MP_ROM_QSTR(MP_QSTR_logreg), MP_ROM_PTR(&logreg_model_type) },
+};
+static MP_DEFINE_CONST_DICT(logreg_globals, logreg_globals_table);
+
+const mp_obj_module_t logreg_cmodule = {
+    .base = { &mp_type_module },
+    .globals = (mp_obj_dict_t *)&logreg_globals,
+};
+MP_REGISTER_MODULE(MP_QSTR_emlearn_logreg_c, logreg_cmodule);
+
+#endif
