@@ -55,19 +55,24 @@ def train(model, X_train, y_train,
     score_logits, score_probs = _make_workspace_pair(n_classes)
     predict_logits, predict_probs = _make_predict_buffers(n_classes)
 
-    prev_loss = float('inf')
+    prev_loss = None
+    final_loss = float('inf')
+    iterations_completed = 0
 
     use_batches = batch_size < n_samples
+    full_X_view = memoryview(X_train)
+    full_y_view = memoryview(y_train)
     if use_batches:
         batch_X = array.array('f', [0.0] * (batch_size * n_features))
         batch_y = array.array('f', [0.0] * (batch_size * n_classes))
         batch_X_view = memoryview(batch_X)
         batch_y_view = memoryview(batch_y)
     else:
-        batch_X_view = memoryview(X_train)
-        batch_y_view = memoryview(y_train)
+        batch_X_view = full_X_view
+        batch_y_view = full_y_view
 
-    for iteration in range(max_iterations):
+    for _ in range(max_iterations):
+        iterations_completed += 1
         if use_batches:
             for start in range(0, n_samples, batch_size):
                 count = min(batch_size, n_samples - start)
@@ -86,33 +91,39 @@ def train(model, X_train, y_train,
         else:
             model.step(batch_X_view, batch_y_view, logits_buf, probs_buf, bias_buf)
 
-        if iteration % check_interval != 0:
+        if iterations_completed % check_interval != 0:
             continue
 
-        current_loss = model.score_logloss(batch_X_view, batch_y_view, score_logits, score_probs)
-        change = abs(prev_loss - current_loss)
+        current_loss = model.score_logloss(full_X_view, full_y_view, score_logits, score_probs)
+        final_loss = current_loss
+        change = float('inf') if prev_loss is None else abs(prev_loss - current_loss)
 
         if verbose >= 2:
-            print(log_prefix, f'Iteration {iteration} loss={current_loss}')
+            print(log_prefix, f'Iteration {iterations_completed} loss={current_loss}')
 
-        converged = change < tolerance and iteration > check_interval * 2
+        converged = change < tolerance and iterations_completed > check_interval * 2
 
-        if score_limit is not None:
-            converged = converged or current_loss <= score_limit
+        if score_limit is not None and current_loss <= score_limit:
+            converged = True
 
-        diverged = (current_loss > prev_loss * divergence_factor) or not (current_loss == current_loss)
+        diverged = not (current_loss == current_loss)
+        if not diverged and prev_loss is not None:
+            diverged = current_loss > prev_loss * divergence_factor
 
         if converged:
             if verbose >= 1:
-                print(log_prefix, f"Converged at iteration {iteration}")
+                print(log_prefix, f"Converged at iteration {iterations_completed}")
             break
 
         if diverged:
             if verbose >= 1:
-                print(log_prefix, f"Diverged at iteration {iteration}")
+                print(log_prefix, f"Diverged at iteration {iterations_completed}")
             break
 
         prev_loss = current_loss
 
-    return iteration, prev_loss
+    if final_loss == float('inf'):
+        final_loss = model.score_logloss(full_X_view, full_y_view, score_logits, score_probs)
+
+    return iterations_completed, final_loss
 
