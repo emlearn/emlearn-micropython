@@ -84,16 +84,23 @@ check_unix_natmod: $(MODULE_MPYS)
 $(PORT_DIR):
 	mkdir -p $@
 
-$(UNIX_MICROPYTHON): $(PORT_DIR)
-	make -C $(MPY_DIR)/ports/unix V=1 MICROPY_PY_FFI=0 USER_C_MODULES=$(C_MODULES_SRC_PATH) FROZEN_MANIFEST=$(MANIFEST_PATH) CFLAGS_EXTRA="-Wno-unused-function -Wno-unused-function ${CFLAGS_EXTRA}" -j4
+# Collect all source and build files under src/ for port builds
+SRC_C := $(shell find src -name "*.c" 2>/dev/null)
+SRC_H := $(shell find src -name "*.h" 2>/dev/null)
+SRC_PY := $(shell find src -name "*.py" 2>/dev/null)
+SRC_BUILD := src/micropython.cmake src/dynmodule.mk $(wildcard src/*/micropython.mk)
+SRC_ALL = $(SRC_C) $(SRC_H) $(SRC_PY) $(SRC_BUILD)
+
+$(UNIX_MICROPYTHON): $(PORT_DIR) $(SRC_ALL) src/manifest_unix.py
+	$(MAKE) -C $(MPY_DIR)/ports/unix V=1 MICROPY_PY_FFI=0 USER_C_MODULES=$(C_MODULES_SRC_PATH) FROZEN_MANIFEST=$(MANIFEST_PATH) CFLAGS_EXTRA="-Wno-unused-function -Wno-unused-function $(CFLAGS_EXTRA)" -j4
 	cp $(MPY_DIR)/ports/unix/build-standard/micropython $@
 
 unix: $(UNIX_MICROPYTHON)
 
-$(WEBASSEMBLY_MICROPYTHON): $(PORT_DIR)
+$(WEBASSEMBLY_MICROPYTHON): $(PORT_DIR) $(SRC_ALL) src/manifest_webassembly.py
 	emcc --version
 	mkdir -p $(PORT_DIR)/../webassembly
-	make -C $(MPY_DIR)/ports/webassembly VARIANT=pyscript V=1 USER_C_MODULES=$(C_MODULES_SRC_PATH) FROZEN_MANIFEST=$(WEBASSEMBLY_MANIFEST_PATH) CFLAGS_EXTRA="-Wno-unused-function -Wno-unused-function ${CFLAGS_EXTRA}" -j4
+	$(MAKE) -C $(MPY_DIR)/ports/webassembly VARIANT=pyscript V=1 USER_C_MODULES=$(C_MODULES_SRC_PATH) FROZEN_MANIFEST=$(WEBASSEMBLY_MANIFEST_PATH) CFLAGS_EXTRA="-Wno-unused-function -Wno-unused-function $(CFLAGS_EXTRA)" -j4
 	cp $(MPY_DIR)/ports/webassembly/build-pyscript/micropython.mjs $@
 	cp $(MPY_DIR)/ports/webassembly/build-pyscript/micropython.wasm dist/ports/webassembly/
 
@@ -105,14 +112,14 @@ check_unix: $(UNIX_MICROPYTHON)
 	$(UNIX_MICROPYTHON) tests/test_all.py test_iir,test_fft,test_arrayutils,test_linreg,test_logreg
 	# TODO: enable more modules
 
-rp2: $(PORT_DIR)
-	make -C $(MPY_DIR)/ports/rp2 V=1 USER_C_MODULES=$(C_MODULES_SRC_PATH)/micropython.cmake FROZEN_MANIFEST=$(MANIFEST_PATH) CFLAGS_EXTRA='-Wno-unused-function -Wno-unused-function' -j4
+rp2: $(PORT_DIR) $(SRC_ALL) src/manifest_unix.py
+	$(MAKE) -C $(MPY_DIR)/ports/rp2 V=1 USER_C_MODULES=$(C_MODULES_SRC_PATH)/micropython.cmake FROZEN_MANIFEST=$(MANIFEST_PATH) CFLAGS_EXTRA='-Wno-unused-function -Wno-unused-function' -j4
 	mkdir -p ./dist/ports/rp2/RPI_PICO
 	cp -r $(MPY_DIR)/ports/rp2/build-RPI_PICO/firmware* ./dist/ports/rp2/RPI_PICO/
 
 
-extmod:
-	make -C $(MPY_DIR)/ports/esp32 V=1 BOARD=$(BOARD) USER_C_MODULES=$(C_MODULES_SRC_PATH)/micropython.cmake FROZEN_MANIFEST=$(MANIFEST_PATH) CFLAGS_EXTRA='-Wno-unused-function -Wno-unused-function' -j4
+extmod: $(SRC_ALL) src/manifest_unix.py
+	$(MAKE) -C $(MPY_DIR)/ports/esp32 V=1 BOARD=$(BOARD) USER_C_MODULES=$(C_MODULES_SRC_PATH)/micropython.cmake FROZEN_MANIFEST=$(MANIFEST_PATH) CFLAGS_EXTRA='-Wno-unused-function -Wno-unused-function' -j4
 	mkdir -p $(PORT_DIST_DIR)
 	cp -r $(PORT_BUILD_DIR)/firmware* $(PORT_DIST_DIR)
 	cp -r $(PORT_BUILD_DIR)/micropython* $(PORT_DIST_DIR)
