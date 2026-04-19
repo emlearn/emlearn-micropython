@@ -1,5 +1,5 @@
 # Location of top-level MicroPython directory
-MPY_DIR = ../../micropython
+MPY_DIR ?= ../../micropython
 
 # Architecture to build for (x86, x64, armv6m, armv7m, xtensa, xtensawin)
 ARCH = x64

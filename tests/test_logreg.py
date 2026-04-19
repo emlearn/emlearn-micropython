@@ -83,6 +83,10 @@ def read_weights(model):
     return buf
 
 
+def read_bias(model):
+    return model.get_bias()
+
+
 def assert_raises_value_error(func, message='Expected ValueError'):
     try:
         func()
@@ -105,7 +109,7 @@ def test_logreg_train_and_predict():
     assert zero_pred < 0.2, zero_pred
 
 
-def test_logreg_predict_class_and_weight_io():
+def test_logreg_weight_io_and_probabilities():
     model = emlearn_logreg.new(2, 0.1, 0.0, 0.0)
 
     manual_weights = array.array('f', [2.5, -1.5])
@@ -120,8 +124,8 @@ def test_logreg_predict_class_and_weight_io():
     bias = model.get_bias()
     assert abs(bias + 0.5) < 1e-6, bias
 
-    assert model.predict_class(array.array('f', [2.0, 0.0])) == 1
-    assert model.predict_class(array.array('f', [0.0, 1.0])) == 0
+    assert model.predict(array.array('f', [2.0, 0.0])) > 0.5
+    assert model.predict(array.array('f', [0.0, 1.0])) < 0.5
 
 
 def test_logreg_train_minibatch_reduces_loss():
@@ -228,9 +232,44 @@ def test_logreg_train_requires_targets():
     assert_raises_value_error(lambda: emlearn_logreg.train(model, X, y))
 
 
+def test_logreg_warm_start_sets_new_weights_and_bias():
+    X, y = make_dataset()
+    model = emlearn_logreg.new(2, 0.3, 0.0, 0.0)
+
+    emlearn_logreg.train(model, X, y, max_iterations=20, check_interval=5)
+    trained_weights = read_weights(model)
+    trained_bias = read_bias(model)
+
+    manual_model = emlearn_logreg.new(2, 0.3, 0.0, 0.0)
+    manual_model.set_weights(trained_weights)
+    manual_model.set_bias(trained_bias)
+
+    sample = array.array('f', [1.0, 1.0])
+    pred_trained = model.predict(sample)
+    pred_manual = manual_model.predict(sample)
+    assert abs(pred_trained - pred_manual) < 1e-6
+
+
+def test_logreg_threshold_adjustment_behaviour():
+    model = emlearn_logreg.new(2, 0.1, 0.0, 0.0)
+    weights = array.array('f', [5.0, -5.0])
+    model.set_weights(weights)
+    model.set_bias(-1.0)
+
+    features = array.array('f', [0.2, 0.1])
+    proba = model.predict(features)
+    assert 0.0 < proba < 1.0
+
+    default_label = 1 if proba >= 0.5 else 0
+    custom_threshold = 0.3
+    custom_label = 1 if proba >= custom_threshold else 0
+
+    assert custom_label >= default_label
+
+
 if __name__ == '__main__':
     test_logreg_train_and_predict()
-    test_logreg_predict_class_and_weight_io()
+    test_logreg_weight_io_and_probabilities()
     test_logreg_train_minibatch_reduces_loss()
     test_logreg_l2_penalty_shrinks_weights()
     test_logreg_l1_penalty_promotes_sparsity()

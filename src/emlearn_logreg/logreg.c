@@ -137,30 +137,6 @@ static mp_obj_t logreg_model_predict(mp_obj_t self_obj, mp_obj_t features_obj) {
 }
 static MP_DEFINE_CONST_FUN_OBJ_2(logreg_model_predict_obj, logreg_model_predict);
 
-static mp_obj_t logreg_model_predict_class(mp_obj_t self_obj, mp_obj_t features_obj) {
-    mp_obj_logreg_model_t *o = MP_OBJ_TO_PTR(self_obj);
-    logreg_model_t *self = &o->model;
-
-    mp_buffer_info_t bufinfo;
-    mp_get_buffer_raise(features_obj, &bufinfo, MP_BUFFER_READ);
-    if (bufinfo.typecode != 'f') {
-        mp_raise_ValueError(MP_ERROR_TEXT("expecting float32 array"));
-    }
-    const float *features = bufinfo.buf;
-    const int n_features = bufinfo.len / sizeof(float);
-
-    if (n_features != self->n_features) {
-        mp_raise_ValueError(MP_ERROR_TEXT("Feature count mismatch"));
-    }
-
-    const float threshold = 0.5f;
-
-    uint8_t label = logreg_predict_proba(self, features) >= threshold ? 1 : 0;
-
-    return mp_obj_new_int(label);
-}
-static MP_DEFINE_CONST_FUN_OBJ_2(logreg_model_predict_class_obj, logreg_model_predict_class);
-
 // Get model weights
 static mp_obj_t logreg_model_get_weights(mp_obj_t self_obj, mp_obj_t out_obj) {
     mp_obj_logreg_model_t *o = MP_OBJ_TO_PTR(self_obj);
@@ -279,17 +255,16 @@ mp_obj_t mpy_init(mp_obj_fun_bc_t *self, size_t n_args, size_t n_kw, mp_obj_t *a
     logreg_model_type.name = MP_QSTR_logreg;
 
     logreg_model_locals_dict_table[0] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR_predict), MP_OBJ_FROM_PTR(&logreg_model_predict_obj) };
-    logreg_model_locals_dict_table[1] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR_predict_class), MP_OBJ_FROM_PTR(&logreg_model_predict_class_obj) };
-    logreg_model_locals_dict_table[2] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR_step), MP_OBJ_FROM_PTR(&logreg_model_step_obj) };
-    logreg_model_locals_dict_table[3] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR___del__), MP_OBJ_FROM_PTR(&logreg_model_del_obj) };
-    logreg_model_locals_dict_table[4] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR_get_weights), MP_OBJ_FROM_PTR(&logreg_model_get_weights_obj) };
-    logreg_model_locals_dict_table[5] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR_set_weights), MP_OBJ_FROM_PTR(&logreg_model_set_weights_obj) };
-    logreg_model_locals_dict_table[6] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR_get_bias), MP_OBJ_FROM_PTR(&logreg_model_get_bias_obj) };
-    logreg_model_locals_dict_table[7] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR_set_bias), MP_OBJ_FROM_PTR(&logreg_model_set_bias_obj) };
-    logreg_model_locals_dict_table[8] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR_get_n_features), MP_OBJ_FROM_PTR(&logreg_model_get_n_features_obj) };
-    logreg_model_locals_dict_table[9] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR_score_logloss), MP_OBJ_FROM_PTR(&logreg_model_score_logloss_obj) };
+    logreg_model_locals_dict_table[1] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR_step), MP_OBJ_FROM_PTR(&logreg_model_step_obj) };
+    logreg_model_locals_dict_table[2] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR___del__), MP_OBJ_FROM_PTR(&logreg_model_del_obj) };
+    logreg_model_locals_dict_table[3] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR_get_weights), MP_OBJ_FROM_PTR(&logreg_model_get_weights_obj) };
+    logreg_model_locals_dict_table[4] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR_set_weights), MP_OBJ_FROM_PTR(&logreg_model_set_weights_obj) };
+    logreg_model_locals_dict_table[5] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR_get_bias), MP_OBJ_FROM_PTR(&logreg_model_get_bias_obj) };
+    logreg_model_locals_dict_table[6] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR_set_bias), MP_OBJ_FROM_PTR(&logreg_model_set_bias_obj) };
+    logreg_model_locals_dict_table[7] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR_get_n_features), MP_OBJ_FROM_PTR(&logreg_model_get_n_features_obj) };
+    logreg_model_locals_dict_table[8] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR_score_logloss), MP_OBJ_FROM_PTR(&logreg_model_score_logloss_obj) };
 
-    MP_OBJ_TYPE_SET_SLOT(&logreg_model_type, locals_dict, (void *)&logreg_model_locals_dict, 10);
+    MP_OBJ_TYPE_SET_SLOT(&logreg_model_type, locals_dict, (void *)&logreg_model_locals_dict, 9);
 
     MP_DYNRUNTIME_INIT_EXIT
 }
