@@ -1,5 +1,9 @@
 // Include the header file to get access to the MicroPython API
+#ifdef MICROPY_ENABLE_DYNRUNTIME
 #include "py/dynruntime.h"
+#else
+#include "py/runtime.h"
+#endif
 
 #include <string.h>
 
@@ -21,7 +25,11 @@ typedef struct _mp_obj_elasticnet_model_t {
     elastic_net_model_t model;
 } mp_obj_elasticnet_model_t;
 
+#if MICROPY_ENABLE_DYNRUNTIME
 mp_obj_full_type_t elasticnet_model_type;
+#else
+static const mp_obj_type_t elasticnet_model_type;
+#endif
 
 // Create a new instance
 static mp_obj_t elasticnet_model_new(size_t n_args, const mp_obj_t *args) {
@@ -50,8 +58,8 @@ static mp_obj_t elasticnet_model_new(size_t n_args, const mp_obj_t *args) {
     self->bias = 0.0f;
     
     // Allocate weight buffers
-    self->weights = (float *)m_malloc(sizeof(float) * n_features);
-    self->weight_gradients = (float *)m_malloc(sizeof(float) * n_features);
+    self->weights = m_new(float, n_features);
+    self->weight_gradients = m_new(float, n_features);
     
     // Initialize weights to zero
     memset(self->weights, 0, n_features * sizeof(float));
@@ -67,8 +75,8 @@ static mp_obj_t elasticnet_model_del(mp_obj_t self_obj) {
     elastic_net_model_t *self = &o->model;   
 
     // Free allocated memory
-    m_free(self->weights);
-    m_free(self->weight_gradients);
+    m_del(float, self->weights, self->n_features);
+    m_del(float, self->weight_gradients, self->n_features);
 
     return mp_const_none;
 }
@@ -118,17 +126,14 @@ static mp_obj_t elasticnet_model_step(size_t n_args, const mp_obj_t *args) {
 static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(elasticnet_model_step_obj, 3, 3, elasticnet_model_step);
 
 // Predict using the model
-static mp_obj_t elasticnet_model_predict(mp_obj_fun_bc_t *self_obj,
-        size_t n_args, size_t n_kw, mp_obj_t *args) {
-    // Check number of arguments is valid
-    mp_arg_check_num(n_args, n_kw, 2, 2, false);
+static mp_obj_t elasticnet_model_predict(mp_obj_t self_obj, mp_obj_t features_obj) {
 
-    mp_obj_elasticnet_model_t *o = MP_OBJ_TO_PTR(args[0]);
+    mp_obj_elasticnet_model_t *o = MP_OBJ_TO_PTR(self_obj);
     elastic_net_model_t *self = &o->model;    
 
     // Extract buffer pointer and verify typecode
     mp_buffer_info_t bufinfo;
-    mp_get_buffer_raise(args[1], &bufinfo, MP_BUFFER_READ);
+    mp_get_buffer_raise(features_obj, &bufinfo, MP_BUFFER_READ);
     if (bufinfo.typecode != 'f') {
         mp_raise_ValueError(MP_ERROR_TEXT("expecting float32 array"));
     }
@@ -144,6 +149,7 @@ static mp_obj_t elasticnet_model_predict(mp_obj_fun_bc_t *self_obj,
 
     return mp_obj_new_float_from_f(prediction);
 }
+static MP_DEFINE_CONST_FUN_OBJ_2(elasticnet_model_predict_obj, elasticnet_model_predict);
 
 // Get model weights
 static mp_obj_t elasticnet_model_get_weights(mp_obj_t self_obj, mp_obj_t out_obj) {
@@ -270,23 +276,23 @@ static mp_obj_t elasticnet_model_score_mse(size_t n_args, const mp_obj_t *args) 
 }
 static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(elasticnet_model_score_mse_obj, 3, 3, elasticnet_model_score_mse);
 
+
+#ifdef MICROPY_ENABLE_DYNRUNTIME
+
 // Module setup
-mp_map_elem_t elasticnet_model_locals_dict_table[10];
+mp_map_elem_t elasticnet_model_locals_dict_table[9];
 static MP_DEFINE_CONST_DICT(elasticnet_model_locals_dict, elasticnet_model_locals_dict_table);
 
 // Module setup entrypoint
 mp_obj_t mpy_init(mp_obj_fun_bc_t *self, size_t n_args, size_t n_kw, mp_obj_t *args) {
-    // This must be first, it sets up the globals dict and other things
     MP_DYNRUNTIME_INIT_ENTRY
 
     mp_store_global(MP_QSTR_new, MP_OBJ_FROM_PTR(&elasticnet_model_new_obj));
-
     elasticnet_model_type.base.type = (void*)&mp_fun_table.type_type;
     elasticnet_model_type.flags = MP_TYPE_FLAG_ITER_IS_CUSTOM;
     elasticnet_model_type.name = MP_QSTR_elasticnet;
-    
-    // methods
-    elasticnet_model_locals_dict_table[0] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR_predict), MP_DYNRUNTIME_MAKE_FUNCTION(elasticnet_model_predict) };
+
+    elasticnet_model_locals_dict_table[0] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR_predict), MP_OBJ_FROM_PTR(&elasticnet_model_predict_obj) };
     elasticnet_model_locals_dict_table[1] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR_step), MP_OBJ_FROM_PTR(&elasticnet_model_step_obj) };
     elasticnet_model_locals_dict_table[2] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR___del__), MP_OBJ_FROM_PTR(&elasticnet_model_del_obj) };
     elasticnet_model_locals_dict_table[3] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR_get_weights), MP_OBJ_FROM_PTR(&elasticnet_model_get_weights_obj) };
@@ -295,9 +301,46 @@ mp_obj_t mpy_init(mp_obj_fun_bc_t *self, size_t n_args, size_t n_kw, mp_obj_t *a
     elasticnet_model_locals_dict_table[6] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR_score_mse), MP_OBJ_FROM_PTR(&elasticnet_model_score_mse_obj) };
     elasticnet_model_locals_dict_table[7] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR_set_bias), MP_OBJ_FROM_PTR(&elasticnet_model_set_bias_obj) };
     elasticnet_model_locals_dict_table[8] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR_set_weights), MP_OBJ_FROM_PTR(&elasticnet_model_set_weights_obj) };
-
     MP_OBJ_TYPE_SET_SLOT(&elasticnet_model_type, locals_dict, (void*)&elasticnet_model_locals_dict, 9);
 
-    // This must be last, it restores the globals dict
+    mp_store_global(MP_QSTR_elasticnet, MP_OBJ_FROM_PTR(&elasticnet_model_type));
+
     MP_DYNRUNTIME_INIT_EXIT
 }
+
+#else // extmod
+
+static const mp_rom_map_elem_t elasticnet_model_locals_dict_table[] = {
+    { MP_ROM_QSTR(MP_QSTR_predict),      MP_ROM_PTR(&elasticnet_model_predict_obj) },
+    { MP_ROM_QSTR(MP_QSTR_step),         MP_ROM_PTR(&elasticnet_model_step_obj) },
+    { MP_ROM_QSTR(MP_QSTR___del__),      MP_ROM_PTR(&elasticnet_model_del_obj) },
+    { MP_ROM_QSTR(MP_QSTR_get_weights),  MP_ROM_PTR(&elasticnet_model_get_weights_obj) },
+    { MP_ROM_QSTR(MP_QSTR_get_bias),     MP_ROM_PTR(&elasticnet_model_get_bias_obj) },
+    { MP_ROM_QSTR(MP_QSTR_get_n_features), MP_ROM_PTR(&elasticnet_model_get_n_features_obj) },
+    { MP_ROM_QSTR(MP_QSTR_score_mse),    MP_ROM_PTR(&elasticnet_model_score_mse_obj) },
+    { MP_ROM_QSTR(MP_QSTR_set_bias),     MP_ROM_PTR(&elasticnet_model_set_bias_obj) },
+    { MP_ROM_QSTR(MP_QSTR_set_weights),  MP_ROM_PTR(&elasticnet_model_set_weights_obj) },
+};
+static MP_DEFINE_CONST_DICT(elasticnet_model_locals_dict, elasticnet_model_locals_dict_table);
+
+static MP_DEFINE_CONST_OBJ_TYPE(
+    elasticnet_model_type,
+    MP_QSTR_elasticnet,
+    MP_TYPE_FLAG_ITER_IS_CUSTOM,
+    make_new, elasticnet_model_new,
+    locals_dict, &elasticnet_model_locals_dict
+);
+
+static const mp_rom_map_elem_t elasticnet_globals_table[] = {
+    { MP_ROM_QSTR(MP_QSTR_new),        MP_ROM_PTR(&elasticnet_model_new_obj) },
+    { MP_ROM_QSTR(MP_QSTR_elasticnet), MP_ROM_PTR(&elasticnet_model_type) },
+};
+static MP_DEFINE_CONST_DICT(elasticnet_globals, elasticnet_globals_table);
+
+const mp_obj_module_t elasticnet_cmodule = {
+    .base = { &mp_type_module },
+    .globals = (mp_obj_dict_t *)&elasticnet_globals,
+};
+MP_REGISTER_MODULE(MP_QSTR_elasticnet_c, elasticnet_cmodule);
+
+#endif
