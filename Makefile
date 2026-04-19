@@ -84,7 +84,7 @@ webassembly: $(WEBASSEMBLY_MICROPYTHON)
 
 
 check_unix: $(UNIX_MICROPYTHON)
-	$(UNIX_MICROPYTHON) tests/test_all.py test_iir,test_fft,test_arrayutils,test_linreg
+	$(UNIX_MICROPYTHON) tests/test_all.py test_iir,test_fft,test_arrayutils,test_linreg,test_logreg
 	# TODO: enable more modules
 
 rp2: $(PORT_DIR)

@@ -19,7 +19,7 @@ DIST_DIR := ../../dist/$(ARCH)_$(MPY_ABI_VERSION)
 MOD = emlearn_logreg
 
 # Source files (.c or .py)
-SRC = logreg.c logreg.py
+SRC = logreg.c emlearn_logreg.py
 
 # Include to get the rules for compiling and linking the module
 include $(MPY_DIR)/py/dynruntime.mk
