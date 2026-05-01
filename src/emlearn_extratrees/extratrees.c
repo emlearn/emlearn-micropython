@@ -72,27 +72,30 @@ static mp_obj_t extratrees_model_new(size_t n_args, const mp_obj_t *args) {
     model->config.rng_seed = rng_seed;
     
     // Allocate model buffers
-    model->nodes = (EmlTreesNode *)m_malloc(sizeof(EmlTreesNode) * max_nodes);
-    model->tree_starts = (int16_t *)m_malloc(sizeof(int16_t) * n_trees);
+    model->nodes = m_new(EmlTreesNode, max_nodes);
+    model->tree_starts = m_new(int16_t, n_trees);
     
     // Allocate workspace buffers
-    workspace->sample_indices = (uint16_t *)m_malloc(sizeof(uint16_t) * max_samples);
-    workspace->feature_indices = (uint16_t *)m_malloc(sizeof(uint16_t) * n_features);
-    workspace->min_vals = (int16_t *)m_malloc(sizeof(int16_t) * n_features);
-    workspace->max_vals = (int16_t *)m_malloc(sizeof(int16_t) * n_features);
-    workspace->class_counts = (int16_t *)m_malloc(sizeof(int16_t) * n_classes);
-    workspace->unique_vals = (int16_t *)m_malloc(sizeof(int16_t) * 50);
+    workspace->sample_indices = m_new(uint16_t, max_samples);
+    workspace->feature_indices = m_new(uint16_t, n_features);
+    workspace->min_vals = m_new(int16_t, n_features);
+    workspace->max_vals = m_new(int16_t, n_features);
+    workspace->class_counts = m_new(int16_t, n_classes);
+    workspace->unique_vals = m_new(int16_t, 50);
     // Allocate temporary arrays for find_best_split
-    workspace->split_left_counts = (int16_t *)m_malloc(sizeof(int16_t) * n_classes);
-    workspace->split_right_counts = (int16_t *)m_malloc(sizeof(int16_t) * n_classes);
+    workspace->split_left_counts = m_new(int16_t, n_classes);
+    workspace->split_right_counts = m_new(int16_t, n_classes);
     // Allocate stack with enough capacity for max depth (conservative estimate)
-    workspace->node_stack = (NodeState *)m_malloc(sizeof(NodeState) * (max_depth * 3));
+    workspace->node_stack = m_new(NodeState, max_depth * 3);
+    // Allocate temporary arrays for predict
+    workspace->probabilities = m_new(float, n_classes);
+    workspace->votes = m_new(int16_t, n_classes);
     workspace->n_samples = 0; // Will be set during training
     workspace->rng_state = rng_seed;
     
     // Allocate training data buffers
-    o->features_buffer = (int16_t *)m_malloc(sizeof(int16_t) * max_samples * n_features);
-    o->labels_buffer = (int16_t *)m_malloc(sizeof(int16_t) * max_samples);
+    o->features_buffer = m_new(int16_t, max_samples * n_features);
+    o->labels_buffer = m_new(int16_t, max_samples);
     
     // Initialize nodes and tree starts
     memset(model->nodes, 0, sizeof(EmlTreesNode) * max_nodes);
@@ -110,19 +113,21 @@ static mp_obj_t extratrees_model_del(mp_obj_t self_obj) {
     EmlTreesWorkspace *workspace = &o->workspace;
 
     // Free allocated memory
-    m_free(model->nodes);
-    m_free(model->tree_starts);
-    m_free(workspace->sample_indices);
-    m_free(workspace->feature_indices);
-    m_free(workspace->min_vals);
-    m_free(workspace->max_vals);
-    m_free(workspace->class_counts);
-    m_free(workspace->unique_vals);
-    m_free(workspace->split_left_counts);
-    m_free(workspace->split_right_counts);
-    m_free(workspace->node_stack);
-    m_free(o->features_buffer);
-    m_free(o->labels_buffer);
+    m_del(EmlTreesNode, model->nodes, model->max_nodes);
+    m_del(int16_t, model->tree_starts, model->n_trees);
+    m_del(uint16_t, workspace->sample_indices, model->max_samples);
+    m_del(uint16_t, workspace->feature_indices, model->n_features);
+    m_del(int16_t, workspace->min_vals, model->n_features);
+    m_del(int16_t, workspace->max_vals, model->n_features);
+    m_del(int16_t, workspace->class_counts, model->n_classes);
+    m_del(int16_t, workspace->unique_vals, 50);
+    m_del(int16_t, workspace->split_left_counts, model->n_classes);
+    m_del(int16_t, workspace->split_right_counts, model->n_classes);
+    m_del(NodeState, workspace->node_stack, model->config.max_depth * 3);
+    m_del(float, workspace->probabilities, model->n_classes);
+    m_del(int16_t, workspace->votes, model->n_classes);
+    m_del(int16_t, o->features_buffer, model->max_samples * model->n_features);
+    m_del(int16_t, o->labels_buffer, model->max_samples);
 
     return mp_const_none;
 }
@@ -189,6 +194,7 @@ static mp_obj_t extratrees_model_predict_proba(mp_obj_fun_bc_t *self_obj,
 
     mp_obj_extratrees_model_t *o = MP_OBJ_TO_PTR(args[0]);
     EmlTreesModel *model = &o->model;
+    EmlTreesWorkspace *workspace = &o->workspace;
 
     // Extract features buffer pointer and verify typecode
     mp_buffer_info_t features_bufinfo;
@@ -216,14 +222,8 @@ static mp_obj_t extratrees_model_predict_proba(mp_obj_fun_bc_t *self_obj,
         mp_raise_ValueError(MP_ERROR_TEXT("Probabilities buffer size mismatch"));
     }
 
-    // Allocate temporary votes buffer
-    int16_t *votes = (int16_t *)m_malloc(sizeof(int16_t) * model->n_classes);
-
-    // Make prediction
-    int16_t predicted_class = eml_trees_predict_proba(model, features, probabilities, votes);
-
-    // Free temporary buffer
-    m_free(votes);
+    // Make prediction using pre-allocated workspace arrays
+    int16_t predicted_class = eml_trees_predict_proba(model, features, probabilities, workspace->votes);
 
     return mp_obj_new_int(predicted_class);
 }
@@ -236,6 +236,7 @@ static mp_obj_t extratrees_model_predict(mp_obj_fun_bc_t *self_obj,
 
     mp_obj_extratrees_model_t *o = MP_OBJ_TO_PTR(args[0]);
     EmlTreesModel *model = &o->model;
+    EmlTreesWorkspace *workspace = &o->workspace;
 
     // Extract features buffer pointer and verify typecode
     mp_buffer_info_t features_bufinfo;
@@ -250,16 +251,8 @@ static mp_obj_t extratrees_model_predict(mp_obj_fun_bc_t *self_obj,
         mp_raise_ValueError(MP_ERROR_TEXT("Feature count mismatch"));
     }
 
-    // Allocate temporary buffers
-    float *probabilities = (float *)m_malloc(sizeof(float) * model->n_classes);
-    int16_t *votes = (int16_t *)m_malloc(sizeof(int16_t) * model->n_classes);
-
-    // Make prediction
-    int16_t predicted_class = eml_trees_predict_proba(model, features, probabilities, votes);
-
-    // Free temporary buffers
-    m_free(probabilities);
-    m_free(votes);
+    // Make prediction using pre-allocated workspace arrays
+    int16_t predicted_class = eml_trees_predict_proba(model, features, workspace->probabilities, workspace->votes);
 
     return mp_obj_new_int(predicted_class);
 }

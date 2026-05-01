@@ -56,6 +56,8 @@ typedef struct _EmlTreesWorkspace {
     int16_t *split_left_counts;   // Temporary arrays for find_best_split [n_classes]
     int16_t *split_right_counts;  // Temporary arrays for find_best_split [n_classes]
     NodeState *node_stack;        // Stack for tree building
+    float *probabilities;         // Temporary array for predict [n_classes]
+    int16_t *votes;               // Temporary array for predict [n_classes]
     uint32_t rng_state;           // Simple RNG state
     int16_t n_samples;            // Number of samples
 } EmlTreesWorkspace;
