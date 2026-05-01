@@ -81,7 +81,6 @@ static mp_obj_t extratrees_model_new(size_t n_args, const mp_obj_t *args) {
     workspace->min_vals = m_new(int16_t, n_features);
     workspace->max_vals = m_new(int16_t, n_features);
     workspace->class_counts = m_new(int16_t, n_classes);
-    workspace->unique_vals = m_new(int16_t, 50);
     // Allocate temporary arrays for find_best_split
     workspace->split_left_counts = m_new(int16_t, n_classes);
     workspace->split_right_counts = m_new(int16_t, n_classes);
@@ -120,7 +119,6 @@ static mp_obj_t extratrees_model_del(mp_obj_t self_obj) {
     m_del(int16_t, workspace->min_vals, model->n_features);
     m_del(int16_t, workspace->max_vals, model->n_features);
     m_del(int16_t, workspace->class_counts, model->n_classes);
-    m_del(int16_t, workspace->unique_vals, 50);
     m_del(int16_t, workspace->split_left_counts, model->n_classes);
     m_del(int16_t, workspace->split_right_counts, model->n_classes);
     m_del(NodeState, workspace->node_stack, model->config.max_depth * 3);

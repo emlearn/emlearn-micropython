@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <limits.h>
 
 #define DEBUG 0
 
@@ -52,7 +53,6 @@ typedef struct _EmlTreesWorkspace {
     int16_t *min_vals;            // Min values per feature [n_features]
     int16_t *max_vals;            // Max values per feature [n_features]
     int16_t *class_counts;        // Temporary array for class counting [n_classes]
-    int16_t *unique_vals;         // Temporary array for unique values [50]
     int16_t *split_left_counts;   // Temporary arrays for find_best_split [n_classes]
     int16_t *split_right_counts;  // Temporary arrays for find_best_split [n_classes]
     NodeState *node_stack;        // Stack for tree building
@@ -264,8 +264,8 @@ static int find_best_split(const int16_t *features, const int16_t *labels,
     
     // Calculate parent class distribution
     memset(workspace->class_counts, 0, sizeof(int16_t) * model->n_classes);
-    for (int16_t i = start; i < end; i++) {
-        int16_t sample_idx = workspace->sample_indices[i];
+    for (int i = start; i < end; i++) {
+        uint16_t sample_idx = workspace->sample_indices[i];
         int16_t label = labels[sample_idx];
         workspace->class_counts[label]++;
     }
@@ -277,57 +277,40 @@ static int find_best_split(const int16_t *features, const int16_t *labels,
         return -1;
     }
     
-    // Try each feature
-    for (int16_t f = 0; f < n_features_subset; f++) {
+    // ExtraTrees: for each feature, draw n_thresholds random thresholds
+    // uniformly between the feature's min and max values in this node
+    for (int f = 0; f < n_features_subset; f++) {
         int16_t feature_idx = workspace->feature_indices[f];
         
-        // Collect unique values for this feature in this node
-        int16_t n_unique = 0;
+        // Find min and max values for this feature in current node
+        int16_t feat_min = INT16_MAX;
+        int16_t feat_max = INT16_MIN;
         
-        for (int16_t i = start; i < end; i++) {
-            int16_t sample_idx = workspace->sample_indices[i];
+        for (int i = start; i < end; i++) {
+            uint16_t sample_idx = workspace->sample_indices[i];
             int16_t val = features[sample_idx * model->n_features + feature_idx];
+            if (val < feat_min) feat_min = val;
+            if (val > feat_max) feat_max = val;
+        }
+        
+        // Need at least 2 distinct values to split
+        if (feat_min >= feat_max) {
+            continue;
+        }
+        
+        // Draw n_thresholds random thresholds between min and max
+        for (int t = 0; t < model->config.n_thresholds; t++) {
+            // Draw random threshold uniformly in [feat_min, feat_max)
+            int32_t range = (int32_t)feat_max - (int32_t)feat_min;
+            int16_t threshold = feat_min + (int16_t)(eml_rand(&workspace->rng_state) % (uint32_t)(range));
             
-            // Check if already in unique_vals
-            bool already_present = false;
-            for (int16_t u = 0; u < n_unique; u++) {
-                if (workspace->unique_vals[u] == val) {
-                    already_present = true;
-                    break;
-                }
-            }
-            if (!already_present && n_unique < 50) {
-                workspace->unique_vals[n_unique++] = val;
-            }
-        }
-        
-        if (n_unique < 2) {
-            continue; // Need at least 2 unique values to split
-        }
-        
-        // Sort unique values to try thresholds between them
-        for (int16_t i = 0; i < n_unique - 1; i++) {
-            for (int16_t j = i + 1; j < n_unique; j++) {
-                if (workspace->unique_vals[i] > workspace->unique_vals[j]) {
-                    int16_t temp = workspace->unique_vals[i];
-                    workspace->unique_vals[i] = workspace->unique_vals[j];
-                    workspace->unique_vals[j] = temp;
-                }
-            }
-        }
-        
-        // Try thresholds between consecutive unique values
-        for (int16_t u = 0; u < n_unique - 1; u++) {
-            // Use threshold between unique_vals[u] and unique_vals[u+1]
-            int16_t threshold = workspace->unique_vals[u];
-            
-            // Count left/right distributions using pre-allocated arrays
+            // Count left/right distributions
             int left_total = 0, right_total = 0;
             memset(workspace->split_left_counts, 0, sizeof(int16_t) * model->n_classes);
             memset(workspace->split_right_counts, 0, sizeof(int16_t) * model->n_classes);
             
-            for (int16_t i = start; i < end; i++) {
-                int16_t sample_idx = workspace->sample_indices[i];
+            for (int i = start; i < end; i++) {
+                uint16_t sample_idx = workspace->sample_indices[i];
                 int16_t feature_val = features[sample_idx * model->n_features + feature_idx];
                 int16_t label = labels[sample_idx];
                 
@@ -340,7 +323,7 @@ static int find_best_split(const int16_t *features, const int16_t *labels,
                 }
             }
             
-            // Check if split creates non-empty partitions
+            // Skip degenerate splits
             if (left_total == 0 || right_total == 0) {
                 continue;
             }
@@ -356,8 +339,6 @@ static int find_best_split(const int16_t *features, const int16_t *labels,
             float weighted_gini = ((float)left_total * left_gini + (float)right_total * right_gini) / (float)total_samples;
             float improvement = parent_gini - weighted_gini;
             
-            // CRITICAL FIX: Accept splits with improvement >= 0.0 (not just > 0.0)
-            // This allows splits that don't immediately improve but may lead to better deeper splits
             if (improvement >= best_improvement) {
                 best_improvement = improvement;
                 *best_feature = feature_idx;
@@ -366,8 +347,6 @@ static int find_best_split(const int16_t *features, const int16_t *labels,
         }
     }
     
-    // CRITICAL FIX: Accept any valid split, even with zero improvement
-    // Change the return condition to accept improvement >= 0.0
     return (*best_feature != -1) ? 0 : -1;
 }
 
