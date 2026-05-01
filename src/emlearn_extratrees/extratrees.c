@@ -29,9 +29,9 @@ mp_obj_full_type_t extratrees_model_type;
 // Create a new instance
 static mp_obj_t extratrees_model_new(size_t n_args, const mp_obj_t *args) {
     // Args: n_features, n_classes, [n_trees], [max_depth], [min_samples_leaf], [n_thresholds], 
-    //       [subsample_ratio], [feature_subsample_ratio], [max_nodes], [max_samples], [rng_seed]
-    if (n_args < 2 || n_args > 11) {
-        mp_raise_ValueError(MP_ERROR_TEXT("Expected 2-11 arguments: n_features, n_classes, [n_trees=10], [max_depth=10], [min_samples_leaf=1], [n_thresholds=10], [subsample_ratio=1.0], [feature_subsample_ratio=1.0], [max_nodes=1000], [max_samples=1000], [rng_seed=42]"));
+    //       [subsample_ratio], [feature_subsample_ratio], [max_nodes], [max_samples], [rng_seed], [use_global_feature_range]
+    if (n_args < 2 || n_args > 12) {
+        mp_raise_ValueError(MP_ERROR_TEXT("Expected 2-12 arguments: n_features, n_classes, [n_trees=10], [max_depth=10], [min_samples_leaf=1], [n_thresholds=10], [subsample_ratio=1.0], [feature_subsample_ratio=1.0], [max_nodes=1000], [max_samples=1000], [rng_seed=42], [use_global_feature_range=0]"));
     }
     
     mp_int_t n_features = mp_obj_get_int(args[0]);
@@ -45,6 +45,7 @@ static mp_obj_t extratrees_model_new(size_t n_args, const mp_obj_t *args) {
     mp_int_t max_nodes = (n_args > 8) ? mp_obj_get_int(args[8]) : 1000;
     mp_int_t max_samples = (n_args > 9) ? mp_obj_get_int(args[9]) : 1000;
     mp_int_t rng_seed = (n_args > 10) ? mp_obj_get_int(args[10]) : 42;
+    mp_int_t use_global_feature_range = (n_args > 11) ? mp_obj_get_int(args[11]) : 0;
 
     // Allocate space
     mp_obj_extratrees_model_t *o = \
@@ -70,6 +71,7 @@ static mp_obj_t extratrees_model_new(size_t n_args, const mp_obj_t *args) {
     model->config.subsample_ratio = subsample_ratio;
     model->config.feature_subsample_ratio = feature_subsample_ratio;
     model->config.rng_seed = rng_seed;
+    model->config.use_global_feature_range = use_global_feature_range;
     
     // Allocate model buffers
     model->nodes = m_new(EmlTreesNode, max_nodes);
@@ -103,7 +105,7 @@ static mp_obj_t extratrees_model_new(size_t n_args, const mp_obj_t *args) {
     return MP_OBJ_FROM_PTR(o);
 }
 // Define a Python reference to the function above
-static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(extratrees_model_new_obj, 2, 11, extratrees_model_new);
+static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(extratrees_model_new_obj, 2, 12, extratrees_model_new);
 
 // Delete an instance
 static mp_obj_t extratrees_model_del(mp_obj_t self_obj) {

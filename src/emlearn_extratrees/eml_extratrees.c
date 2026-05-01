@@ -32,6 +32,7 @@ typedef struct _EmlTreesConfig {
     int16_t n_thresholds;
     float subsample_ratio;          // subsample ratio as float (0.0 to 1.0)
     float feature_subsample_ratio;  // feature subsample ratio as float (0.0 to 1.0)
+    int16_t use_global_feature_range; // 0: per-node min/max, 1: global min/max
     uint32_t rng_seed;
 } EmlTreesConfig;
 
@@ -278,19 +279,27 @@ static int find_best_split(const int16_t *features, const int16_t *labels,
     }
     
     // ExtraTrees: for each feature, draw n_thresholds random thresholds
-    // uniformly between the feature's min and max values in this node
+    // uniformly between the feature's min and max values
     for (int f = 0; f < n_features_subset; f++) {
         int16_t feature_idx = workspace->feature_indices[f];
         
-        // Find min and max values for this feature in current node
-        int16_t feat_min = INT16_MAX;
-        int16_t feat_max = INT16_MIN;
+        int16_t feat_min, feat_max;
         
-        for (int i = start; i < end; i++) {
-            uint16_t sample_idx = workspace->sample_indices[i];
-            int16_t val = features[sample_idx * model->n_features + feature_idx];
-            if (val < feat_min) feat_min = val;
-            if (val > feat_max) feat_max = val;
+        if (model->config.use_global_feature_range) {
+            // Use precomputed global min/max for this feature
+            feat_min = workspace->min_vals[feature_idx];
+            feat_max = workspace->max_vals[feature_idx];
+        } else {
+            // Find min and max values for this feature in current node
+            feat_min = INT16_MAX;
+            feat_max = INT16_MIN;
+            
+            for (int i = start; i < end; i++) {
+                uint16_t sample_idx = workspace->sample_indices[i];
+                int16_t val = features[sample_idx * model->n_features + feature_idx];
+                if (val < feat_min) feat_min = val;
+                if (val > feat_max) feat_max = val;
+            }
         }
         
         // Need at least 2 distinct values to split
@@ -540,6 +549,17 @@ int16_t eml_trees_train(EmlTreesModel *model, EmlTreesWorkspace *workspace,
     workspace->rng_state = model->config.rng_seed;
     
     printf("Training: %d trees, %d total samples\n", model->n_trees, workspace->n_samples);
+    
+    // Compute global feature min/max once (used if use_global_feature_range is set)
+    for (int16_t f = 0; f < model->n_features; f++) {
+        workspace->min_vals[f] = INT16_MAX;
+        workspace->max_vals[f] = INT16_MIN;
+        for (int16_t i = 0; i < workspace->n_samples; i++) {
+            int16_t val = features[i * model->n_features + f];
+            if (val < workspace->min_vals[f]) workspace->min_vals[f] = val;
+            if (val > workspace->max_vals[f]) workspace->max_vals[f] = val;
+        }
+    }
     
     // Calculate subsample size
     int16_t subsample_size = (int16_t)((float)workspace->n_samples * model->config.subsample_ratio);
