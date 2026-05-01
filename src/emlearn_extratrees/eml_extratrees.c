@@ -38,6 +38,7 @@ typedef struct _EmlTreesModel {
     EmlTreesNode *nodes;          // Pre-allocated node array
     int16_t *tree_starts;         // Start index for each tree
     int16_t max_nodes;            // Maximum nodes available
+    int16_t max_samples;           // Maximum samples in training data
     int16_t n_nodes_used;         // Current nodes used
     int16_t n_features;           // Number of features
     int16_t n_classes;            // Number of classes
@@ -46,10 +47,14 @@ typedef struct _EmlTreesModel {
 } EmlTreesModel;
 
 typedef struct _EmlTreesWorkspace {
-    int16_t *sample_indices;      // Sample indices for current tree
-    int16_t *feature_indices;     // Feature indices for current tree
+    uint16_t *sample_indices;      // Sample indices for current tree
+    uint16_t *feature_indices;     // Feature indices for current tree
     int16_t *min_vals;            // Min values per feature [n_features]
     int16_t *max_vals;            // Max values per feature [n_features]
+    int16_t *class_counts;        // Temporary array for class counting [n_classes]
+    int16_t *unique_vals;         // Temporary array for unique values [50]
+    int16_t *split_left_counts;   // Temporary arrays for find_best_split [n_classes]
+    int16_t *split_right_counts;  // Temporary arrays for find_best_split [n_classes]
     NodeState *node_stack;        // Stack for tree building
     uint32_t rng_state;           // Simple RNG state
     int16_t n_samples;            // Number of samples
@@ -62,10 +67,10 @@ static uint32_t eml_rand(uint32_t *state) {
 }
 
 // Fisher-Yates shuffle for subsampling
-static void shuffle_indices(int16_t *indices, int16_t n, uint32_t *rng_state) {
-    for (int16_t i = 0; i < n - 1; i++) {
-        int16_t j = i + (eml_rand(rng_state) % (n - i));
-        int16_t temp = indices[i];
+static void shuffle_indices(uint16_t *indices, int n, uint32_t *rng_state) {
+    for (int i = 0; i < n - 1; i++) {
+        int j = i + (eml_rand(rng_state) % (n - i));
+        uint16_t temp = indices[i];
         indices[i] = indices[j];
         indices[j] = temp;
     }
@@ -90,11 +95,11 @@ static float calculate_gini_from_counts(const int16_t *counts, int16_t total, in
 
 
 // Partition samples based on feature threshold
-static int16_t partition_samples(const int16_t *features, EmlTreesModel *model, 
-                                EmlTreesWorkspace *workspace, int16_t start, int16_t end, 
-                                int8_t feature, int16_t threshold) {
-    int16_t left = start;
-    int16_t right = end - 1;
+static int partition_samples(const int16_t *features, EmlTreesModel *model, 
+                                EmlTreesWorkspace *workspace, int start, int end, 
+                                int8_t feature, int threshold) {
+    int left = start;
+    int right = end - 1;
     
     while (left <= right) {
         // Find element on left that should be on right
@@ -199,11 +204,10 @@ int16_t eml_trees_predict_proba(const EmlTreesModel *model, const int16_t *featu
 
 
 // ALSO: Make sure get_majority_class is working correctly
-static int16_t get_majority_class(const int16_t *labels, const int16_t *indices,
-                                 int16_t start, int16_t end, int16_t n_classes) {
-    int16_t counts[256] = {0};
-    int16_t max_count = 0;
-    int16_t majority_class = 0;
+static int get_majority_class(const int16_t *labels, const uint16_t *indices,
+                                 int start, int end, int n_classes, int16_t *counts) {
+    int max_count = 0;
+    int majority_class = 0;
     
     printf("get_majority_class: samples %d to %d\n", start, end-1);
     
@@ -213,8 +217,8 @@ static int16_t get_majority_class(const int16_t *labels, const int16_t *indices,
     }
     
     // Count occurrences
-    for (int16_t i = start; i < end; i++) {
-        int16_t sample_idx = indices[i];
+    for (int i = start; i < end; i++) {
+        uint16_t sample_idx = indices[i];
         int16_t label = labels[sample_idx];
         
         if (label >= 0 && label < n_classes) {
@@ -224,7 +228,7 @@ static int16_t get_majority_class(const int16_t *labels, const int16_t *indices,
     }
     
     // Find majority
-    for (int16_t i = 0; i < n_classes; i++) {
+    for (int i = 0; i < n_classes; i++) {
         if (counts[i] > max_count) {
             max_count = counts[i];
             majority_class = i;
@@ -241,30 +245,30 @@ static int16_t get_majority_class(const int16_t *labels, const int16_t *indices,
 // For complex patterns like XOR, we need to allow splits that don't immediately improve Gini
 // but will lead to better splits at deeper levels
 
-static int16_t find_best_split(const int16_t *features, const int16_t *labels,
+static int find_best_split(const int16_t *features, const int16_t *labels,
                               EmlTreesModel *model, EmlTreesWorkspace *workspace, 
-                              int16_t start, int16_t end, int16_t n_features_subset, 
-                              int8_t *best_feature, int16_t *best_threshold) {
+                              int start, int end, int n_features_subset, 
+                              int8_t *best_feature, int *best_threshold) {
     
     float best_improvement = -1.0f;
     *best_feature = -1;
     *best_threshold = 0;
     
-    int16_t total_samples = end - start;
+    int total_samples = end - start;
     
     if (total_samples < 2) {
         return -1;
     }
     
     // Calculate parent class distribution
-    int16_t parent_counts[256] = {0};
+    memset(workspace->class_counts, 0, sizeof(int16_t) * model->n_classes);
     for (int16_t i = start; i < end; i++) {
         int16_t sample_idx = workspace->sample_indices[i];
         int16_t label = labels[sample_idx];
-        parent_counts[label]++;
+        workspace->class_counts[label]++;
     }
     
-    float parent_gini = calculate_gini_from_counts(parent_counts, total_samples, model->n_classes);
+    float parent_gini = calculate_gini_from_counts(workspace->class_counts, total_samples, model->n_classes);
     
     // If already pure, no split needed
     if (parent_gini == 0.0f) {
@@ -276,7 +280,6 @@ static int16_t find_best_split(const int16_t *features, const int16_t *labels,
         int16_t feature_idx = workspace->feature_indices[f];
         
         // Collect unique values for this feature in this node
-        int16_t unique_vals[50];
         int16_t n_unique = 0;
         
         for (int16_t i = start; i < end; i++) {
@@ -286,13 +289,13 @@ static int16_t find_best_split(const int16_t *features, const int16_t *labels,
             // Check if already in unique_vals
             bool already_present = false;
             for (int16_t u = 0; u < n_unique; u++) {
-                if (unique_vals[u] == val) {
+                if (workspace->unique_vals[u] == val) {
                     already_present = true;
                     break;
                 }
             }
             if (!already_present && n_unique < 50) {
-                unique_vals[n_unique++] = val;
+                workspace->unique_vals[n_unique++] = val;
             }
         }
         
@@ -303,10 +306,10 @@ static int16_t find_best_split(const int16_t *features, const int16_t *labels,
         // Sort unique values to try thresholds between them
         for (int16_t i = 0; i < n_unique - 1; i++) {
             for (int16_t j = i + 1; j < n_unique; j++) {
-                if (unique_vals[i] > unique_vals[j]) {
-                    int16_t temp = unique_vals[i];
-                    unique_vals[i] = unique_vals[j];
-                    unique_vals[j] = temp;
+                if (workspace->unique_vals[i] > workspace->unique_vals[j]) {
+                    int16_t temp = workspace->unique_vals[i];
+                    workspace->unique_vals[i] = workspace->unique_vals[j];
+                    workspace->unique_vals[j] = temp;
                 }
             }
         }
@@ -314,12 +317,12 @@ static int16_t find_best_split(const int16_t *features, const int16_t *labels,
         // Try thresholds between consecutive unique values
         for (int16_t u = 0; u < n_unique - 1; u++) {
             // Use threshold between unique_vals[u] and unique_vals[u+1]
-            int16_t threshold = unique_vals[u];
+            int16_t threshold = workspace->unique_vals[u];
             
-            // Count left/right distributions
-            int16_t left_counts[256] = {0};
-            int16_t right_counts[256] = {0};
-            int16_t left_total = 0, right_total = 0;
+            // Count left/right distributions using pre-allocated arrays
+            int left_total = 0, right_total = 0;
+            memset(workspace->split_left_counts, 0, sizeof(int16_t) * model->n_classes);
+            memset(workspace->split_right_counts, 0, sizeof(int16_t) * model->n_classes);
             
             for (int16_t i = start; i < end; i++) {
                 int16_t sample_idx = workspace->sample_indices[i];
@@ -327,10 +330,10 @@ static int16_t find_best_split(const int16_t *features, const int16_t *labels,
                 int16_t label = labels[sample_idx];
                 
                 if (feature_val <= threshold) {
-                    left_counts[label]++;
+                    workspace->split_left_counts[label]++;
                     left_total++;
                 } else {
-                    right_counts[label]++;
+                    workspace->split_right_counts[label]++;
                     right_total++;
                 }
             }
@@ -346,8 +349,8 @@ static int16_t find_best_split(const int16_t *features, const int16_t *labels,
             }
             
             // Calculate improvement
-            float left_gini = calculate_gini_from_counts(left_counts, left_total, model->n_classes);
-            float right_gini = calculate_gini_from_counts(right_counts, right_total, model->n_classes);
+            float left_gini = calculate_gini_from_counts(workspace->split_left_counts, left_total, model->n_classes);
+            float right_gini = calculate_gini_from_counts(workspace->split_right_counts, right_total, model->n_classes);
             float weighted_gini = ((float)left_total * left_gini + (float)right_total * right_gini) / (float)total_samples;
             float improvement = parent_gini - weighted_gini;
             
@@ -367,13 +370,13 @@ static int16_t find_best_split(const int16_t *features, const int16_t *labels,
 }
 
 // ALSO: Ensure stopping criteria allow deep enough trees for XOR
-static int16_t build_tree(EmlTreesModel *model, EmlTreesWorkspace *workspace,
+static int build_tree(EmlTreesModel *model, EmlTreesWorkspace *workspace,
                          const int16_t *features, const int16_t *labels) {
     
     int16_t tree_start = model->n_nodes_used;
     
     // Subsample features
-    int16_t n_features_subset = (int16_t)((float)model->n_features * model->config.feature_subsample_ratio);
+    int n_features_subset = (int)((float)model->n_features * model->config.feature_subsample_ratio);
     if (n_features_subset < 1) n_features_subset = 1;
     if (n_features_subset > model->n_features) n_features_subset = model->n_features;
     
@@ -383,7 +386,7 @@ static int16_t build_tree(EmlTreesModel *model, EmlTreesWorkspace *workspace,
     shuffle_indices(workspace->feature_indices, model->n_features, &workspace->rng_state);
     
     // Initialize root node state
-    int16_t stack_size = 1;
+    int stack_size = 1;
     workspace->node_stack[0].node_idx = tree_start;
     workspace->node_stack[0].start = 0;
     workspace->node_stack[0].end = workspace->n_samples;
@@ -399,7 +402,7 @@ static int16_t build_tree(EmlTreesModel *model, EmlTreesWorkspace *workspace,
         }
         
         // Check stopping criteria - MODIFIED for XOR
-        int16_t n_samples_node = current.end - current.start;
+        int n_samples_node = current.end - current.start;
         
         // Create leaf if:
         // 1. Reached max depth, OR
@@ -415,8 +418,8 @@ static int16_t build_tree(EmlTreesModel *model, EmlTreesWorkspace *workspace,
             // Check if node is pure
             int16_t first_label = -1;
             bool is_pure = true;
-            for (int16_t i = current.start; i < current.end; i++) {
-                int16_t sample_idx = workspace->sample_indices[i];
+            for (int i = current.start; i < current.end; i++) {
+                uint16_t sample_idx = workspace->sample_indices[i];
                 int16_t label = labels[sample_idx];
                 if (first_label == -1) {
                     first_label = label;
@@ -432,8 +435,9 @@ static int16_t build_tree(EmlTreesModel *model, EmlTreesWorkspace *workspace,
         
         if (should_stop) {
             // Create leaf node
+            memset(workspace->class_counts, 0, sizeof(int16_t) * model->n_classes);
             int16_t majority = get_majority_class(labels, workspace->sample_indices,
-                                                 current.start, current.end, model->n_classes);
+                                                 current.start, current.end, model->n_classes, workspace->class_counts);
             
             model->nodes[node_idx].feature = -1;
             model->nodes[node_idx].value = majority;
@@ -448,15 +452,16 @@ static int16_t build_tree(EmlTreesModel *model, EmlTreesWorkspace *workspace,
         
         // Find best split
         int8_t best_feature;
-        int16_t best_threshold;
-        int16_t split_result = find_best_split(features, labels, model, workspace, 
-                                              current.start, current.end,
-                                              n_features_subset, &best_feature, &best_threshold);
+        int best_threshold;
+        int split_result = find_best_split(features, labels, model, workspace, 
+                                          current.start, current.end,
+                                          n_features_subset, &best_feature, &best_threshold);
         
         if (split_result != 0 || best_feature == -1) {
             // No valid split found, create leaf
+            memset(workspace->class_counts, 0, sizeof(int16_t) * model->n_classes);
             int16_t majority = get_majority_class(labels, workspace->sample_indices,
-                                                 current.start, current.end, model->n_classes);
+                                                 current.start, current.end, model->n_classes, workspace->class_counts);
             
             model->nodes[node_idx].feature = -1;
             model->nodes[node_idx].value = majority;
@@ -470,13 +475,14 @@ static int16_t build_tree(EmlTreesModel *model, EmlTreesWorkspace *workspace,
         }
         
         // Partition samples
-        int16_t split_point = partition_samples(features, model, workspace, current.start, current.end, 
-                                               best_feature, best_threshold);
+        int split_point = partition_samples(features, model, workspace, current.start, current.end, 
+                                          best_feature, best_threshold);
         
         if (split_point <= current.start || split_point >= current.end) {
             // Partition failed, create leaf
+            memset(workspace->class_counts, 0, sizeof(int16_t) * model->n_classes);
             int16_t majority = get_majority_class(labels, workspace->sample_indices,
-                                                 current.start, current.end, model->n_classes);
+                                                 current.start, current.end, model->n_classes, workspace->class_counts);
             
             model->nodes[node_idx].feature = -1;
             model->nodes[node_idx].value = majority;
@@ -497,8 +503,9 @@ static int16_t build_tree(EmlTreesModel *model, EmlTreesWorkspace *workspace,
         
         if (next_node + 1 >= model->max_nodes) {
             // Not enough space, create leaf
+            memset(workspace->class_counts, 0, sizeof(int16_t) * model->n_classes);
             int16_t majority = get_majority_class(labels, workspace->sample_indices,
-                                                 current.start, current.end, model->n_classes);
+                                                 current.start, current.end, model->n_classes, workspace->class_counts);
             
             model->nodes[node_idx].feature = -1;
             model->nodes[node_idx].value = majority;
@@ -520,8 +527,8 @@ static int16_t build_tree(EmlTreesModel *model, EmlTreesWorkspace *workspace,
         // Update n_nodes_used
         model->n_nodes_used = next_node + 2;
         
-        // Add children to stack
-        if (stack_size < 98) {
+        // Add children to stack (ensure we don't exceed capacity)
+        if (stack_size + 2 <= model->config.max_depth * 3) {
             // Right child
             workspace->node_stack[stack_size].node_idx = model->nodes[node_idx].right;
             workspace->node_stack[stack_size].start = split_point;
@@ -559,6 +566,11 @@ int16_t eml_trees_train(EmlTreesModel *model, EmlTreesWorkspace *workspace,
     if (subsample_size > workspace->n_samples) subsample_size = workspace->n_samples;
     
     printf("Subsample size: %d (ratio=%.2f)\n", subsample_size, model->config.subsample_ratio);
+    
+    // Check if n_samples exceeds max_samples capacity
+    if (workspace->n_samples > model->max_samples) {
+        return -1;  // Return error code indicating insufficient capacity
+    }
     
     // Initialize sample indices
     for (int16_t i = 0; i < workspace->n_samples; i++) {

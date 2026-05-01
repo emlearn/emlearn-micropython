@@ -60,6 +60,7 @@ static mp_obj_t extratrees_model_new(size_t n_args, const mp_obj_t *args) {
     model->n_classes = n_classes;
     model->n_trees = n_trees;
     model->max_nodes = max_nodes;
+    model->max_samples = max_samples;
     model->n_nodes_used = 0;
     
     // Configure model config
@@ -75,11 +76,17 @@ static mp_obj_t extratrees_model_new(size_t n_args, const mp_obj_t *args) {
     model->tree_starts = (int16_t *)m_malloc(sizeof(int16_t) * n_trees);
     
     // Allocate workspace buffers
-    workspace->sample_indices = (int16_t *)m_malloc(sizeof(int16_t) * max_samples);
-    workspace->feature_indices = (int16_t *)m_malloc(sizeof(int16_t) * n_features);
+    workspace->sample_indices = (uint16_t *)m_malloc(sizeof(uint16_t) * max_samples);
+    workspace->feature_indices = (uint16_t *)m_malloc(sizeof(uint16_t) * n_features);
     workspace->min_vals = (int16_t *)m_malloc(sizeof(int16_t) * n_features);
     workspace->max_vals = (int16_t *)m_malloc(sizeof(int16_t) * n_features);
-    workspace->node_stack = (NodeState *)m_malloc(sizeof(NodeState) * 100); // Stack limit
+    workspace->class_counts = (int16_t *)m_malloc(sizeof(int16_t) * n_classes);
+    workspace->unique_vals = (int16_t *)m_malloc(sizeof(int16_t) * 50);
+    // Allocate temporary arrays for find_best_split
+    workspace->split_left_counts = (int16_t *)m_malloc(sizeof(int16_t) * n_classes);
+    workspace->split_right_counts = (int16_t *)m_malloc(sizeof(int16_t) * n_classes);
+    // Allocate stack with enough capacity for max depth (conservative estimate)
+    workspace->node_stack = (NodeState *)m_malloc(sizeof(NodeState) * (max_depth * 3));
     workspace->n_samples = 0; // Will be set during training
     workspace->rng_state = rng_seed;
     
@@ -109,6 +116,10 @@ static mp_obj_t extratrees_model_del(mp_obj_t self_obj) {
     m_free(workspace->feature_indices);
     m_free(workspace->min_vals);
     m_free(workspace->max_vals);
+    m_free(workspace->class_counts);
+    m_free(workspace->unique_vals);
+    m_free(workspace->split_left_counts);
+    m_free(workspace->split_right_counts);
     m_free(workspace->node_stack);
     m_free(o->features_buffer);
     m_free(o->labels_buffer);
