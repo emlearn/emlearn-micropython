@@ -36,6 +36,8 @@ The following is an overview of .mpy ABI version for MicroPython releases.
 +---------------------+---------------+
 | MicroPython version | .mpy version  |
 +=====================+===============+
+| 1.28.x              | 6.3           |
++---------------------+---------------+
 | 1.27.x              | 6.3           |
 +---------------------+---------------+
 | 1.26.x              | 6.3           |
