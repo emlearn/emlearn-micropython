@@ -1,7 +1,7 @@
 
 ARCH ?= x64
 MPY_ABI_VERSION ?= 6.3
-MPY_DIR ?= ../micropython
+MPY_DIR ?= ./dependencies/micropython
 MICROPYTHON_BIN ?= micropython
 
 # extmod settings

@@ -4,3 +4,6 @@
 [submodule "dependencies/CMSIS-DSP"]
 	path = dependencies/CMSIS-DSP
 	url = https://github.com/ARM-software/CMSIS-DSP.git
+[submodule "dependencies/micropython"]
+	path = dependencies/micropython
+	url = https://github.com/jonnor/micropython.git
