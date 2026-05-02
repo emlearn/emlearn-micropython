@@ -15,10 +15,10 @@ For Windows, I recommend using Windows Subsystem for Linux (WSL2).
 
 You will need to have **Python 3.10+ or later** already installed.
 
-We assume that **micropython** git repository available.
+The default setup assumes MicroPython git repository as a submodule, in `dependencies/micropython`.
 It is assumed to be at the same level as this repository in the file system.
-If using another location, adjust `MPY_DIR` accordingly.
-You should be using MicroPython 1.27 (or newer).
+If using another location, adjust the `MPY_DIR` make variable accordingly.
+You should be using MicroPython 1.28 (or newer).
 
 You should build and install the [MicroPython Unix port](https://github.com/micropython/micropython/blob/master/ports/unix/README.md) to run/test on PC (`micropython` executable).
 
