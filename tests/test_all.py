@@ -37,6 +37,7 @@ TEST_MODULES=[
     'test_extratrees_xor',
     'test_extratrees_cancer',
     'test_extratrees_wine',
+    'test_plsr_airquality',
 ]
 
 def main():
