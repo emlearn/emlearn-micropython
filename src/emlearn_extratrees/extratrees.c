@@ -37,25 +37,24 @@ static const mp_obj_type_t extratrees_model_type;
 #endif
 
 // Create a new instance
-static mp_obj_t extratrees_model_new(size_t n_args, const mp_obj_t *args) {
-    // Args: n_features, n_classes, [n_trees], [max_depth], [min_samples_leaf], [n_thresholds], 
-    //       [subsample_ratio], [feature_subsample_ratio], [max_nodes], [max_samples], [rng_seed], [use_global_feature_range]
-    if (n_args < 2 || n_args > 12) {
-        mp_raise_ValueError(MP_ERROR_TEXT("Expected 2-12 arguments: n_features, n_classes, [n_trees=10], [max_depth=10], [min_samples_leaf=1], [n_thresholds=10], [subsample_ratio=1.0], [feature_subsample_ratio=1.0], [max_nodes=1000], [max_samples=1000], [rng_seed=42], [use_global_feature_range=0]"));
+static mp_obj_t extratrees_model_make_new(size_t n_args, const mp_obj_t *args) {
+    // All 12 args provided by Python wrapper (defaults handled there)
+    if (n_args != 12) {
+        mp_raise_ValueError(MP_ERROR_TEXT("Expected 12 arguments"));
     }
     
     mp_int_t n_features = mp_obj_get_int(args[0]);
     mp_int_t n_classes = mp_obj_get_int(args[1]);
-    mp_int_t n_trees = (n_args > 2) ? mp_obj_get_int(args[2]) : 10;
-    mp_int_t max_depth = (n_args > 3) ? mp_obj_get_int(args[3]) : 10;
-    mp_int_t min_samples_leaf = (n_args > 4) ? mp_obj_get_int(args[4]) : 1;
-    mp_int_t n_thresholds = (n_args > 5) ? mp_obj_get_int(args[5]) : 10;
-    float subsample_ratio = (n_args > 6) ? mp_obj_get_float_to_f(args[6]) : 1.0f;
-    float feature_subsample_ratio = (n_args > 7) ? mp_obj_get_float_to_f(args[7]) : 1.0f;
-    mp_int_t max_nodes = (n_args > 8) ? mp_obj_get_int(args[8]) : 1000;
-    mp_int_t max_samples = (n_args > 9) ? mp_obj_get_int(args[9]) : 1000;
-    mp_int_t rng_seed = (n_args > 10) ? mp_obj_get_int(args[10]) : 42;
-    mp_int_t use_global_feature_range = (n_args > 11) ? mp_obj_get_int(args[11]) : 0;
+    mp_int_t n_trees = mp_obj_get_int(args[2]);
+    mp_int_t max_depth = mp_obj_get_int(args[3]);
+    mp_int_t min_samples_leaf = mp_obj_get_int(args[4]);
+    mp_int_t n_thresholds = mp_obj_get_int(args[5]);
+    float subsample_ratio = mp_obj_get_float_to_f(args[6]);
+    float feature_subsample_ratio = mp_obj_get_float_to_f(args[7]);
+    mp_int_t max_nodes = mp_obj_get_int(args[8]);
+    mp_int_t max_samples = mp_obj_get_int(args[9]);
+    mp_int_t rng_seed = mp_obj_get_int(args[10]);
+    mp_int_t use_global_feature_range = mp_obj_get_int(args[11]);
 
     // Allocate space
     mp_obj_extratrees_model_t *o = \
@@ -116,7 +115,7 @@ static mp_obj_t extratrees_model_new(size_t n_args, const mp_obj_t *args) {
     return MP_OBJ_FROM_PTR(o);
 }
 // Define a Python reference to the function above
-static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(extratrees_model_new_obj, 2, 12, extratrees_model_new);
+static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(extratrees_model_make_new_obj, 12, 12, extratrees_model_make_new);
 
 // Delete an instance
 static mp_obj_t extratrees_model_del(mp_obj_t self_obj) {
@@ -397,7 +396,7 @@ static MP_DEFINE_CONST_FUN_OBJ_1(extratrees_model_get_n_trees_trained_obj, extra
 #if MICROPY_ENABLE_DYNRUNTIME
 
 // Module setup
-mp_map_elem_t extratrees_model_locals_dict_table[11];
+mp_map_elem_t extratrees_model_locals_dict_table[12];
 static MP_DEFINE_CONST_DICT(extratrees_model_locals_dict, extratrees_model_locals_dict_table);
 
 // Module setup entrypoint
@@ -405,24 +404,25 @@ mp_obj_t mpy_init(mp_obj_fun_bc_t *self, size_t n_args, size_t n_kw, mp_obj_t *a
     // This must be first, it sets up the globals dict and other things
     MP_DYNRUNTIME_INIT_ENTRY
 
-    mp_store_global(MP_QSTR_new, MP_OBJ_FROM_PTR(&extratrees_model_new_obj));
+    mp_store_global(MP_QSTR_make_new, MP_OBJ_FROM_PTR(&extratrees_model_make_new_obj));
 
     extratrees_model_type.base.type = (void*)&mp_fun_table.type_type;
     extratrees_model_type.flags = MP_TYPE_FLAG_ITER_IS_CUSTOM;
     extratrees_model_type.name = MP_QSTR_extratrees;
     
     // methods
-    extratrees_model_locals_dict_table[0] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR_predict), MP_OBJ_FROM_PTR(&extratrees_model_predict_obj) };
-    extratrees_model_locals_dict_table[1] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR_predict_proba), MP_OBJ_FROM_PTR(&extratrees_model_predict_proba_obj) };
-    extratrees_model_locals_dict_table[2] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR_train), MP_OBJ_FROM_PTR(&extratrees_model_train_obj) };
-    extratrees_model_locals_dict_table[3] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR_train_init), MP_OBJ_FROM_PTR(&extratrees_model_train_init_obj) };
-    extratrees_model_locals_dict_table[4] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR_train_step), MP_OBJ_FROM_PTR(&extratrees_model_train_step_obj) };
-    extratrees_model_locals_dict_table[5] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR___del__), MP_OBJ_FROM_PTR(&extratrees_model_del_obj) };
-    extratrees_model_locals_dict_table[6] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR_get_n_features), MP_OBJ_FROM_PTR(&extratrees_model_get_n_features_obj) };
-    extratrees_model_locals_dict_table[7] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR_get_n_classes), MP_OBJ_FROM_PTR(&extratrees_model_get_n_classes_obj) };
-    extratrees_model_locals_dict_table[8] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR_get_n_trees), MP_OBJ_FROM_PTR(&extratrees_model_get_n_trees_obj) };
-    extratrees_model_locals_dict_table[9] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR_get_n_nodes_used), MP_OBJ_FROM_PTR(&extratrees_model_get_n_nodes_used_obj) };
-    extratrees_model_locals_dict_table[10] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR_get_n_trees_trained), MP_OBJ_FROM_PTR(&extratrees_model_get_n_trees_trained_obj) };
+    extratrees_model_locals_dict_table[0] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR_make_new), MP_OBJ_FROM_PTR(&extratrees_model_make_new_obj) };
+    extratrees_model_locals_dict_table[1] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR_predict), MP_OBJ_FROM_PTR(&extratrees_model_predict_obj) };
+    extratrees_model_locals_dict_table[2] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR_predict_proba), MP_OBJ_FROM_PTR(&extratrees_model_predict_proba_obj) };
+    extratrees_model_locals_dict_table[3] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR_train), MP_OBJ_FROM_PTR(&extratrees_model_train_obj) };
+    extratrees_model_locals_dict_table[4] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR_train_init), MP_OBJ_FROM_PTR(&extratrees_model_train_init_obj) };
+    extratrees_model_locals_dict_table[5] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR_train_step), MP_OBJ_FROM_PTR(&extratrees_model_train_step_obj) };
+    extratrees_model_locals_dict_table[6] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR___del__), MP_OBJ_FROM_PTR(&extratrees_model_del_obj) };
+    extratrees_model_locals_dict_table[7] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR_get_n_features), MP_OBJ_FROM_PTR(&extratrees_model_get_n_features_obj) };
+    extratrees_model_locals_dict_table[8] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR_get_n_classes), MP_OBJ_FROM_PTR(&extratrees_model_get_n_classes_obj) };
+    extratrees_model_locals_dict_table[9] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR_get_n_trees), MP_OBJ_FROM_PTR(&extratrees_model_get_n_trees_obj) };
+    extratrees_model_locals_dict_table[10] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR_get_n_nodes_used), MP_OBJ_FROM_PTR(&extratrees_model_get_n_nodes_used_obj) };
+    extratrees_model_locals_dict_table[11] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR_get_n_trees_trained), MP_OBJ_FROM_PTR(&extratrees_model_get_n_trees_trained_obj) };
 
     MP_OBJ_TYPE_SET_SLOT(&extratrees_model_type, locals_dict, (void*)&extratrees_model_locals_dict, 10);
 
@@ -434,6 +434,7 @@ mp_obj_t mpy_init(mp_obj_fun_bc_t *self, size_t n_args, size_t n_kw, mp_obj_t *a
 
 // User C module mode
 static const mp_rom_map_elem_t extratrees_model_locals_dict_table[] = {
+    { MP_ROM_QSTR(MP_QSTR_make_new), MP_ROM_PTR(&extratrees_model_make_new_obj) },
     { MP_ROM_QSTR(MP_QSTR_predict), MP_ROM_PTR(&extratrees_model_predict_obj) },
     { MP_ROM_QSTR(MP_QSTR_predict_proba), MP_ROM_PTR(&extratrees_model_predict_proba_obj) },
     { MP_ROM_QSTR(MP_QSTR_train), MP_ROM_PTR(&extratrees_model_train_obj) },
@@ -457,7 +458,7 @@ static MP_DEFINE_CONST_OBJ_TYPE(
 
 // Define module object
 static const mp_rom_map_elem_t emlearn_extratrees_globals_table[] = {
-    { MP_ROM_QSTR(MP_QSTR_new), MP_ROM_PTR(&extratrees_model_new_obj) },
+    { MP_ROM_QSTR(MP_QSTR_make_new), MP_ROM_PTR(&extratrees_model_make_new_obj) },
 };
 static MP_DEFINE_CONST_DICT(emlearn_extratrees_globals, emlearn_extratrees_globals_table);
 

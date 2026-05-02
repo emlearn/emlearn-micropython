@@ -16,7 +16,7 @@ def test_single_tree_prediction():
     print("Data: (0,0)->0, (1000,1000)->1")
     
     # Single tree with enough depth and thresholds
-    model = emlearn_extratrees.new(2, 2, 1, 5, 1, 100)
+    model = emlearn_extratrees.new(2, 2, n_trees=1, max_depth=5, n_thresholds=100)
     model.train(X, y)
     
     nodes_used = model.get_n_nodes_used()
@@ -63,7 +63,7 @@ def test_class_bias():
     
     print("Data: 1 sample class 0, 5 samples class 1")
     
-    model = emlearn_extratrees.new(2, 2, 3, 5, 1, 50)
+    model = emlearn_extratrees.new(2, 2, n_trees=3, max_depth=5, n_thresholds=50)
     model.train(X, y)
     
     # Test on a clear class 1 example
@@ -103,7 +103,7 @@ def test_manual_verification():
         print("  ({}, {}) -> {}".format(x1, x2, label))
     
     # Train with parameters that should definitely work
-    model = emlearn_extratrees.new(2, 2, 10, 10, 1, 100)
+    model = emlearn_extratrees.new(2, 2, n_trees=10, max_depth=10, n_thresholds=100)
     model.train(X, y)
     
     print("\nNodes used: {}".format(model.get_n_nodes_used()))
@@ -160,7 +160,7 @@ def test_train_step_by_step():
     y = array.array('h', [0, 0, 1, 1])
     
     # 3 trees
-    model = emlearn_extratrees.new(2, 2, 3, 5, 1, 50)
+    model = emlearn_extratrees.new(2, 2, n_trees=3, max_depth=5, n_thresholds=50)
     model.train_init(X, y)
     
     steps = 0
@@ -203,7 +203,7 @@ def test_train_generator():
     ])
     y = array.array('h', [0, 0, 1, 1])
     
-    model = emlearn_extratrees.new(2, 2, 5, 5, 1, 50)
+    model = emlearn_extratrees.new(2, 2, n_trees=5, max_depth=5, n_thresholds=50)
     
     trees_progress = []
     for trees_done in emlearn_extratrees.train_steps(model, X, y):
@@ -239,11 +239,11 @@ def test_train_step_same_as_train():
     y = array.array('h', [0, 0, 1, 1])
     
     # Bulk train
-    model_bulk = emlearn_extratrees.new(2, 2, 3, 5, 1, 50, 1.0, 1.0, 1000, 100, 42)
+    model_bulk = emlearn_extratrees.new(2, 2, n_trees=3, max_depth=5, n_thresholds=50, max_samples=100, rng_seed=42)
     model_bulk.train(X, y)
     
     # Step-by-step train
-    model_step = emlearn_extratrees.new(2, 2, 3, 5, 1, 50, 1.0, 1.0, 1000, 100, 42)
+    model_step = emlearn_extratrees.new(2, 2, n_trees=3, max_depth=5, n_thresholds=50, max_samples=100, rng_seed=42)
     model_step.train_init(X, y)
     while not model_step.train_step():
         pass

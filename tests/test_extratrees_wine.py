@@ -56,17 +56,10 @@ def test_wine():
     
     # Create model
     model = emlearn_extratrees.new(
-        n_features,  # n_features
-        n_classes,   # n_classes
-        20,          # n_trees 
-        12,          # max_depth
-        2,           # min_samples_leaf
-        15,          # n_thresholds
-        0.8,         # subsample_ratio
-        1.0,         # feature_subsample_ratio
-        3000,        # max_nodes
-        500,         # max_samples
-        42           # rng_seed
+        n_features, n_classes,
+        n_trees=20, max_depth=12, min_samples_leaf=2,
+        n_thresholds=15, subsample_ratio=0.8, feature_subsample_ratio=1.0,
+        max_nodes=3000, max_samples=500, rng_seed=42
     )
     
     train_start = time.ticks_ms()

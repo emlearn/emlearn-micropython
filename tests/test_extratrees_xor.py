@@ -29,18 +29,10 @@ def test_xor_comprehensive():
     
     # Test with ensemble of trees (now that individual trees work)
     model = emlearn_extratrees.new(
-        2,      # n_features
-        2,      # n_classes  
-        10,     # n_trees (ensemble)
-        8,      # max_depth
-        1,      # min_samples_leaf
-        10,     # n_thresholds
-        0.8,    # subsample_ratio (80% for diversity)
-        1.0,    # feature_subsample_ratio (use both features)
-        500,    # max_nodes
-        100,    # max_samples
-        42      # rng_seed
-    )
+        2, 2,
+        n_trees=10, max_depth=8, n_thresholds=10,
+        subsample_ratio=0.8, feature_subsample_ratio=1.0,
+        max_nodes=500, max_samples=100, rng_seed=42)
     
     model.train(X, y)
     
@@ -118,7 +110,7 @@ def test_xor_robustness():
     for n_trees, max_depth, desc in configs:
         print(f"\nTesting {desc}:")
         
-        model = emlearn_extratrees.new(2, 2, n_trees, max_depth, 1, 8, 0.9, 1.0, 1000, 100, 123)
+        model = emlearn_extratrees.new(2, 2, n_trees=n_trees, max_depth=max_depth, n_thresholds=8, subsample_ratio=0.9, max_samples=100, rng_seed=123)
         model.train(X, y)
         
         # Test all XOR cases
@@ -170,7 +162,7 @@ def test_xor_different_values():
         X = array.array('h', X_data)
         y = array.array('h', y_data)
         
-        model = emlearn_extratrees.new(2, 2, 12, 10, 1, 10, 0.8, 1.0, 800, 100, 456)
+        model = emlearn_extratrees.new(2, 2, n_trees=12, max_depth=10, n_thresholds=10, subsample_ratio=0.8, max_nodes=800, max_samples=100, rng_seed=456)
         model.train(X, y)
         
         # Test

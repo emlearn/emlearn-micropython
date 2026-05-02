@@ -47,17 +47,10 @@ def test_real_dataset():
     
     # Create model
     model = emlearn_extratrees.new(
-        30,    # n_features
-        2,     # n_classes  
-        20,    # n_trees
-        12,    # max_depth
-        2,     # min_samples_leaf
-        15,    # n_thresholds
-        0.8,   # subsample_ratio
-        0.7,   # feature_subsample_ratio  
-        3000,  # max_nodes
-        500,   # max_samples
-        42     # rng_seed
+        30, 2,
+        n_trees=20, max_depth=12, min_samples_leaf=2,
+        n_thresholds=15, subsample_ratio=0.8, feature_subsample_ratio=0.7,
+        max_nodes=3000, max_samples=500, rng_seed=42
     )
     
     print("Training...")
