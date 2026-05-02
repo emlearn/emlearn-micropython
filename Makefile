@@ -10,7 +10,7 @@ BOARD=ESP32_GENERIC_S3
 
 VERSION := $(shell git describe --tags --always)
 
-MPY_DIR_ABS = $(abspath $(MPY_DIR)) 
+MPY_DIR_ABS = $(abspath $(MPY_DIR))
 
 C_MODULES_SRC_PATH = $(abspath ./src)
 
@@ -153,7 +153,10 @@ extmod: $(SRC_ALL) src/manifest_unix.py
 	cp -r $(PORT_BUILD_DIR)/micropython* $(PORT_DIST_DIR)
 	
 
-.PHONY: clean unix
+.PHONY: clean unix codesize
+
+codesize:
+	python3 tools/code_size.py $(MPY_DIR_ABS)/ports/unix/build-standard
 
 clean:
 	make -C src/emlearn_trees/ ARCH=$(ARCH) MPY_DIR=$(MPY_DIR_ABS) V=1 clean
