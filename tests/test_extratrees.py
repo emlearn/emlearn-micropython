@@ -147,6 +147,116 @@ def test_manual_verification():
         else:
             print("- Mixed votes but wrong outcome -> majority vote logic issue")
 
+def test_train_step_by_step():
+    """Test incremental training using train_init/train_step"""
+    print("\n=== Step-by-step Training ===")
+    
+    X = array.array('h', [
+        0, 0,
+        100, 100,
+        200, 200,
+        300, 300,
+    ])
+    y = array.array('h', [0, 0, 1, 1])
+    
+    # 3 trees
+    model = emlearn_extratrees.new(2, 2, 3, 5, 1, 50)
+    model.train_init(X, y)
+    
+    steps = 0
+    trees_done_list = []
+    while True:
+        done = model.train_step()
+        steps += 1
+        trees_done = model.get_n_trees_trained()
+        trees_done_list.append(trees_done)
+        if done:
+            break
+    
+    print("Steps taken: {}".format(steps))
+    print("Trees trained: {}".format(model.get_n_trees_trained()))
+    print("Nodes used: {}".format(model.get_n_nodes_used()))
+    
+    # Verify predictions still work
+    probabilities = array.array('f', [0.0, 0.0])
+    test_features = array.array('h', [0, 0])
+    predicted = model.predict_proba(test_features, probabilities)
+    print("Predict (0,0): {} probs=[{:.3f}, {:.3f}]".format(predicted, probabilities[0], probabilities[1]))
+    assert predicted == 0, "Expected class 0"
+    
+    test_features = array.array('h', [300, 300])
+    predicted = model.predict_proba(test_features, probabilities)
+    print("Predict (300,300): {} probs=[{:.3f}, {:.3f}]".format(predicted, probabilities[0], probabilities[1]))
+    assert predicted == 1, "Expected class 1"
+    
+    print("✓ Step-by-step training works")
+
+def test_train_generator():
+    """Test training using the Python generator"""
+    print("\n=== Generator Training ===")
+    
+    X = array.array('h', [
+        0, 0,
+        100, 100,
+        200, 200,
+        300, 300,
+    ])
+    y = array.array('h', [0, 0, 1, 1])
+    
+    model = emlearn_extratrees.new(2, 2, 5, 5, 1, 50)
+    
+    trees_progress = []
+    for trees_done in emlearn_extratrees.train_steps(model, X, y):
+        trees_progress.append(trees_done)
+    
+    print("Progress: {}".format(trees_progress))
+    print("Trees trained: {}".format(model.get_n_trees_trained()))
+    print("Nodes used: {}".format(model.get_n_nodes_used()))
+    
+    assert model.get_n_trees_trained() == 5
+    
+    # Verify predictions
+    test_features = array.array('h', [0, 0])
+    predicted = model.predict(test_features)
+    assert predicted == 0, "Expected class 0"
+    
+    test_features = array.array('h', [300, 300])
+    predicted = model.predict(test_features)
+    assert predicted == 1, "Expected class 1"
+    
+    print("✓ Generator training works")
+
+def test_train_step_same_as_train():
+    """Verify step-by-step training produces same result as bulk train"""
+    print("\n=== Step vs Bulk Equivalence ===")
+    
+    X = array.array('h', [
+        0, 0,
+        50, 50,
+        100, 100,
+        150, 150,
+    ])
+    y = array.array('h', [0, 0, 1, 1])
+    
+    # Bulk train
+    model_bulk = emlearn_extratrees.new(2, 2, 3, 5, 1, 50, 1.0, 1.0, 1000, 100, 42)
+    model_bulk.train(X, y)
+    
+    # Step-by-step train
+    model_step = emlearn_extratrees.new(2, 2, 3, 5, 1, 50, 1.0, 1.0, 1000, 100, 42)
+    model_step.train_init(X, y)
+    while not model_step.train_step():
+        pass
+    
+    nodes_bulk = model_bulk.get_n_nodes_used()
+    nodes_step = model_step.get_n_nodes_used()
+    print("Bulk nodes: {}, Step nodes: {}".format(nodes_bulk, nodes_step))
+    
+    assert nodes_bulk == nodes_step, "Step-by-step should produce same number of nodes"
+    assert model_step.get_n_trees_trained() == 3
+    
+    print("✓ Step and bulk produce identical results")
+
 if __name__ == "__main__":
     print("Prediction Logic Debug")
     print("=" * 50)
@@ -155,6 +265,9 @@ if __name__ == "__main__":
         test_single_tree_prediction()
         test_class_bias()
         test_manual_verification()
+        test_train_step_by_step()
+        test_train_generator()
+        test_train_step_same_as_train()
         
         print("\n" + "="*50)
         print("Prediction debug completed!")

@@ -19,7 +19,7 @@ DIST_DIR := ../../dist/$(ARCH)_$(MPY_ABI_VERSION)
 MOD = emlearn_extratrees
 
 # Source files (.c or .py)
-SRC = extratrees.c
+SRC = extratrees.c emlearn_extratrees.py
 
 # Include to get the rules for compiling and linking the module
 include $(MPY_DIR)/py/dynruntime.mk

@@ -45,6 +45,7 @@ typedef struct _EmlTreesModel {
     int16_t n_features;           // Number of features
     int16_t n_classes;            // Number of classes
     int16_t n_trees;              // Number of trees
+    int16_t n_trees_trained;      // Number of trees fully trained
     EmlTreesConfig config;
 } EmlTreesModel;
 
@@ -61,6 +62,15 @@ typedef struct _EmlTreesWorkspace {
     int16_t *votes;               // Temporary array for predict [n_classes]
     uint32_t rng_state;           // Simple RNG state
     int16_t n_samples;            // Number of samples
+    // Step-by-step training state
+    int16_t train_stack_size;          // Current stack size during step-by-step building
+    int16_t train_tree_index;          // Current tree being built (0-based)
+    int16_t train_n_features_subset;   // Feature subset size for current tree
+    int16_t train_subsample_size;      // Subsample size for training
+    int16_t train_original_n_samples;  // Original n_samples before subsampling
+    int16_t train_state;               // 0=idle, 1=training, 2=done
+    const int16_t *train_features;    // Pointer to training features data
+    const int16_t *train_labels;      // Pointer to training labels data
 } EmlTreesWorkspace;
 
 // Simple linear congruential generator
@@ -251,7 +261,8 @@ static int get_majority_class(const int16_t *labels, const uint16_t *indices,
 static int find_best_split(const int16_t *features, const int16_t *labels,
                               EmlTreesModel *model, EmlTreesWorkspace *workspace, 
                               int start, int end, int n_features_subset, 
-                              int8_t *best_feature, int *best_threshold) {
+                              int8_t *best_feature, int *best_threshold,
+                              float *best_improvement_out) {
     
     float best_improvement = -1.0f;
     *best_feature = -1;
@@ -356,6 +367,7 @@ static int find_best_split(const int16_t *features, const int16_t *labels,
         }
     }
     
+    if (best_improvement_out) *best_improvement_out = best_improvement;
     return (*best_feature != -1) ? 0 : -1;
 }
 
@@ -443,9 +455,11 @@ static int build_tree(EmlTreesModel *model, EmlTreesWorkspace *workspace,
         // Find best split
         int8_t best_feature;
         int best_threshold;
+        float best_improvement = 0.0f;
         int split_result = find_best_split(features, labels, model, workspace, 
                                           current.start, current.end,
-                                          n_features_subset, &best_feature, &best_threshold);
+                                          n_features_subset, &best_feature, &best_threshold,
+                                          &best_improvement);
         
         if (split_result != 0 || best_feature == -1) {
             // No valid split found, create leaf
@@ -539,18 +553,20 @@ static int build_tree(EmlTreesModel *model, EmlTreesWorkspace *workspace,
 }
 
 
-// CRITICAL: Also check that we're not accidentally filtering out all samples during subsampling
-// In eml_trees_train, make sure to print subsample_size:
-
-int16_t eml_trees_train(EmlTreesModel *model, EmlTreesWorkspace *workspace,
-                       const int16_t *features, const int16_t *labels) {
-    
+// Initialize step-by-step training
+int16_t eml_trees_train_init(EmlTreesModel *model, EmlTreesWorkspace *workspace,
+                              const int16_t *features, const int16_t *labels) {
     model->n_nodes_used = 0;
+    model->n_trees_trained = 0;
     workspace->rng_state = model->config.rng_seed;
+    workspace->train_features = features;
+    workspace->train_labels = labels;
+    workspace->train_state = 1; // training
+    workspace->train_tree_index = 0;
+    workspace->train_stack_size = 0;
+    workspace->train_original_n_samples = workspace->n_samples;
     
-    printf("Training: %d trees, %d total samples\n", model->n_trees, workspace->n_samples);
-    
-    // Compute global feature min/max once (used if use_global_feature_range is set)
+    // Compute global feature min/max once
     for (int16_t f = 0; f < model->n_features; f++) {
         workspace->min_vals[f] = INT16_MAX;
         workspace->max_vals[f] = INT16_MIN;
@@ -565,12 +581,12 @@ int16_t eml_trees_train(EmlTreesModel *model, EmlTreesWorkspace *workspace,
     int16_t subsample_size = (int16_t)((float)workspace->n_samples * model->config.subsample_ratio);
     if (subsample_size < 1) subsample_size = 1;
     if (subsample_size > workspace->n_samples) subsample_size = workspace->n_samples;
+    workspace->train_subsample_size = subsample_size;
     
-    printf("Subsample size: %d (ratio=%.2f)\n", subsample_size, model->config.subsample_ratio);
-    
-    // Check if n_samples exceeds max_samples capacity
+    // Check capacity
     if (workspace->n_samples > model->max_samples) {
-        return -1;  // Return error code indicating insufficient capacity
+        workspace->train_state = 0;
+        return -1;
     }
     
     // Initialize sample indices
@@ -578,39 +594,190 @@ int16_t eml_trees_train(EmlTreesModel *model, EmlTreesWorkspace *workspace,
         workspace->sample_indices[i] = i;
     }
     
-    // Build each tree
-    for (int16_t tree = 0; tree < model->n_trees; tree++) {
-        printf("\n=== Building tree %d ===\n", tree);
+    return 0;
+}
+
+// Process one node in step-by-step training
+// Returns: 1=training complete, 0=more steps needed, -1=error
+int16_t eml_trees_train_step(EmlTreesModel *model, EmlTreesWorkspace *workspace) {
+    if (workspace->train_state != 1) {
+        return -1;
+    }
+    
+    // If stack is empty, start a new tree
+    if (workspace->train_stack_size == 0) {
+        // Check if all trees done
+        if (workspace->train_tree_index >= model->n_trees) {
+            workspace->train_state = 2;
+            return 1; // done
+        }
         
-        model->tree_starts[tree] = model->n_nodes_used;
+        // Start new tree
+        model->tree_starts[workspace->train_tree_index] = model->n_nodes_used;
         
         // Subsample
-        shuffle_indices(workspace->sample_indices, workspace->n_samples, &workspace->rng_state);
+        shuffle_indices(workspace->sample_indices, workspace->train_original_n_samples, &workspace->rng_state);
         
-        printf("After shuffle, first few indices: ");
-        for (int16_t i = 0; i < (workspace->n_samples < 8 ? workspace->n_samples : 8); i++) {
-            printf("%d ", workspace->sample_indices[i]);
+        // Subsample features
+        int n_features_subset = (int)((float)model->n_features * model->config.feature_subsample_ratio);
+        if (n_features_subset < 1) n_features_subset = 1;
+        if (n_features_subset > model->n_features) n_features_subset = model->n_features;
+        workspace->train_n_features_subset = n_features_subset;
+        
+        for (int16_t i = 0; i < model->n_features; i++) {
+            workspace->feature_indices[i] = i;
         }
-        printf("\n");
+        shuffle_indices(workspace->feature_indices, model->n_features, &workspace->rng_state);
         
-        // Set subsample size
-        int16_t original_n_samples = workspace->n_samples;
-        workspace->n_samples = subsample_size;
+        // Set subsample size for tree building
+        workspace->n_samples = workspace->train_subsample_size;
         
-        printf("Using %d samples for this tree\n", workspace->n_samples);
+        // Push root node onto stack
+        workspace->node_stack[0].node_idx = model->n_nodes_used;
+        workspace->node_stack[0].start = 0;
+        workspace->node_stack[0].end = workspace->n_samples;
+        workspace->node_stack[0].depth = 0;
+        workspace->train_stack_size = 1;
+    }
+    
+    // Pop one node from stack
+    workspace->train_stack_size--;
+    NodeState current = workspace->node_stack[workspace->train_stack_size];
+    int16_t node_idx = current.node_idx;
+    
+    if (node_idx >= model->max_nodes) {
+        return -1;
+    }
+    
+    // Check stopping criteria
+    int n_samples_node = current.end - current.start;
+    bool should_stop = false;
+    
+    if (current.depth >= model->config.max_depth) {
+        should_stop = true;
+    } else if (n_samples_node < 2 * model->config.min_samples_leaf) {
+        should_stop = true;
+    } else {
+        int16_t first_label = -1;
+        bool is_pure = true;
+        for (int i = current.start; i < current.end; i++) {
+            uint16_t sample_idx = workspace->sample_indices[i];
+            int16_t label = workspace->train_labels[sample_idx];
+            if (first_label == -1) {
+                first_label = label;
+            } else if (label != first_label) {
+                is_pure = false;
+                break;
+            }
+        }
+        if (is_pure) should_stop = true;
+    }
+    
+    if (should_stop) {
+        // Create leaf node
+        memset(workspace->class_counts, 0, sizeof(int16_t) * model->n_classes);
+        int16_t majority = get_majority_class(workspace->train_labels, workspace->sample_indices,
+                                             current.start, current.end, model->n_classes, workspace->class_counts);
+        model->nodes[node_idx].feature = -1;
+        model->nodes[node_idx].value = majority;
+        model->nodes[node_idx].left = -1;
+        model->nodes[node_idx].right = -1;
+        if (node_idx >= model->n_nodes_used) {
+            model->n_nodes_used = node_idx + 1;
+        }
+    } else {
+        // Find best split
+        int8_t best_feature;
+        int best_threshold;
+        int split_result = find_best_split(workspace->train_features, workspace->train_labels,
+                                           model, workspace,
+                                           current.start, current.end,
+                                           workspace->train_n_features_subset,
+                                           &best_feature, &best_threshold, NULL);
         
-        // Build tree
-        int16_t result = build_tree(model, workspace, features, labels);
+        bool created_split = false;
         
-        // Restore original sample count
-        workspace->n_samples = original_n_samples;
+        if (split_result == 0 && best_feature != -1) {
+            // Try partition
+            int split_point = partition_samples(workspace->train_features, model, workspace,
+                                                current.start, current.end,
+                                                best_feature, best_threshold);
+            
+            if (split_point > current.start && split_point < current.end) {
+                // Check node space
+                int16_t next_node = model->n_nodes_used;
+                if (next_node <= node_idx) next_node = node_idx + 1;
+                
+                if (next_node + 1 < model->max_nodes &&
+                    workspace->train_stack_size + 2 <= model->config.max_depth * 3) {
+                    // Create internal (split) node
+                    model->nodes[node_idx].feature = best_feature;
+                    model->nodes[node_idx].value = best_threshold;
+                    model->nodes[node_idx].left = next_node;
+                    model->nodes[node_idx].right = next_node + 1;
+                    model->n_nodes_used = next_node + 2;
+                    
+                    // Push children onto stack
+                    workspace->node_stack[workspace->train_stack_size].node_idx = next_node + 1;
+                    workspace->node_stack[workspace->train_stack_size].start = split_point;
+                    workspace->node_stack[workspace->train_stack_size].end = current.end;
+                    workspace->node_stack[workspace->train_stack_size].depth = current.depth + 1;
+                    workspace->train_stack_size++;
+                    
+                    workspace->node_stack[workspace->train_stack_size].node_idx = next_node;
+                    workspace->node_stack[workspace->train_stack_size].start = current.start;
+                    workspace->node_stack[workspace->train_stack_size].end = split_point;
+                    workspace->node_stack[workspace->train_stack_size].depth = current.depth + 1;
+                    workspace->train_stack_size++;
+                    
+                    created_split = true;
+                }
+            }
+        }
         
-        if (result != 0) {
-            return result;
+        if (!created_split) {
+            // No valid split, create leaf
+            memset(workspace->class_counts, 0, sizeof(int16_t) * model->n_classes);
+            int16_t majority = get_majority_class(workspace->train_labels, workspace->sample_indices,
+                                                 current.start, current.end, model->n_classes, workspace->class_counts);
+            model->nodes[node_idx].feature = -1;
+            model->nodes[node_idx].value = majority;
+            model->nodes[node_idx].left = -1;
+            model->nodes[node_idx].right = -1;
+            if (node_idx >= model->n_nodes_used) {
+                model->n_nodes_used = node_idx + 1;
+            }
         }
     }
     
-    printf("\nTraining completed: %d nodes total\n", model->n_nodes_used);
+    // If stack is now empty, this tree is done
+    if (workspace->train_stack_size == 0) {
+        workspace->n_samples = workspace->train_original_n_samples;
+        model->n_trees_trained = workspace->train_tree_index + 1;
+        workspace->train_tree_index++;
+        
+        if (workspace->train_tree_index >= model->n_trees) {
+            workspace->train_state = 2;
+            return 1; // all done
+        }
+    }
+    
+    return 0; // more steps needed
+}
+
+// Train all trees at once (convenience wrapper)
+int16_t eml_trees_train(EmlTreesModel *model, EmlTreesWorkspace *workspace,
+                       const int16_t *features, const int16_t *labels) {
+    
+    int16_t result = eml_trees_train_init(model, workspace, features, labels);
+    if (result != 0) return result;
+    
+    while (1) {
+        result = eml_trees_train_step(model, workspace);
+        if (result < 0) return result;
+        if (result == 1) break; // done
+    }
+    
     return 0;
 }
 
