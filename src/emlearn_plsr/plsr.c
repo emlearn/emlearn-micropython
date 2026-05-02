@@ -266,6 +266,21 @@ static mp_obj_t plsr_model_get_convergence_metric(mp_obj_t self_obj) {
 }
 static MP_DEFINE_CONST_FUN_OBJ_1(plsr_model_get_convergence_metric_obj, plsr_model_get_convergence_metric);
 
+// Set auto-centering
+static mp_obj_t plsr_model_set_auto_center(mp_obj_t self_obj, mp_obj_t value_obj) {
+    mp_obj_plsr_model_t *o = MP_OBJ_TO_PTR(self_obj);
+    o->model.auto_center = mp_obj_is_true(value_obj);
+    return mp_const_none;
+}
+static MP_DEFINE_CONST_FUN_OBJ_2(plsr_model_set_auto_center_obj, plsr_model_set_auto_center);
+
+// Get auto-centering
+static mp_obj_t plsr_model_get_auto_center(mp_obj_t self_obj) {
+    mp_obj_plsr_model_t *o = MP_OBJ_TO_PTR(self_obj);
+    return mp_obj_new_bool(o->model.auto_center);
+}
+static MP_DEFINE_CONST_FUN_OBJ_1(plsr_model_get_auto_center_obj, plsr_model_get_auto_center);
+
 // ============================================================================
 // Build-type specific module registration
 // ============================================================================
@@ -273,7 +288,7 @@ static MP_DEFINE_CONST_FUN_OBJ_1(plsr_model_get_convergence_metric_obj, plsr_mod
 #if MICROPY_ENABLE_DYNRUNTIME
 
 // Forward declaration for locals dict
-mp_map_elem_t plsr_model_locals_dict_table[8];
+mp_map_elem_t plsr_model_locals_dict_table[10];
 static MP_DEFINE_CONST_DICT(plsr_model_locals_dict, plsr_model_locals_dict_table);
 
 // Module setup entrypoint
@@ -296,8 +311,10 @@ mp_obj_t mpy_init(mp_obj_fun_bc_t *self, size_t n_args, size_t n_kw, mp_obj_t *a
     plsr_model_locals_dict_table[5] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR_is_converged), MP_OBJ_FROM_PTR(&plsr_model_is_converged_obj) };
     plsr_model_locals_dict_table[6] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR_is_complete), MP_OBJ_FROM_PTR(&plsr_model_is_complete_obj) };
     plsr_model_locals_dict_table[7] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR_get_convergence_metric), MP_OBJ_FROM_PTR(&plsr_model_get_convergence_metric_obj) };
+    plsr_model_locals_dict_table[8] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR_set_auto_center), MP_OBJ_FROM_PTR(&plsr_model_set_auto_center_obj) };
+    plsr_model_locals_dict_table[9] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR_get_auto_center), MP_OBJ_FROM_PTR(&plsr_model_get_auto_center_obj) };
 
-    MP_OBJ_TYPE_SET_SLOT(&plsr_model_type, locals_dict, (void*)&plsr_model_locals_dict, 8);
+    MP_OBJ_TYPE_SET_SLOT(&plsr_model_type, locals_dict, (void*)&plsr_model_locals_dict, 10);
 
     // This must be last, it restores the globals dict
     MP_DYNRUNTIME_INIT_EXIT
@@ -316,6 +333,8 @@ static const mp_rom_map_elem_t plsr_model_locals_dict_table[] = {
     { MP_ROM_QSTR(MP_QSTR_is_converged), MP_ROM_PTR(&plsr_model_is_converged_obj) },
     { MP_ROM_QSTR(MP_QSTR_is_complete), MP_ROM_PTR(&plsr_model_is_complete_obj) },
     { MP_ROM_QSTR(MP_QSTR_get_convergence_metric), MP_ROM_PTR(&plsr_model_get_convergence_metric_obj) },
+    { MP_ROM_QSTR(MP_QSTR_set_auto_center), MP_ROM_PTR(&plsr_model_set_auto_center_obj) },
+    { MP_ROM_QSTR(MP_QSTR_get_auto_center), MP_ROM_PTR(&plsr_model_get_auto_center_obj) },
 };
 static MP_DEFINE_CONST_DICT(plsr_model_locals_dict, plsr_model_locals_dict_table);
 

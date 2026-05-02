@@ -1,11 +1,5 @@
 #!/usr/bin/env python3
-"""MicroPython test for PLSR on the SpectroFood dataset.
-
-NOTE: The NIPALS implementation currently has convergence issues with
-high-dimensional data (421 features). The test verifies that training
-completes without errors. Prediction quality is checked only loosely.
-sklearn PLSR with n_components=5 achieves R^2 ~0.70 on this dataset.
-"""
+"""MicroPython test for PLSR on the SpectroFood dataset."""
 
 import array
 import emlearn_plsr
@@ -51,8 +45,8 @@ def test_plsr_spectrofood():
     model = emlearn_plsr.new(n_train, n_features, n_components)
     total_iter, final_metric = emlearn_plsr.fit(
         model, X_train, y_train,
-        max_iterations=2000,
-        tolerance=1e-4,
+        max_iterations=100,
+        tolerance=1e-6,
         verbose=0,
     )
 
@@ -74,9 +68,13 @@ def test_plsr_spectrofood():
     print(f"Test R^2: {r2:.5f}")
     print(f"Target (sklearn PLSR): ~0.70")
 
-    # TODO: NIPALS convergence issues with high-dimensional data
-    # cause poor prediction quality here. Just verify no errors/crashes.
-    # Once the algorithm is improved, tighten this to check R^2 > 0.5
+    # emlearn PLSR should be close to sklearn
+    assert r2 > 0.60, "R^2 above 0.60"
+
+    if r2 >= 0.65:
+        print("✅ GOOD: Regression performance matches sklearn on high-dimensional spectral data!")
+    elif r2 >= 0.60:
+        print("⚠️  FAIR: Close to sklearn but slightly below")
 
 
 if __name__ == '__main__':

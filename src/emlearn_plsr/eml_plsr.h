@@ -8,6 +8,10 @@
  * Based on: Wold, H. (1966) "Estimation of principal components and related 
  * models by iterative least squares"
  * 
+ * For PLS1 (single response variable), the NIPALS algorithm converges in
+ * exactly one iteration per component. Data is automatically centered
+ * before fitting, matching sklearn's PLSRegression behavior.
+ * 
  * Usage:
  *   // Default: implementation is included (header-only mode)
  *   #include "eml_plsr.h"
@@ -40,9 +44,10 @@
       (size_t)(n_components) +                      /* loadings_y */ \
       (size_t)(n_samples) * (size_t)(n_components) + /* scores */ \
       (size_t)(n_samples) +                         /* score_curr */ \
-      (size_t)(n_samples) +                         /* score_y_curr */ \
       (size_t)(n_features) +                        /* weight_curr */ \
-      (size_t)(n_features)                          /* loading_x_curr */ \
+      (size_t)(n_features) +                        /* loading_x_curr */ \
+      (size_t)(n_features) +                        /* x_mean */ \
+      (size_t)(n_features)                          /* x_work (predict) */ \
      ) * sizeof(float))
 
 /* Error codes */
@@ -73,9 +78,16 @@ typedef struct {
     float *loadings_y;
     float *scores;
     float *score_curr;
-    float *score_y_curr;
     float *weight_curr;
     float *loading_x_curr;
+    float *x_mean;
+    float *x_work;       /* temp buffer for prediction */
+
+    /* Centering offsets (stored for prediction) */
+    float y_mean;
+    
+    /* Auto-centering control (default: enabled) */
+    bool auto_center;
     
     /* Training state */
     uint16_t current_component;
@@ -153,6 +165,18 @@ EmlError eml_plsr_fit(
 
 #include <string.h>
 #include <math.h>
+
+/* Debug output control */
+#ifndef EMLEARN_PLSR_DEBUG
+#define EMLEARN_PLSR_DEBUG 0
+#endif
+
+#if EMLEARN_PLSR_DEBUG
+#include <stdio.h>
+#define EMLEARN_PLSR_PRINTF(fmt, ...) printf(fmt, ##__VA_ARGS__)
+#else
+#define EMLEARN_PLSR_PRINTF(fmt, ...)
+#endif
 
 /* Internal helper functions - all prefixed with eml_plsr_ */
 
@@ -277,15 +301,20 @@ static inline EmlError eml_plsr_init(
     plsr->score_curr = &mem[offset]; 
     offset += n_samples;
     
-    plsr->score_y_curr = &mem[offset]; 
-    offset += n_samples;
-    
     plsr->weight_curr = &mem[offset]; 
     offset += n_features;
     
     plsr->loading_x_curr = &mem[offset]; 
     offset += n_features;
     
+    plsr->x_mean = &mem[offset]; 
+    offset += n_features;
+    
+    plsr->x_work = &mem[offset]; 
+    offset += n_features;
+    
+    plsr->y_mean = 0.0f;
+    plsr->auto_center = true;
     plsr->current_component = 0;
     plsr->current_iter = 0;
     plsr->component_converged = false;
@@ -303,18 +332,67 @@ static inline EmlError eml_plsr_fit_start(
         return EmlUninitialized;
     }
     
-    memcpy(plsr->inputs_work, X, 
-           (size_t)plsr->n_samples * (size_t)plsr->n_features * sizeof(float));
-    memcpy(plsr->targets_work, y, plsr->n_samples * sizeof(float));
-    memcpy(plsr->score_y_curr, plsr->targets_work, plsr->n_samples * sizeof(float));
+    const uint16_t n = plsr->n_samples;
+    const uint16_t m = plsr->n_features;
+    
+    /* Copy X into work buffer */
+    memcpy(plsr->inputs_work, X, (size_t)n * (size_t)m * sizeof(float));
+    
+    /* Copy y into work buffer */
+    memcpy(plsr->targets_work, y, n * sizeof(float));
+    
+    if (plsr->auto_center) {
+        /* Compute and store X column means */
+        for (uint16_t j = 0; j < m; j++) {
+            float sum = 0.0f;
+            for (uint16_t i = 0; i < n; i++) {
+                sum += plsr->inputs_work[(size_t)i * m + j];
+            }
+            plsr->x_mean[j] = sum / (float)n;
+        }
+        
+        /* Center X */
+        for (uint16_t i = 0; i < n; i++) {
+            for (uint16_t j = 0; j < m; j++) {
+                plsr->inputs_work[(size_t)i * m + j] -= plsr->x_mean[j];
+            }
+        }
+        
+        /* Compute and store y mean */
+        float y_sum = 0.0f;
+        for (uint16_t i = 0; i < n; i++) {
+            y_sum += plsr->targets_work[i];
+        }
+        plsr->y_mean = y_sum / (float)n;
+        
+        /* Center y */
+        for (uint16_t i = 0; i < n; i++) {
+            plsr->targets_work[i] -= plsr->y_mean;
+        }
+    } else {
+        /* No centering: zero out means */
+        memset(plsr->x_mean, 0, m * sizeof(float));
+        plsr->y_mean = 0.0f;
+    }
     
     plsr->current_component = 0;
     plsr->current_iter = 0;
     plsr->component_converged = false;
+    plsr->convergence_metric = 0.0f;
+    
+    EMLEARN_PLSR_PRINTF("plsr fit_start: n=%d m=%d y_mean=%.6f x_mean[0]=%.6f\n",
+        n, m, plsr->y_mean, plsr->x_mean[0]);
     
     return EmlOk;
 }
 
+/**
+ * @brief Perform one NIPALS iteration step for PLS1
+ * 
+ * For PLS1 (single y), the NIPALS algorithm converges in exactly one
+ * iteration per component. The weight vector w is computed directly
+ * from the covariance X^T y, then normalized.
+ */
 static inline EmlError eml_plsr_iteration_step(
     eml_plsr_t *plsr,
     float tolerance
@@ -323,57 +401,27 @@ static inline EmlError eml_plsr_iteration_step(
         return EmlUninitialized;
     }
     
-    float score_prev[plsr->n_samples];
-    if (plsr->current_iter > 0) {
-        memcpy(score_prev, plsr->score_curr, plsr->n_samples * sizeof(float));
-    }
-    
-    float score_y_norm_sq = eml_plsr_dot_product(plsr->score_y_curr, plsr->score_y_curr, plsr->n_samples);
-    if (score_y_norm_sq < 1e-10f) {
-        return EmlPostconditionFailed;
-    }
-    
-    eml_plsr_mat_trans_vec_mult(plsr->inputs_work, plsr->score_y_curr, plsr->weight_curr, 
+    /* w = X^T y_residual (covariance direction) */
+    eml_plsr_mat_trans_vec_mult(plsr->inputs_work, plsr->targets_work, plsr->weight_curr,
                                  plsr->n_samples, plsr->n_features);
     
-    for (uint16_t i = 0; i < plsr->n_features; i++) {
-        plsr->weight_curr[i] /= score_y_norm_sq;
-    }
-    
+    /* Normalize w */
     float weight_norm = eml_plsr_normalize_vector(plsr->weight_curr, plsr->n_features);
     if (weight_norm < 1e-10f) {
         return EmlPostconditionFailed;
     }
     
+    /* t = X w (scores) */
     eml_plsr_mat_vec_mult(plsr->inputs_work, plsr->weight_curr, plsr->score_curr,
                           plsr->n_samples, plsr->n_features);
     
-    float score_norm_sq = eml_plsr_dot_product(plsr->score_curr, plsr->score_curr, plsr->n_samples);
-    if (score_norm_sq < 1e-10f) {
-        return EmlPostconditionFailed;
-    }
+    EMLEARN_PLSR_PRINTF("plsr step: comp=%d w_norm=%.6f t_norm=%.4f\n",
+        plsr->current_component, weight_norm,
+        eml_plsr_vector_norm(plsr->score_curr, plsr->n_samples));
     
-    float loading_y = eml_plsr_dot_product(plsr->targets_work, plsr->score_curr, plsr->n_samples) / score_norm_sq;
-    
-    for (uint16_t i = 0; i < plsr->n_samples; i++) {
-        plsr->score_y_curr[i] = plsr->targets_work[i] * loading_y;
-    }
-    
-    eml_plsr_normalize_vector(plsr->score_y_curr, plsr->n_samples);
-    
-    if (plsr->current_iter > 0) {
-        float diff = 0.0f;
-        for (uint16_t i = 0; i < plsr->n_samples; i++) {
-            float d = plsr->score_curr[i] - score_prev[i];
-            diff += d * d;
-        }
-        plsr->convergence_metric = sqrtf(diff);
-        
-        if (plsr->convergence_metric < tolerance) {
-            plsr->component_converged = true;
-        }
-    }
-    
+    /* For PLS1, convergence is immediate */
+    plsr->convergence_metric = 0.0f;
+    plsr->component_converged = true;
     plsr->current_iter++;
     
     return EmlOk;
@@ -402,6 +450,7 @@ static inline EmlError eml_plsr_finalize_component(eml_plsr_t *plsr) {
         return EmlPostconditionFailed;
     }
     
+    /* p = X^T t / (t^T t) -- X loadings */
     eml_plsr_mat_trans_vec_mult(plsr->inputs_work, plsr->score_curr, plsr->loading_x_curr,
                                  plsr->n_samples, plsr->n_features);
     
@@ -409,8 +458,10 @@ static inline EmlError eml_plsr_finalize_component(eml_plsr_t *plsr) {
         plsr->loading_x_curr[i] /= score_norm_sq;
     }
     
+    /* c = y^T t / (t^T t) -- y loading */
     float loading_y = eml_plsr_dot_product(plsr->targets_work, plsr->score_curr, plsr->n_samples) / score_norm_sq;
     
+    /* Store component results */
     for (uint16_t i = 0; i < plsr->n_features; i++) {
         plsr->weights[i * plsr->n_components + comp] = plsr->weight_curr[i];
         plsr->loadings_x[i * plsr->n_components + comp] = plsr->loading_x_curr[i];
@@ -421,18 +472,19 @@ static inline EmlError eml_plsr_finalize_component(eml_plsr_t *plsr) {
         plsr->scores[i * plsr->n_components + comp] = plsr->score_curr[i];
     }
     
+    EMLEARN_PLSR_PRINTF("plsr finalize: comp=%d c=%.6f t_norm=%.4f\n",
+        comp, loading_y, sqrtf(score_norm_sq));
+    
+    /* Deflate X: X = X - t p^T */
     eml_plsr_deflate_matrix(plsr->inputs_work, plsr->score_curr, plsr->loading_x_curr, 1.0f,
                             plsr->n_samples, plsr->n_features);
     
+    /* Deflate y: y = y - c t */
     eml_plsr_deflate_vector(plsr->targets_work, plsr->score_curr, loading_y, plsr->n_samples);
     
     plsr->current_component++;
     plsr->current_iter = 0;
     plsr->component_converged = false;
-    
-    if (plsr->current_component < plsr->n_components) {
-        memcpy(plsr->score_y_curr, plsr->targets_work, plsr->n_samples * sizeof(float));
-    }
     
     return EmlOk;
 }
@@ -444,6 +496,15 @@ static inline bool eml_plsr_is_complete(const eml_plsr_t *plsr) {
     return plsr->current_component >= plsr->n_components;
 }
 
+/**
+ * @brief Predict using the PLSR model with incremental deflation
+ * 
+ * For each component k:
+ *   score_k = x_centered . w_k
+ *   y_pred += score_k * c_k
+ *   x_centered -= score_k * p_k  (deflate)
+ * Finally: y_pred += y_mean
+ */
 static inline EmlError eml_plsr_predict(
     const eml_plsr_t *plsr,
     const float *x,
@@ -453,15 +514,32 @@ static inline EmlError eml_plsr_predict(
         return EmlUninitialized;
     }
     
+    /* Center input: x_work = x - x_mean */
+    for (uint16_t i = 0; i < plsr->n_features; i++) {
+        plsr->x_work[i] = x[i] - plsr->x_mean[i];
+    }
+    
+    /* Incremental deflation prediction */
     *y_pred = 0.0f;
     
     for (uint16_t comp = 0; comp < plsr->current_component; comp++) {
+        /* score = x_work . w_comp */
         float score = 0.0f;
         for (uint16_t i = 0; i < plsr->n_features; i++) {
-            score += x[i] * plsr->weights[i * plsr->n_components + comp];
+            score += plsr->x_work[i] * plsr->weights[i * plsr->n_components + comp];
         }
+        
+        /* y_pred += score * c_comp */
         *y_pred += score * plsr->loadings_y[comp];
+        
+        /* x_work -= score * p_comp (deflate for next component) */
+        for (uint16_t i = 0; i < plsr->n_features; i++) {
+            plsr->x_work[i] -= score * plsr->loadings_x[i * plsr->n_components + comp];
+        }
     }
+    
+    /* Add back y mean */
+    *y_pred += plsr->y_mean;
     
     return EmlOk;
 }
