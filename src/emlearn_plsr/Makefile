@@ -27,7 +27,7 @@ endif
 MOD = emlearn_plsr
 
 # Source files (.c or .py)
-SRC = plsr.c plsr.py
+SRC = plsr.c emlearn_plsr.py
 
 # Include to get the rules for compiling and linking the module
 include $(MPY_DIR)/py/dynruntime.mk

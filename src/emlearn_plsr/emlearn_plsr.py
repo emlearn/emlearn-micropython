@@ -2,6 +2,14 @@
 Training helper for EML PLS Regression MicroPython module
 """
 
+# When used as external C module, the .py is the top-level import,
+# and we need to merge the native module symbols at import time
+# When used as dynamic native modules (.mpy), .py and native code is merged at build time
+try:
+    from emlearn_plsr_c import *
+except ImportError:
+    pass
+
 log_prefix = 'emlearn_plsr:'
 
 def fit(model, X_train, y_train,
@@ -72,5 +80,3 @@ def fit(model, X_train, y_train,
             print(log_prefix, f'Training incomplete after {total_iterations} iterations')
     
     return total_iterations, final_metric
-
-

@@ -1,19 +1,26 @@
-// MicroPython native module wrapper for PLS Regression
+// MicroPython module wrapper for PLS Regression
+// Supports both native module (dynruntime) and external C module builds
+
+#ifdef MICROPY_ENABLE_DYNRUNTIME
 #include "py/dynruntime.h"
+#else
+#include "py/runtime.h"
+#endif
 
 #include <string.h>
+#include <stdbool.h>
 
 // NOTE: make sure we do not use sqrtf() wrapper which uses errno, does not work in native module
 #if USE_IEEE_SQRTF
 #define sqrtf(x) __ieee754_sqrtf(x)
 #elif USE_BUILTIN_SQRTF
 #define sqrtf(x) __builtin_sqrtf(x)
-#else
 #endif
 
 #include "eml_plsr.h"
 
-// memset/memcpy for compatibility 
+#ifdef MICROPY_ENABLE_DYNRUNTIME
+// memset/memcpy for compatibility
 #if !defined(__linux__)
 void *memcpy(void *dst, const void *src, size_t n) {
     return mp_fun_table.memmove_(dst, src, n);
@@ -22,19 +29,24 @@ void *memset(void *s, int c, size_t n) {
     return mp_fun_table.memset_(s, c, n);
 }
 #endif
-
+#endif
 
 // MicroPython type for PLSR model
 typedef struct _mp_obj_plsr_model_t {
     mp_obj_base_t base;
     eml_plsr_t model;
     uint8_t *memory;  // Allocated memory block
+    size_t memory_size;
     uint16_t n_samples;
     uint16_t n_features;
     uint16_t n_components;
 } mp_obj_plsr_model_t;
 
+#if MICROPY_ENABLE_DYNRUNTIME
 mp_obj_full_type_t plsr_model_type;
+#else
+static const mp_obj_type_t plsr_model_type;
+#endif
 
 // Create a new instance
 static mp_obj_t plsr_model_new(size_t n_args, const mp_obj_t *args) {
@@ -42,7 +54,7 @@ static mp_obj_t plsr_model_new(size_t n_args, const mp_obj_t *args) {
     if (n_args != 3) {
         mp_raise_ValueError(MP_ERROR_TEXT("Expected 3 arguments: n_samples, n_features, n_components"));
     }
-    
+
     mp_int_t n_samples = mp_obj_get_int(args[0]);
     mp_int_t n_features = mp_obj_get_int(args[1]);
     mp_int_t n_components = mp_obj_get_int(args[2]);
@@ -56,7 +68,7 @@ static mp_obj_t plsr_model_new(size_t n_args, const mp_obj_t *args) {
     }
 
     // Allocate space
-    mp_obj_plsr_model_t *o = \
+    mp_obj_plsr_model_t *o =
         mp_obj_malloc(mp_obj_plsr_model_t, (mp_obj_type_t *)&plsr_model_type);
 
     o->n_samples = n_samples;
@@ -65,18 +77,19 @@ static mp_obj_t plsr_model_new(size_t n_args, const mp_obj_t *args) {
 
     // Calculate and allocate memory
     size_t memory_size = eml_plsr_get_memory_size(n_samples, n_features, n_components);
-    o->memory = (uint8_t *)m_malloc(memory_size);
-    
+    o->memory_size = memory_size;
+    o->memory = m_new(uint8_t, memory_size);
+
     if (!o->memory) {
         mp_raise_ValueError(MP_ERROR_TEXT("Failed to allocate PLSR memory"));
     }
 
     // Initialize model
-    EmlError err = eml_plsr_init(&o->model, n_samples, n_features, n_components, 
+    EmlError err = eml_plsr_init(&o->model, n_samples, n_features, n_components,
                                   o->memory, memory_size);
-    
+
     if (err != EmlOk) {
-        m_free(o->memory);
+        m_del(uint8_t, o->memory, memory_size);
         mp_raise_ValueError(MP_ERROR_TEXT("Failed to initialize PLSR model"));
     }
 
@@ -90,7 +103,7 @@ static mp_obj_t plsr_model_del(mp_obj_t self_obj) {
 
     // Free allocated memory
     if (o->memory) {
-        m_free(o->memory);
+        m_del(uint8_t, o->memory, o->memory_size);
         o->memory = NULL;
     }
 
@@ -98,14 +111,13 @@ static mp_obj_t plsr_model_del(mp_obj_t self_obj) {
 }
 static MP_DEFINE_CONST_FUN_OBJ_1(plsr_model_del_obj, plsr_model_del);
 
-
 // Start iterative fitting
 static mp_obj_t plsr_model_fit_start(size_t n_args, const mp_obj_t *args) {
     // Args: self, X, y
     if (n_args != 3) {
         mp_raise_ValueError(MP_ERROR_TEXT("Expected 3 arguments: self, X, y"));
     }
-    
+
     mp_obj_plsr_model_t *o = MP_OBJ_TO_PTR(args[0]);
     eml_plsr_t *self = &o->model;
 
@@ -152,7 +164,7 @@ static mp_obj_t plsr_model_step(size_t n_args, const mp_obj_t *args) {
     if (n_args < 1 || n_args > 2) {
         mp_raise_ValueError(MP_ERROR_TEXT("Expected 1-2 arguments: self, [tolerance]"));
     }
-    
+
     mp_obj_plsr_model_t *o = MP_OBJ_TO_PTR(args[0]);
     eml_plsr_t *self = &o->model;
 
@@ -211,13 +223,14 @@ static mp_obj_t plsr_model_is_complete(mp_obj_t self_obj) {
 static MP_DEFINE_CONST_FUN_OBJ_1(plsr_model_is_complete_obj, plsr_model_is_complete);
 
 // Predict using the model
-static mp_obj_t plsr_model_predict(mp_obj_fun_bc_t *self_obj,
-        size_t n_args, size_t n_kw, mp_obj_t *args) {
-    // Check number of arguments is valid
-    mp_arg_check_num(n_args, n_kw, 2, 2, false);
+static mp_obj_t plsr_model_predict(size_t n_args, const mp_obj_t *args) {
+    // Args: self, features
+    if (n_args != 2) {
+        mp_raise_ValueError(MP_ERROR_TEXT("Expected 2 arguments: self, features"));
+    }
 
     mp_obj_plsr_model_t *o = MP_OBJ_TO_PTR(args[0]);
-    eml_plsr_t *self = &o->model;    
+    eml_plsr_t *self = &o->model;
 
     // Extract buffer pointer and verify typecode
     mp_buffer_info_t bufinfo;
@@ -242,6 +255,7 @@ static mp_obj_t plsr_model_predict(mp_obj_fun_bc_t *self_obj,
 
     return mp_obj_new_float_from_f(prediction);
 }
+static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(plsr_model_predict_obj, 2, 2, plsr_model_predict);
 
 // Get convergence metric
 static mp_obj_t plsr_model_get_convergence_metric(mp_obj_t self_obj) {
@@ -252,7 +266,13 @@ static mp_obj_t plsr_model_get_convergence_metric(mp_obj_t self_obj) {
 }
 static MP_DEFINE_CONST_FUN_OBJ_1(plsr_model_get_convergence_metric_obj, plsr_model_get_convergence_metric);
 
-// Module setup
+// ============================================================================
+// Build-type specific module registration
+// ============================================================================
+
+#if MICROPY_ENABLE_DYNRUNTIME
+
+// Forward declaration for locals dict
 mp_map_elem_t plsr_model_locals_dict_table[8];
 static MP_DEFINE_CONST_DICT(plsr_model_locals_dict, plsr_model_locals_dict_table);
 
@@ -266,9 +286,9 @@ mp_obj_t mpy_init(mp_obj_fun_bc_t *self, size_t n_args, size_t n_kw, mp_obj_t *a
     plsr_model_type.base.type = (void*)&mp_fun_table.type_type;
     plsr_model_type.flags = MP_TYPE_FLAG_ITER_IS_CUSTOM;
     plsr_model_type.name = MP_QSTR_plsr;
-    
+
     // methods
-    plsr_model_locals_dict_table[0] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR_predict), MP_DYNRUNTIME_MAKE_FUNCTION(plsr_model_predict) };
+    plsr_model_locals_dict_table[0] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR_predict), MP_OBJ_FROM_PTR(&plsr_model_predict_obj) };
     plsr_model_locals_dict_table[1] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR___del__), MP_OBJ_FROM_PTR(&plsr_model_del_obj) };
     plsr_model_locals_dict_table[2] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR_fit_start), MP_OBJ_FROM_PTR(&plsr_model_fit_start_obj) };
     plsr_model_locals_dict_table[3] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR_step), MP_OBJ_FROM_PTR(&plsr_model_step_obj) };
@@ -277,9 +297,46 @@ mp_obj_t mpy_init(mp_obj_fun_bc_t *self, size_t n_args, size_t n_kw, mp_obj_t *a
     plsr_model_locals_dict_table[6] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR_is_complete), MP_OBJ_FROM_PTR(&plsr_model_is_complete_obj) };
     plsr_model_locals_dict_table[7] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR_get_convergence_metric), MP_OBJ_FROM_PTR(&plsr_model_get_convergence_metric_obj) };
 
-
     MP_OBJ_TYPE_SET_SLOT(&plsr_model_type, locals_dict, (void*)&plsr_model_locals_dict, 8);
 
     // This must be last, it restores the globals dict
     MP_DYNRUNTIME_INIT_EXIT
 }
+
+#else
+
+// External C module build
+
+static const mp_rom_map_elem_t plsr_model_locals_dict_table[] = {
+    { MP_ROM_QSTR(MP_QSTR_predict), MP_ROM_PTR(&plsr_model_predict_obj) },
+    { MP_ROM_QSTR(MP_QSTR___del__), MP_ROM_PTR(&plsr_model_del_obj) },
+    { MP_ROM_QSTR(MP_QSTR_fit_start), MP_ROM_PTR(&plsr_model_fit_start_obj) },
+    { MP_ROM_QSTR(MP_QSTR_step), MP_ROM_PTR(&plsr_model_step_obj) },
+    { MP_ROM_QSTR(MP_QSTR_finalize_component), MP_ROM_PTR(&plsr_model_finalize_component_obj) },
+    { MP_ROM_QSTR(MP_QSTR_is_converged), MP_ROM_PTR(&plsr_model_is_converged_obj) },
+    { MP_ROM_QSTR(MP_QSTR_is_complete), MP_ROM_PTR(&plsr_model_is_complete_obj) },
+    { MP_ROM_QSTR(MP_QSTR_get_convergence_metric), MP_ROM_PTR(&plsr_model_get_convergence_metric_obj) },
+};
+static MP_DEFINE_CONST_DICT(plsr_model_locals_dict, plsr_model_locals_dict_table);
+
+static MP_DEFINE_CONST_OBJ_TYPE(
+    plsr_model_type,
+    MP_QSTR_plsr,
+    MP_TYPE_FLAG_ITER_IS_CUSTOM,
+    make_new, plsr_model_new,
+    locals_dict, &plsr_model_locals_dict
+);
+
+static const mp_rom_map_elem_t plsr_globals_table[] = {
+    { MP_ROM_QSTR(MP_QSTR_new), MP_ROM_PTR(&plsr_model_new_obj) },
+    { MP_ROM_QSTR(MP_QSTR_plsr), MP_ROM_PTR(&plsr_model_type) },
+};
+static MP_DEFINE_CONST_DICT(plsr_globals, plsr_globals_table);
+
+const mp_obj_module_t plsr_cmodule = {
+    .base = { &mp_type_module },
+    .globals = (mp_obj_dict_t *)&plsr_globals,
+};
+MP_REGISTER_MODULE(MP_QSTR_emlearn_plsr_c, plsr_cmodule);
+
+#endif

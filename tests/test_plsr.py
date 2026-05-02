@@ -22,6 +22,30 @@ def assert_equal(a, b, name="value"):
     print(f"  ✓ {name}: {a} == {b}")
 
 
+def test_model_creation():
+    """Test model creation and basic properties"""
+    print("\n=== Test: Model Creation ===")
+
+    model = emlearn_plsr.new(8, 3, 2)
+    assert_true(model is not None, "Model created")
+
+    # Check not complete before training
+    assert_true(not model.is_complete(), "Not complete initially")
+
+    # Check invalid dimensions raise error
+    try:
+        emlearn_plsr.new(0, 3, 2)  # zero samples
+        assert_true(False, "Should have raised error for zero samples")
+    except ValueError:
+        print("  ✓ Caught zero samples")
+
+    try:
+        emlearn_plsr.new(8, 0, 2)  # zero features
+        assert_true(False, "Should have raised error for zero features")
+    except ValueError:
+        print("  ✓ Caught zero features")
+
+
 def test_simple_training():
     """Test basic training and prediction"""
     print("\n=== Test: Simple Training ===")
@@ -241,4 +265,5 @@ def run_all_tests():
 
 
 if __name__ == '__main__':
-    exit(run_all_tests())
+    import sys
+    sys.exit(run_all_tests())
