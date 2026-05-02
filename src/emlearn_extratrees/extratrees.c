@@ -1,10 +1,15 @@
 // Include the header file to get access to the MicroPython API
+#ifdef MICROPY_ENABLE_DYNRUNTIME
 #include "py/dynruntime.h"
+#else
+#include "py/runtime.h"
+#endif
 
 #include <string.h>
 
 #include "eml_extratrees.c"
 
+#ifdef MICROPY_ENABLE_DYNRUNTIME
 // memset/memcpy for compatibility 
 #if !defined(__linux__)
 void *memcpy(void *dst, const void *src, size_t n) {
@@ -13,6 +18,7 @@ void *memcpy(void *dst, const void *src, size_t n) {
 void *memset(void *s, int c, size_t n) {
     return mp_fun_table.memset_(s, c, n);
 }
+#endif
 #endif
 
 // MicroPython type for ExtraTrees model
@@ -24,7 +30,11 @@ typedef struct _mp_obj_extratrees_model_t {
     mp_obj_t train_y_obj;  // Reference to y Python object (prevents GC during step training)
 } mp_obj_extratrees_model_t;
 
+#if MICROPY_ENABLE_DYNRUNTIME
 mp_obj_full_type_t extratrees_model_type;
+#else
+static const mp_obj_type_t extratrees_model_type;
+#endif
 
 // Create a new instance
 static mp_obj_t extratrees_model_new(size_t n_args, const mp_obj_t *args) {
@@ -40,8 +50,8 @@ static mp_obj_t extratrees_model_new(size_t n_args, const mp_obj_t *args) {
     mp_int_t max_depth = (n_args > 3) ? mp_obj_get_int(args[3]) : 10;
     mp_int_t min_samples_leaf = (n_args > 4) ? mp_obj_get_int(args[4]) : 1;
     mp_int_t n_thresholds = (n_args > 5) ? mp_obj_get_int(args[5]) : 10;
-    float subsample_ratio = (n_args > 6) ? mp_obj_get_float(args[6]) : 1.0f;
-    float feature_subsample_ratio = (n_args > 7) ? mp_obj_get_float(args[7]) : 1.0f;
+    float subsample_ratio = (n_args > 6) ? mp_obj_get_float_to_f(args[6]) : 1.0f;
+    float feature_subsample_ratio = (n_args > 7) ? mp_obj_get_float_to_f(args[7]) : 1.0f;
     mp_int_t max_nodes = (n_args > 8) ? mp_obj_get_int(args[8]) : 1000;
     mp_int_t max_samples = (n_args > 9) ? mp_obj_get_int(args[9]) : 1000;
     mp_int_t rng_seed = (n_args > 10) ? mp_obj_get_int(args[10]) : 42;
@@ -260,10 +270,10 @@ static mp_obj_t extratrees_model_train_step(mp_obj_t self_obj) {
 static MP_DEFINE_CONST_FUN_OBJ_1(extratrees_model_train_step_obj, extratrees_model_train_step);
 
 // Predict using the model (returns class probabilities)
-static mp_obj_t extratrees_model_predict_proba(mp_obj_fun_bc_t *self_obj,
-        size_t n_args, size_t n_kw, mp_obj_t *args) {
-    // Check number of arguments is valid
-    mp_arg_check_num(n_args, n_kw, 3, 3, false);
+static mp_obj_t extratrees_model_predict_proba(size_t n_args, const mp_obj_t *args) {
+    if (n_args != 3) {
+        mp_raise_ValueError(MP_ERROR_TEXT("Expected 3 arguments: self, features, probabilities"));
+    }
 
     mp_obj_extratrees_model_t *o = MP_OBJ_TO_PTR(args[0]);
     EmlTreesModel *model = &o->model;
@@ -300,12 +310,13 @@ static mp_obj_t extratrees_model_predict_proba(mp_obj_fun_bc_t *self_obj,
 
     return mp_obj_new_int(predicted_class);
 }
+static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(extratrees_model_predict_proba_obj, 3, 3, extratrees_model_predict_proba);
 
 // Predict using the model (returns only class label)
-static mp_obj_t extratrees_model_predict(mp_obj_fun_bc_t *self_obj,
-        size_t n_args, size_t n_kw, mp_obj_t *args) {
-    // Check number of arguments is valid
-    mp_arg_check_num(n_args, n_kw, 2, 2, false);
+static mp_obj_t extratrees_model_predict(size_t n_args, const mp_obj_t *args) {
+    if (n_args != 2) {
+        mp_raise_ValueError(MP_ERROR_TEXT("Expected 2 arguments: self, features"));
+    }
 
     mp_obj_extratrees_model_t *o = MP_OBJ_TO_PTR(args[0]);
     EmlTreesModel *model = &o->model;
@@ -329,6 +340,7 @@ static mp_obj_t extratrees_model_predict(mp_obj_fun_bc_t *self_obj,
 
     return mp_obj_new_int(predicted_class);
 }
+static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(extratrees_model_predict_obj, 2, 2, extratrees_model_predict);
 
 // Get number of features
 static mp_obj_t extratrees_model_get_n_features(mp_obj_t self_obj) {
@@ -378,6 +390,12 @@ static mp_obj_t extratrees_model_get_n_trees_trained(mp_obj_t self_obj) {
 }
 static MP_DEFINE_CONST_FUN_OBJ_1(extratrees_model_get_n_trees_trained_obj, extratrees_model_get_n_trees_trained);
 
+// =========================================================================
+// Module registration — dynruntime vs user C module
+// =========================================================================
+
+#if MICROPY_ENABLE_DYNRUNTIME
+
 // Module setup
 mp_map_elem_t extratrees_model_locals_dict_table[11];
 static MP_DEFINE_CONST_DICT(extratrees_model_locals_dict, extratrees_model_locals_dict_table);
@@ -394,8 +412,8 @@ mp_obj_t mpy_init(mp_obj_fun_bc_t *self, size_t n_args, size_t n_kw, mp_obj_t *a
     extratrees_model_type.name = MP_QSTR_extratrees;
     
     // methods
-    extratrees_model_locals_dict_table[0] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR_predict), MP_DYNRUNTIME_MAKE_FUNCTION(extratrees_model_predict) };
-    extratrees_model_locals_dict_table[1] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR_predict_proba), MP_DYNRUNTIME_MAKE_FUNCTION(extratrees_model_predict_proba) };
+    extratrees_model_locals_dict_table[0] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR_predict), MP_OBJ_FROM_PTR(&extratrees_model_predict_obj) };
+    extratrees_model_locals_dict_table[1] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR_predict_proba), MP_OBJ_FROM_PTR(&extratrees_model_predict_proba_obj) };
     extratrees_model_locals_dict_table[2] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR_train), MP_OBJ_FROM_PTR(&extratrees_model_train_obj) };
     extratrees_model_locals_dict_table[3] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR_train_init), MP_OBJ_FROM_PTR(&extratrees_model_train_init_obj) };
     extratrees_model_locals_dict_table[4] = (mp_map_elem_t){ MP_OBJ_NEW_QSTR(MP_QSTR_train_step), MP_OBJ_FROM_PTR(&extratrees_model_train_step_obj) };
@@ -411,3 +429,43 @@ mp_obj_t mpy_init(mp_obj_fun_bc_t *self, size_t n_args, size_t n_kw, mp_obj_t *a
     // This must be last, it restores the globals dict
     MP_DYNRUNTIME_INIT_EXIT
 }
+
+#else
+
+// User C module mode
+static const mp_rom_map_elem_t extratrees_model_locals_dict_table[] = {
+    { MP_ROM_QSTR(MP_QSTR_predict), MP_ROM_PTR(&extratrees_model_predict_obj) },
+    { MP_ROM_QSTR(MP_QSTR_predict_proba), MP_ROM_PTR(&extratrees_model_predict_proba_obj) },
+    { MP_ROM_QSTR(MP_QSTR_train), MP_ROM_PTR(&extratrees_model_train_obj) },
+    { MP_ROM_QSTR(MP_QSTR_train_init), MP_ROM_PTR(&extratrees_model_train_init_obj) },
+    { MP_ROM_QSTR(MP_QSTR_train_step), MP_ROM_PTR(&extratrees_model_train_step_obj) },
+    { MP_ROM_QSTR(MP_QSTR___del__), MP_ROM_PTR(&extratrees_model_del_obj) },
+    { MP_ROM_QSTR(MP_QSTR_get_n_features), MP_ROM_PTR(&extratrees_model_get_n_features_obj) },
+    { MP_ROM_QSTR(MP_QSTR_get_n_classes), MP_ROM_PTR(&extratrees_model_get_n_classes_obj) },
+    { MP_ROM_QSTR(MP_QSTR_get_n_trees), MP_ROM_PTR(&extratrees_model_get_n_trees_obj) },
+    { MP_ROM_QSTR(MP_QSTR_get_n_nodes_used), MP_ROM_PTR(&extratrees_model_get_n_nodes_used_obj) },
+    { MP_ROM_QSTR(MP_QSTR_get_n_trees_trained), MP_ROM_PTR(&extratrees_model_get_n_trees_trained_obj) },
+};
+static MP_DEFINE_CONST_DICT(extratrees_model_locals_dict, extratrees_model_locals_dict_table);
+
+static MP_DEFINE_CONST_OBJ_TYPE(
+    extratrees_model_type,
+    MP_QSTR_extratrees,
+    MP_TYPE_FLAG_ITER_IS_CUSTOM,
+    locals_dict, &extratrees_model_locals_dict
+);
+
+// Define module object
+static const mp_rom_map_elem_t emlearn_extratrees_globals_table[] = {
+    { MP_ROM_QSTR(MP_QSTR_new), MP_ROM_PTR(&extratrees_model_new_obj) },
+};
+static MP_DEFINE_CONST_DICT(emlearn_extratrees_globals, emlearn_extratrees_globals_table);
+
+const mp_obj_module_t emlearn_extratrees_cmodule = {
+    .base = { &mp_type_module },
+    .globals = (mp_obj_dict_t *)&emlearn_extratrees_globals,
+};
+
+MP_REGISTER_MODULE(MP_QSTR_emlearn_extratrees_c, emlearn_extratrees_cmodule);
+
+#endif

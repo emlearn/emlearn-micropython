@@ -143,7 +143,7 @@ static int partition_samples(const int16_t *features, EmlTreesModel *model,
 
 
 // Add this debug version of eml_trees_predict_proba
-int16_t eml_trees_predict_proba(const EmlTreesModel *model, const int16_t *features, 
+static int16_t eml_trees_predict_proba(const EmlTreesModel *model, const int16_t *features, 
                                float *probabilities, int16_t *votes) {
     
     // Initialize vote counts
@@ -554,7 +554,7 @@ static int build_tree(EmlTreesModel *model, EmlTreesWorkspace *workspace,
 
 
 // Initialize step-by-step training
-int16_t eml_trees_train_init(EmlTreesModel *model, EmlTreesWorkspace *workspace,
+static int16_t eml_trees_train_init(EmlTreesModel *model, EmlTreesWorkspace *workspace,
                               const int16_t *features, const int16_t *labels) {
     model->n_nodes_used = 0;
     model->n_trees_trained = 0;
@@ -599,7 +599,7 @@ int16_t eml_trees_train_init(EmlTreesModel *model, EmlTreesWorkspace *workspace,
 
 // Process one node in step-by-step training
 // Returns: 1=training complete, 0=more steps needed, -1=error
-int16_t eml_trees_train_step(EmlTreesModel *model, EmlTreesWorkspace *workspace) {
+static int16_t eml_trees_train_step(EmlTreesModel *model, EmlTreesWorkspace *workspace) {
     if (workspace->train_state != 1) {
         return -1;
     }
@@ -766,7 +766,7 @@ int16_t eml_trees_train_step(EmlTreesModel *model, EmlTreesWorkspace *workspace)
 }
 
 // Train all trees at once (convenience wrapper)
-int16_t eml_trees_train(EmlTreesModel *model, EmlTreesWorkspace *workspace,
+static int16_t eml_trees_train(EmlTreesModel *model, EmlTreesWorkspace *workspace,
                        const int16_t *features, const int16_t *labels) {
     
     int16_t result = eml_trees_train_init(model, workspace, features, labels);
