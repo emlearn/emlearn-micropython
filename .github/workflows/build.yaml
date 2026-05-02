@@ -8,8 +8,7 @@ jobs:
   build-linux:
     runs-on: ubuntu-24.04
     env:
-      MPY_DIR: ./micropython
-      MICROPYTHON_BIN: ./micropython/ports/unix/build-nomodules/micropython
+      MICROPYTHON_BIN: ./dependencies/micropython/ports/unix/build-nomodules/micropython
     steps:
     - uses: actions/checkout@v4
       with:
@@ -19,15 +18,10 @@ jobs:
     - uses: actions/setup-python@v5
       with:
         python-version: '3.10'
-    - uses: actions/checkout@v4
-      with:
-        repository: micropython/micropython
-        path: micropython
-        ref: v1.27.0
     - name: Install Python dependencies
       run: pip install -r requirements.txt
     - name: Setup MicroPython X86
-      working-directory: micropython
+      working-directory: ./dependencies/micropython
       run: |
         source tools/ci.sh && ci_unix_32bit_setup && ci_unix_standard_build
         mv ./ports/unix/build-standard/ ./ports/unix/build-nomodules/
@@ -47,8 +41,7 @@ jobs:
   build-arm:
     runs-on: ubuntu-24.04
     env:
-      MPY_DIR: ./micropython
-      MICROPYTHON_BIN: ./micropython/ports/unix/build-nomodules/micropython
+      MICROPYTHON_BIN: ./dependencies/micropython/ports/unix/build-nomodules/micropython
     steps:
     - uses: actions/checkout@v4
       with:
@@ -58,20 +51,15 @@ jobs:
     - uses: actions/setup-python@v5
       with:
         python-version: '3.10'
-    - uses: actions/checkout@v4
-      with:
-        repository: micropython/micropython
-        path: micropython
-        ref: v1.27.0
     - name: Install Python dependencies
       run: pip install -r requirements.txt
     - name: Setup MicroPython ARM
-      working-directory: micropython
+      working-directory: ./dependencies/micropython
       run: |
         source tools/ci.sh && ci_rp2_setup
         make -C mpy-cross
     - name: Setup MicroPython RP2 port
-      working-directory: micropython/ports/rp2
+      working-directory: ./dependencies/micropython/ports/rp2
       run: |
         make submodules
         make clean
@@ -92,8 +80,7 @@ jobs:
   build-esp32:
     runs-on: ubuntu-24.04
     env:
-      MPY_DIR: ./micropython
-      MICROPYTHON_BIN: ./micropython/ports/unix/build-nomodules/micropython
+      IDF_VER: v5.5.1
     steps:
     - uses: actions/checkout@v4
       with:
@@ -103,29 +90,24 @@ jobs:
     - uses: actions/setup-python@v5
       with:
         python-version: '3.10'
-    - uses: actions/checkout@v4
-      with:
-        repository: micropython/micropython
-        path: micropython
-        ref: v1.27.0
     - name: Install Python dependencies
       run: pip install -r requirements.txt
 
     - name: Setup MicroPython ESP32
-      working-directory: micropython
+      working-directory: ./dependencies/micropython
       run: |
         source tools/ci.sh && ci_esp32_idf_setup
         make -C mpy-cross
     - name: Setup submodules esp32
-      working-directory: micropython/ports/esp32
+      working-directory: ./dependencies/micropython/ports/esp32
       run: source ../../esp-idf/export.sh && make submodules
     - name: Build custom firmware with extmod, ESP32
       run: |
-        source micropython/esp-idf/export.sh && pip install -r requirements.txt
+        source ./dependencies/micropython/esp-idf/export.sh && pip install -r requirements.txt
         make extmod PORT=esp32 BOARD=ESP32_GENERIC_S3
         make extmod PORT=esp32 BOARD=ESP32_GENERIC
     - name: Build module xtensawin
-      run: source micropython/esp-idf/export.sh && pip install -r requirements.txt && make dist ARCH=xtensawin V=1
+      run: source ./dependencies/micropython/esp-idf/export.sh && pip install -r requirements.txt && make dist ARCH=xtensawin V=1
     - name: Archive dist artifacts
       uses: actions/upload-artifact@v4
       with:
@@ -136,8 +118,7 @@ jobs:
   build-riscv:
     runs-on: ubuntu-24.04
     env:
-      MPY_DIR: ./micropython
-      MICROPYTHON_BIN: ./micropython/ports/unix/build-nomodules/micropython
+      IDF_VER: v5.5.1
     steps:
     - uses: actions/checkout@v4
       with:
@@ -147,28 +128,23 @@ jobs:
     - uses: actions/setup-python@v5
       with:
         python-version: '3.10'
-    - uses: actions/checkout@v4
-      with:
-        repository: micropython/micropython
-        path: micropython
-        ref: v1.27.0
     - name: Install Python dependencies
       run: pip install -r requirements.txt
 
     - name: Setup MicroPython ESP32
-      working-directory: micropython
+      working-directory: ./dependencies/micropython
       run: |
         source tools/ci.sh && ci_esp32_idf_setup && ci_gcc_riscv_setup
         make -C mpy-cross
     - name: Setup submodules esp32
-      working-directory: micropython/ports/esp32
+      working-directory: ./dependencies/micropython/ports/esp32
       run: source ../../esp-idf/export.sh && make submodules
     - name: Build custom firmware with extmod, ESP32
       run: |
-        source micropython/esp-idf/export.sh && pip install -r requirements.txt
+        source ./dependencies/micropython/esp-idf/export.sh && pip install -r requirements.txt
         echo make extmod PORT=esp32 BOARD=ESP32_GENERIC_C6
     - name: Build nadmod xtensawin
-      run: source micropython/esp-idf/export.sh && pip install -r requirements.txt && make dist ARCH=rv32imc V=1
+      run: source ./dependencies/micropython/esp-idf/export.sh && pip install -r requirements.txt && make dist ARCH=rv32imc V=1
     - name: Archive dist artifacts
       uses: actions/upload-artifact@v4
       with:
@@ -179,9 +155,7 @@ jobs:
   build-macos:
     runs-on: macos-latest
     env:
-      MPY_DIR: ./micropython
-      MICROPYTHON_BIN: ./micropython/ports/unix/build-nomodules/micropython
-
+      MICROPYTHON_BIN: ./dependencies/micropython/ports/unix/build-nomodules/micropython
     steps:
     - uses: actions/checkout@v4
       with:
@@ -195,15 +169,10 @@ jobs:
     - uses: actions/setup-python@v5
       with:
         python-version: '3.10'
-    - uses: actions/checkout@v4
-      with:
-        repository: micropython/micropython
-        path: micropython
-        ref: v1.27.0
     - name: Install Python dependencies
       run: pip install -r requirements.txt
     - name: Setup MicroPython X86
-      working-directory: micropython
+      working-directory: ./dependencies/micropython
       run: |
         make -C mpy-cross CFLAGS_EXTRA=-Wno-error
         make -C ports/unix submodules
@@ -226,8 +195,7 @@ jobs:
   build-webassembly:
     runs-on: ubuntu-latest
     env:
-      MPY_DIR: ./micropython
-      MICROPYTHON_BIN: ./micropython/ports/unix/build-nomodules/micropython
+      MICROPYTHON_BIN: ./dependencies/micropython/ports/unix/build-nomodules/micropython
     steps:
     - uses: actions/checkout@v4
       with:
@@ -237,15 +205,10 @@ jobs:
     - uses: actions/setup-python@v5
       with:
         python-version: '3.10'
-    - uses: actions/checkout@v4
-      with:
-        repository: jonnor/micropython
-        path: micropython
-        ref: webassembly-extra-cflags
     - name: Install Python dependencies
       run: pip install -r requirements.txt
     - name: Setup MicroPython
-      working-directory: micropython
+      working-directory: ./dependencies/micropython
       run: |
         npm install terser
         git clone https://github.com/emscripten-core/emsdk.git
@@ -253,8 +216,8 @@ jobs:
         make -C mpy-cross CFLAGS_EXTRA=-Wno-error
     - name: Build Webassembly
       run: |
-        source ${MPY_DIR}/emsdk/emsdk_env.sh
-        make -C ${MPY_DIR}/ports/webassembly submodules
+        source ./dependencies/micropython/emsdk/emsdk_env.sh
+        make -C ./dependencies/micropython/ports/webassembly submodules
         make webassembly V=1
     - name: Archive dist artifacts
       uses: actions/upload-artifact@v4
