@@ -9,10 +9,11 @@ mpy_arch = [None, 'x86', 'x64',
 mpy_major = sys_mpy & 0xff
 mpy_minor = sys_mpy >> 8 & 3
 
-module_dir = f'{mpy_arch}_{mpy_major}.{mpy_minor}' 
+module_dir = f'{mpy_arch}_{mpy_major}.{mpy_minor}'
 
-# make sure we can import .mpy modules
-sys.path.insert(0, './dist/'+module_dir)
+# make sure we can import .mpy modules (skip with 'nomodules' arg)
+if 'nomodules' not in sys.argv:
+    sys.path.insert(0, './dist/'+module_dir)
 
 # make sure we can import test files
 sys.path.insert(0, './tests')
@@ -31,6 +32,10 @@ TEST_MODULES=[
     'test_logreg_cancer',
     'test_neighbors',
     'test_trees',
+    'test_extratrees',
+    'test_extratrees_xor',
+    'test_extratrees_cancer',
+    'test_extratrees_wine',
 ]
 
 def main():
@@ -39,8 +44,10 @@ def main():
     # Default: all
     
     modules = TEST_MODULES
-    if len(sys.argv) >= 2:
-        config = sys.argv[1].split(',')
+    # Filter out non-test flags from argv
+    test_args = [a for a in sys.argv[1:] if a != 'nomodules']
+    if len(test_args) >= 1:
+        config = test_args[0].split(',')
         skip = [ m[1:] for m in config if m[0] == '-' ]
         add = [ m for m in config if m[0] != '-' ]
         if len(skip):

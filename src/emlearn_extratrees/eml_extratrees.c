@@ -1,0 +1,783 @@
+#include <stdint.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
+#include <limits.h>
+
+#define DEBUG 0
+
+#if DEBUG
+#define printf(fmt, ...) mp_printf(&mp_plat_print, fmt, ##__VA_ARGS__)
+#else
+#define printf(fmt, ...) ((void)0)
+#endif
+
+typedef struct _EmlExtraTreesNode {
+    int8_t feature;   // -1 for leaf nodes
+    int16_t value;    // threshold or class label
+    int16_t left;     // left child index
+    int16_t right;    // right child index
+} EmlExtraTreesNode;
+
+typedef struct _NodeState {
+    int16_t node_idx;     // current node being processed
+    int16_t start;        // sample range start
+    int16_t end;          // sample range end
+    int16_t depth;        // current depth
+} NodeState;
+
+typedef struct _EmlExtraTreesConfig {
+    int16_t max_depth;
+    int16_t min_samples_leaf;
+    int16_t n_thresholds;
+    float subsample_ratio;          // subsample ratio as float (0.0 to 1.0)
+    float feature_subsample_ratio;  // feature subsample ratio as float (0.0 to 1.0)
+    int16_t use_global_feature_range; // 0: per-node min/max, 1: global min/max
+    uint32_t rng_seed;
+} EmlExtraTreesConfig;
+
+typedef struct _EmlExtraTreesModel {
+    EmlExtraTreesNode *nodes;          // Pre-allocated node array
+    int16_t *tree_starts;         // Start index for each tree
+    int16_t max_nodes;            // Maximum nodes available
+    int16_t max_samples;           // Maximum samples in training data
+    int16_t n_nodes_used;         // Current nodes used
+    int16_t n_features;           // Number of features
+    int16_t n_classes;            // Number of classes
+    int16_t n_trees;              // Number of trees
+    int16_t n_trees_trained;      // Number of trees fully trained
+    EmlExtraTreesConfig config;
+} EmlExtraTreesModel;
+
+typedef struct _EmlExtraTreesWorkspace {
+    uint16_t *sample_indices;      // Sample indices for current tree
+    uint16_t *feature_indices;     // Feature indices for current tree
+    int16_t *min_vals;            // Min values per feature [n_features]
+    int16_t *max_vals;            // Max values per feature [n_features]
+    int16_t *class_counts;        // Temporary array for class counting [n_classes]
+    int16_t *split_left_counts;   // Temporary arrays for find_best_split [n_classes]
+    int16_t *split_right_counts;  // Temporary arrays for find_best_split [n_classes]
+    NodeState *node_stack;        // Stack for tree building
+    float *probabilities;         // Temporary array for predict [n_classes]
+    int16_t *votes;               // Temporary array for predict [n_classes]
+    uint32_t rng_state;           // Simple RNG state
+    int16_t n_samples;            // Number of samples
+    // Step-by-step training state
+    int16_t train_stack_size;          // Current stack size during step-by-step building
+    int16_t train_tree_index;          // Current tree being built (0-based)
+    int16_t train_n_features_subset;   // Feature subset size for current tree
+    int16_t train_subsample_size;      // Subsample size for training
+    int16_t train_original_n_samples;  // Original n_samples before subsampling
+    int16_t train_state;               // 0=idle, 1=training, 2=done
+    const int16_t *train_features;    // Pointer to training features data
+    const int16_t *train_labels;      // Pointer to training labels data
+} EmlExtraTreesWorkspace;
+
+// Simple linear congruential generator
+static uint32_t eml_rand(uint32_t *state) {
+    *state = *state * 1103515245 + 12345;
+    return *state;
+}
+
+// Fisher-Yates shuffle for subsampling
+static void shuffle_indices(uint16_t *indices, int n, uint32_t *rng_state) {
+    for (int i = 0; i < n - 1; i++) {
+        int j = i + (eml_rand(rng_state) % (n - i));
+        uint16_t temp = indices[i];
+        indices[i] = indices[j];
+        indices[j] = temp;
+    }
+}
+
+// Calculate Gini impurity from class counts
+static float calculate_gini_from_counts(const int16_t *counts, int16_t total, int16_t n_classes) {
+    if (total == 0) return 0.0f;
+    
+    float gini = 1.0f;
+    for (int16_t i = 0; i < n_classes; i++) {
+        if (counts[i] > 0) {
+            float prob = (float)counts[i] / (float)total;
+            gini -= prob * prob;
+        }
+    }
+    
+    return gini;
+}
+
+
+
+
+// Partition samples based on feature threshold
+static int partition_samples(const int16_t *features, EmlExtraTreesModel *model, 
+                                EmlExtraTreesWorkspace *workspace, int start, int end, 
+                                int8_t feature, int threshold) {
+    int left = start;
+    int right = end - 1;
+    
+    while (left <= right) {
+        // Find element on left that should be on right
+        while (left <= right && features[workspace->sample_indices[left] * model->n_features + feature] <= threshold) {
+            left++;
+        }
+        
+        // Find element on right that should be on left
+        while (left <= right && features[workspace->sample_indices[right] * model->n_features + feature] > threshold) {
+            right--;
+        }
+        
+        // Swap if needed
+        if (left < right) {
+            int16_t temp = workspace->sample_indices[left];
+            workspace->sample_indices[left] = workspace->sample_indices[right];
+            workspace->sample_indices[right] = temp;
+            left++;
+            right--;
+        }
+    }
+    
+    return left; // Split point
+}
+
+
+
+
+
+// Add this debug version of eml_extratrees_predict_proba
+static int16_t eml_extratrees_predict_proba(const EmlExtraTreesModel *model, const int16_t *features, 
+                               float *probabilities, int16_t *votes) {
+    
+    // Initialize vote counts
+    for (int16_t i = 0; i < model->n_classes; i++) {
+        votes[i] = 0;
+    }
+    
+    //printf("Prediction debug: features=[%d,%d]\n", features[0], features[1]);
+    
+    // Get prediction from each tree
+    for (int16_t tree = 0; tree < model->n_trees; tree++) {
+        int16_t node_idx = model->tree_starts[tree];
+        //printf("  Tree %d: starting at node %d\n", tree, node_idx);
+        
+        // Traverse tree
+        int16_t steps = 0;
+        while (node_idx >= 0 && node_idx < model->n_nodes_used && 
+               model->nodes[node_idx].feature != -1 && steps < 20) {
+            
+            int8_t feature = model->nodes[node_idx].feature;
+            int16_t threshold = model->nodes[node_idx].value;
+            int16_t left = model->nodes[node_idx].left;
+            int16_t right = model->nodes[node_idx].right;
+            
+            printf("    Node %d: feature=%d, threshold=%d, feature_val=%d\n", 
+                   node_idx, feature, threshold, features[feature]);
+            
+            if (features[feature] <= threshold) {
+                //printf("    Going LEFT to node %d\n", left);
+                node_idx = left;
+            } else {
+                //printf("    Going RIGHT to node %d\n", right);
+                node_idx = right;
+            }
+            steps++;
+        }
+        
+        // Check leaf node
+        if (node_idx >= 0 && node_idx < model->n_nodes_used) {
+            int16_t predicted_class = model->nodes[node_idx].value;
+            //printf("  Tree %d: reached leaf node %d, class=%d\n", tree, node_idx, predicted_class);
+            
+            if (predicted_class >= 0 && predicted_class < model->n_classes) {
+                votes[predicted_class]++;
+            }
+        } else {
+            //printf("  Tree %d: invalid leaf node %d\n", tree, node_idx);
+        }
+    }
+    
+    //printf("Final votes: [%d,%d]\n", votes[0], votes[1]);
+    
+    // Rest of function unchanged...
+    for (int16_t i = 0; i < model->n_classes; i++) {
+        probabilities[i] = (float)votes[i] / (float)model->n_trees;
+    }
+    
+    int16_t max_votes = 0;
+    int16_t predicted_class = 0;
+    for (int16_t i = 0; i < model->n_classes; i++) {
+        if (votes[i] > max_votes) {
+            max_votes = votes[i];
+            predicted_class = i;
+        }
+    }
+    
+    return predicted_class;
+}
+
+
+
+
+// ALSO: Make sure get_majority_class is working correctly
+static int get_majority_class(const int16_t *labels, const uint16_t *indices,
+                                 int start, int end, int n_classes, int16_t *counts) {
+    int max_count = 0;
+    int majority_class = 0;
+    
+    printf("get_majority_class: samples %d to %d\n", start, end-1);
+    
+    if (start >= end) {
+        printf("  No samples, returning class 0\n");
+        return 0;
+    }
+    
+    // Count occurrences
+    for (int i = start; i < end; i++) {
+        uint16_t sample_idx = indices[i];
+        int16_t label = labels[sample_idx];
+        
+        if (label >= 0 && label < n_classes) {
+            counts[label]++;
+            printf("  Sample %d: index=%d, label=%d\n", i, sample_idx, label);
+        }
+    }
+    
+    // Find majority
+    for (int i = 0; i < n_classes; i++) {
+        if (counts[i] > max_count) {
+            max_count = counts[i];
+            majority_class = i;
+        }
+    }
+    
+    printf("  Counts: [%d,%d], majority class: %d\n", counts[0], counts[1], majority_class);
+    
+    return majority_class;
+}
+
+
+// CRITICAL FIX: Accept splits with zero improvement
+// For complex patterns like XOR, we need to allow splits that don't immediately improve Gini
+// but will lead to better splits at deeper levels
+
+static int find_best_split(const int16_t *features, const int16_t *labels,
+                              EmlExtraTreesModel *model, EmlExtraTreesWorkspace *workspace, 
+                              int start, int end, int n_features_subset, 
+                              int8_t *best_feature, int *best_threshold,
+                              float *best_improvement_out) {
+    
+    float best_improvement = -1.0f;
+    *best_feature = -1;
+    *best_threshold = 0;
+    
+    int total_samples = end - start;
+    
+    if (total_samples < 2) {
+        return -1;
+    }
+    
+    // Calculate parent class distribution
+    memset(workspace->class_counts, 0, sizeof(int16_t) * model->n_classes);
+    for (int i = start; i < end; i++) {
+        uint16_t sample_idx = workspace->sample_indices[i];
+        int16_t label = labels[sample_idx];
+        workspace->class_counts[label]++;
+    }
+    
+    float parent_gini = calculate_gini_from_counts(workspace->class_counts, total_samples, model->n_classes);
+    
+    // If already pure, no split needed
+    if (parent_gini == 0.0f) {
+        return -1;
+    }
+    
+    // ExtraTrees: for each feature, draw n_thresholds random thresholds
+    // uniformly between the feature's min and max values
+    for (int f = 0; f < n_features_subset; f++) {
+        int16_t feature_idx = workspace->feature_indices[f];
+        
+        int16_t feat_min, feat_max;
+        
+        if (model->config.use_global_feature_range) {
+            // Use precomputed global min/max for this feature
+            feat_min = workspace->min_vals[feature_idx];
+            feat_max = workspace->max_vals[feature_idx];
+        } else {
+            // Find min and max values for this feature in current node
+            feat_min = INT16_MAX;
+            feat_max = INT16_MIN;
+            
+            for (int i = start; i < end; i++) {
+                uint16_t sample_idx = workspace->sample_indices[i];
+                int16_t val = features[sample_idx * model->n_features + feature_idx];
+                if (val < feat_min) feat_min = val;
+                if (val > feat_max) feat_max = val;
+            }
+        }
+        
+        // Need at least 2 distinct values to split
+        if (feat_min >= feat_max) {
+            continue;
+        }
+        
+        // Draw n_thresholds random thresholds between min and max
+        for (int t = 0; t < model->config.n_thresholds; t++) {
+            // Draw random threshold uniformly in [feat_min, feat_max)
+            int32_t range = (int32_t)feat_max - (int32_t)feat_min;
+            int16_t threshold = feat_min + (int16_t)(eml_rand(&workspace->rng_state) % (uint32_t)(range));
+            
+            // Count left/right distributions
+            int left_total = 0, right_total = 0;
+            memset(workspace->split_left_counts, 0, sizeof(int16_t) * model->n_classes);
+            memset(workspace->split_right_counts, 0, sizeof(int16_t) * model->n_classes);
+            
+            for (int i = start; i < end; i++) {
+                uint16_t sample_idx = workspace->sample_indices[i];
+                int16_t feature_val = features[sample_idx * model->n_features + feature_idx];
+                int16_t label = labels[sample_idx];
+                
+                if (feature_val <= threshold) {
+                    workspace->split_left_counts[label]++;
+                    left_total++;
+                } else {
+                    workspace->split_right_counts[label]++;
+                    right_total++;
+                }
+            }
+            
+            // Skip degenerate splits
+            if (left_total == 0 || right_total == 0) {
+                continue;
+            }
+            
+            // Check min_samples_leaf constraint
+            if (left_total < model->config.min_samples_leaf || right_total < model->config.min_samples_leaf) {
+                continue;
+            }
+            
+            // Calculate improvement
+            float left_gini = calculate_gini_from_counts(workspace->split_left_counts, left_total, model->n_classes);
+            float right_gini = calculate_gini_from_counts(workspace->split_right_counts, right_total, model->n_classes);
+            float weighted_gini = ((float)left_total * left_gini + (float)right_total * right_gini) / (float)total_samples;
+            float improvement = parent_gini - weighted_gini;
+            
+            if (improvement >= best_improvement) {
+                best_improvement = improvement;
+                *best_feature = feature_idx;
+                *best_threshold = threshold;
+            }
+        }
+    }
+    
+    if (best_improvement_out) *best_improvement_out = best_improvement;
+    return (*best_feature != -1) ? 0 : -1;
+}
+
+// ALSO: Ensure stopping criteria allow deep enough trees for XOR
+static int build_tree(EmlExtraTreesModel *model, EmlExtraTreesWorkspace *workspace,
+                         const int16_t *features, const int16_t *labels) {
+    
+    int16_t tree_start = model->n_nodes_used;
+    
+    // Subsample features
+    int n_features_subset = (int)((float)model->n_features * model->config.feature_subsample_ratio);
+    if (n_features_subset < 1) n_features_subset = 1;
+    if (n_features_subset > model->n_features) n_features_subset = model->n_features;
+    
+    for (int16_t i = 0; i < model->n_features; i++) {
+        workspace->feature_indices[i] = i;
+    }
+    shuffle_indices(workspace->feature_indices, model->n_features, &workspace->rng_state);
+    
+    // Initialize root node state
+    int stack_size = 1;
+    workspace->node_stack[0].node_idx = tree_start;
+    workspace->node_stack[0].start = 0;
+    workspace->node_stack[0].end = workspace->n_samples;
+    workspace->node_stack[0].depth = 0;
+    
+    // Process stack
+    while (stack_size > 0) {
+        NodeState current = workspace->node_stack[--stack_size];
+        int16_t node_idx = current.node_idx;
+        
+        if (node_idx >= model->max_nodes) {
+            return -1;
+        }
+        
+        // Check stopping criteria - MODIFIED for XOR
+        int n_samples_node = current.end - current.start;
+        
+        // Create leaf if:
+        // 1. Reached max depth, OR
+        // 2. Too few samples for further splitting, OR  
+        // 3. Node is already pure
+        bool should_stop = false;
+        
+        if (current.depth >= model->config.max_depth) {
+            should_stop = true;
+        } else if (n_samples_node < 2 * model->config.min_samples_leaf) {
+            should_stop = true;
+        } else {
+            // Check if node is pure
+            int16_t first_label = -1;
+            bool is_pure = true;
+            for (int i = current.start; i < current.end; i++) {
+                uint16_t sample_idx = workspace->sample_indices[i];
+                int16_t label = labels[sample_idx];
+                if (first_label == -1) {
+                    first_label = label;
+                } else if (label != first_label) {
+                    is_pure = false;
+                    break;
+                }
+            }
+            if (is_pure) {
+                should_stop = true;
+            }
+        }
+        
+        if (should_stop) {
+            // Create leaf node
+            memset(workspace->class_counts, 0, sizeof(int16_t) * model->n_classes);
+            int16_t majority = get_majority_class(labels, workspace->sample_indices,
+                                                 current.start, current.end, model->n_classes, workspace->class_counts);
+            
+            model->nodes[node_idx].feature = -1;
+            model->nodes[node_idx].value = majority;
+            model->nodes[node_idx].left = -1;
+            model->nodes[node_idx].right = -1;
+            
+            if (node_idx >= model->n_nodes_used) {
+                model->n_nodes_used = node_idx + 1;
+            }
+            continue;
+        }
+        
+        // Find best split
+        int8_t best_feature;
+        int best_threshold;
+        float best_improvement = 0.0f;
+        int split_result = find_best_split(features, labels, model, workspace, 
+                                          current.start, current.end,
+                                          n_features_subset, &best_feature, &best_threshold,
+                                          &best_improvement);
+        
+        if (split_result != 0 || best_feature == -1) {
+            // No valid split found, create leaf
+            memset(workspace->class_counts, 0, sizeof(int16_t) * model->n_classes);
+            int16_t majority = get_majority_class(labels, workspace->sample_indices,
+                                                 current.start, current.end, model->n_classes, workspace->class_counts);
+            
+            model->nodes[node_idx].feature = -1;
+            model->nodes[node_idx].value = majority;
+            model->nodes[node_idx].left = -1;
+            model->nodes[node_idx].right = -1;
+            
+            if (node_idx >= model->n_nodes_used) {
+                model->n_nodes_used = node_idx + 1;
+            }
+            continue;
+        }
+        
+        // Partition samples
+        int split_point = partition_samples(features, model, workspace, current.start, current.end, 
+                                          best_feature, best_threshold);
+        
+        if (split_point <= current.start || split_point >= current.end) {
+            // Partition failed, create leaf
+            memset(workspace->class_counts, 0, sizeof(int16_t) * model->n_classes);
+            int16_t majority = get_majority_class(labels, workspace->sample_indices,
+                                                 current.start, current.end, model->n_classes, workspace->class_counts);
+            
+            model->nodes[node_idx].feature = -1;
+            model->nodes[node_idx].value = majority;
+            model->nodes[node_idx].left = -1;
+            model->nodes[node_idx].right = -1;
+            
+            if (node_idx >= model->n_nodes_used) {
+                model->n_nodes_used = node_idx + 1;
+            }
+            continue;
+        }
+        
+        // Calculate next available node indices
+        int16_t next_node = model->n_nodes_used;
+        if (next_node <= node_idx) {
+            next_node = node_idx + 1;
+        }
+        
+        if (next_node + 1 >= model->max_nodes) {
+            // Not enough space, create leaf
+            memset(workspace->class_counts, 0, sizeof(int16_t) * model->n_classes);
+            int16_t majority = get_majority_class(labels, workspace->sample_indices,
+                                                 current.start, current.end, model->n_classes, workspace->class_counts);
+            
+            model->nodes[node_idx].feature = -1;
+            model->nodes[node_idx].value = majority;
+            model->nodes[node_idx].left = -1;
+            model->nodes[node_idx].right = -1;
+            
+            if (node_idx >= model->n_nodes_used) {
+                model->n_nodes_used = node_idx + 1;
+            }
+            continue;
+        }
+        
+        // Create internal node
+        model->nodes[node_idx].feature = best_feature;
+        model->nodes[node_idx].value = best_threshold;
+        model->nodes[node_idx].left = next_node;
+        model->nodes[node_idx].right = next_node + 1;
+        
+        // Update n_nodes_used
+        model->n_nodes_used = next_node + 2;
+        
+        // Add children to stack (ensure we don't exceed capacity)
+        if (stack_size + 2 <= model->config.max_depth * 3) {
+            // Right child
+            workspace->node_stack[stack_size].node_idx = model->nodes[node_idx].right;
+            workspace->node_stack[stack_size].start = split_point;
+            workspace->node_stack[stack_size].end = current.end;
+            workspace->node_stack[stack_size].depth = current.depth + 1;
+            stack_size++;
+            
+            // Left child
+            workspace->node_stack[stack_size].node_idx = model->nodes[node_idx].left;
+            workspace->node_stack[stack_size].start = current.start;
+            workspace->node_stack[stack_size].end = split_point;
+            workspace->node_stack[stack_size].depth = current.depth + 1;
+            stack_size++;
+        }
+    }
+    
+    return 0;
+}
+
+
+// Initialize step-by-step training
+static int16_t eml_extratrees_train_init(EmlExtraTreesModel *model, EmlExtraTreesWorkspace *workspace,
+                              const int16_t *features, const int16_t *labels) {
+    model->n_nodes_used = 0;
+    model->n_trees_trained = 0;
+    workspace->rng_state = model->config.rng_seed;
+    workspace->train_features = features;
+    workspace->train_labels = labels;
+    workspace->train_state = 1; // training
+    workspace->train_tree_index = 0;
+    workspace->train_stack_size = 0;
+    workspace->train_original_n_samples = workspace->n_samples;
+    
+    // Compute global feature min/max once
+    for (int16_t f = 0; f < model->n_features; f++) {
+        workspace->min_vals[f] = INT16_MAX;
+        workspace->max_vals[f] = INT16_MIN;
+        for (int16_t i = 0; i < workspace->n_samples; i++) {
+            int16_t val = features[i * model->n_features + f];
+            if (val < workspace->min_vals[f]) workspace->min_vals[f] = val;
+            if (val > workspace->max_vals[f]) workspace->max_vals[f] = val;
+        }
+    }
+    
+    // Calculate subsample size
+    int16_t subsample_size = (int16_t)((float)workspace->n_samples * model->config.subsample_ratio);
+    if (subsample_size < 1) subsample_size = 1;
+    if (subsample_size > workspace->n_samples) subsample_size = workspace->n_samples;
+    workspace->train_subsample_size = subsample_size;
+    
+    // Check capacity
+    if (workspace->n_samples > model->max_samples) {
+        workspace->train_state = 0;
+        return -1;
+    }
+    
+    // Initialize sample indices
+    for (int16_t i = 0; i < workspace->n_samples; i++) {
+        workspace->sample_indices[i] = i;
+    }
+    
+    return 0;
+}
+
+// Process one node in step-by-step training
+// Returns: 1=training complete, 0=more steps needed, -1=error
+static int16_t eml_extratrees_train_step(EmlExtraTreesModel *model, EmlExtraTreesWorkspace *workspace) {
+    if (workspace->train_state != 1) {
+        return -1;
+    }
+    
+    // If stack is empty, start a new tree
+    if (workspace->train_stack_size == 0) {
+        // Check if all trees done
+        if (workspace->train_tree_index >= model->n_trees) {
+            workspace->train_state = 2;
+            return 1; // done
+        }
+        
+        // Start new tree
+        model->tree_starts[workspace->train_tree_index] = model->n_nodes_used;
+        
+        // Subsample
+        shuffle_indices(workspace->sample_indices, workspace->train_original_n_samples, &workspace->rng_state);
+        
+        // Subsample features
+        int n_features_subset = (int)((float)model->n_features * model->config.feature_subsample_ratio);
+        if (n_features_subset < 1) n_features_subset = 1;
+        if (n_features_subset > model->n_features) n_features_subset = model->n_features;
+        workspace->train_n_features_subset = n_features_subset;
+        
+        for (int16_t i = 0; i < model->n_features; i++) {
+            workspace->feature_indices[i] = i;
+        }
+        shuffle_indices(workspace->feature_indices, model->n_features, &workspace->rng_state);
+        
+        // Set subsample size for tree building
+        workspace->n_samples = workspace->train_subsample_size;
+        
+        // Push root node onto stack
+        workspace->node_stack[0].node_idx = model->n_nodes_used;
+        workspace->node_stack[0].start = 0;
+        workspace->node_stack[0].end = workspace->n_samples;
+        workspace->node_stack[0].depth = 0;
+        workspace->train_stack_size = 1;
+    }
+    
+    // Pop one node from stack
+    workspace->train_stack_size--;
+    NodeState current = workspace->node_stack[workspace->train_stack_size];
+    int16_t node_idx = current.node_idx;
+    
+    if (node_idx >= model->max_nodes) {
+        return -1;
+    }
+    
+    // Check stopping criteria
+    int n_samples_node = current.end - current.start;
+    bool should_stop = false;
+    
+    if (current.depth >= model->config.max_depth) {
+        should_stop = true;
+    } else if (n_samples_node < 2 * model->config.min_samples_leaf) {
+        should_stop = true;
+    } else {
+        int16_t first_label = -1;
+        bool is_pure = true;
+        for (int i = current.start; i < current.end; i++) {
+            uint16_t sample_idx = workspace->sample_indices[i];
+            int16_t label = workspace->train_labels[sample_idx];
+            if (first_label == -1) {
+                first_label = label;
+            } else if (label != first_label) {
+                is_pure = false;
+                break;
+            }
+        }
+        if (is_pure) should_stop = true;
+    }
+    
+    if (should_stop) {
+        // Create leaf node
+        memset(workspace->class_counts, 0, sizeof(int16_t) * model->n_classes);
+        int16_t majority = get_majority_class(workspace->train_labels, workspace->sample_indices,
+                                             current.start, current.end, model->n_classes, workspace->class_counts);
+        model->nodes[node_idx].feature = -1;
+        model->nodes[node_idx].value = majority;
+        model->nodes[node_idx].left = -1;
+        model->nodes[node_idx].right = -1;
+        if (node_idx >= model->n_nodes_used) {
+            model->n_nodes_used = node_idx + 1;
+        }
+    } else {
+        // Find best split
+        int8_t best_feature;
+        int best_threshold;
+        int split_result = find_best_split(workspace->train_features, workspace->train_labels,
+                                           model, workspace,
+                                           current.start, current.end,
+                                           workspace->train_n_features_subset,
+                                           &best_feature, &best_threshold, NULL);
+        
+        bool created_split = false;
+        
+        if (split_result == 0 && best_feature != -1) {
+            // Try partition
+            int split_point = partition_samples(workspace->train_features, model, workspace,
+                                                current.start, current.end,
+                                                best_feature, best_threshold);
+            
+            if (split_point > current.start && split_point < current.end) {
+                // Check node space
+                int16_t next_node = model->n_nodes_used;
+                if (next_node <= node_idx) next_node = node_idx + 1;
+                
+                if (next_node + 1 < model->max_nodes &&
+                    workspace->train_stack_size + 2 <= model->config.max_depth * 3) {
+                    // Create internal (split) node
+                    model->nodes[node_idx].feature = best_feature;
+                    model->nodes[node_idx].value = best_threshold;
+                    model->nodes[node_idx].left = next_node;
+                    model->nodes[node_idx].right = next_node + 1;
+                    model->n_nodes_used = next_node + 2;
+                    
+                    // Push children onto stack
+                    workspace->node_stack[workspace->train_stack_size].node_idx = next_node + 1;
+                    workspace->node_stack[workspace->train_stack_size].start = split_point;
+                    workspace->node_stack[workspace->train_stack_size].end = current.end;
+                    workspace->node_stack[workspace->train_stack_size].depth = current.depth + 1;
+                    workspace->train_stack_size++;
+                    
+                    workspace->node_stack[workspace->train_stack_size].node_idx = next_node;
+                    workspace->node_stack[workspace->train_stack_size].start = current.start;
+                    workspace->node_stack[workspace->train_stack_size].end = split_point;
+                    workspace->node_stack[workspace->train_stack_size].depth = current.depth + 1;
+                    workspace->train_stack_size++;
+                    
+                    created_split = true;
+                }
+            }
+        }
+        
+        if (!created_split) {
+            // No valid split, create leaf
+            memset(workspace->class_counts, 0, sizeof(int16_t) * model->n_classes);
+            int16_t majority = get_majority_class(workspace->train_labels, workspace->sample_indices,
+                                                 current.start, current.end, model->n_classes, workspace->class_counts);
+            model->nodes[node_idx].feature = -1;
+            model->nodes[node_idx].value = majority;
+            model->nodes[node_idx].left = -1;
+            model->nodes[node_idx].right = -1;
+            if (node_idx >= model->n_nodes_used) {
+                model->n_nodes_used = node_idx + 1;
+            }
+        }
+    }
+    
+    // If stack is now empty, this tree is done
+    if (workspace->train_stack_size == 0) {
+        workspace->n_samples = workspace->train_original_n_samples;
+        model->n_trees_trained = workspace->train_tree_index + 1;
+        workspace->train_tree_index++;
+        
+        if (workspace->train_tree_index >= model->n_trees) {
+            workspace->train_state = 2;
+            return 1; // all done
+        }
+    }
+    
+    return 0; // more steps needed
+}
+
+// Train all trees at once (convenience wrapper)
+static int16_t eml_extratrees_train(EmlExtraTreesModel *model, EmlExtraTreesWorkspace *workspace,
+                       const int16_t *features, const int16_t *labels) {
+    
+    int16_t result = eml_extratrees_train_init(model, workspace, features, labels);
+    if (result != 0) return result;
+    
+    while (1) {
+        result = eml_extratrees_train_step(model, workspace);
+        if (result < 0) return result;
+        if (result == 1) break; // done
+    }
+    
+    return 0;
+}
+

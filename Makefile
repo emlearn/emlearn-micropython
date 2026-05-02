@@ -38,6 +38,7 @@ MODULES = emlearn_trees \
 	emlearn_arrayutils \
 	emlearn_linreg \
 	emlearn_logreg \
+	emlearn_extratrees \
 	emlearn_cnn_int8 \
 	emlearn_cnn_fp32
 
@@ -60,6 +61,7 @@ emlearn_iir_q15_SRC = src/emlearn_iir_q15
 emlearn_arrayutils_SRC = src/emlearn_arrayutils
 emlearn_linreg_SRC = src/emlearn_linreg
 emlearn_logreg_SRC = src/emlearn_logreg
+emlearn_extratrees_SRC = src/emlearn_extratrees
 
 # Dependencies for each .mpy file: .c, .h, .py files, and Makefile
 $(foreach mod,$(MODULES),\
@@ -134,7 +136,7 @@ webassembly: $(WEBASSEMBLY_MICROPYTHON)
 
 
 check_unix: $(UNIX_MICROPYTHON) $(TEST_PY)
-	$(UNIX_MICROPYTHON) tests/test_all.py -test_cnn
+	$(UNIX_MICROPYTHON) tests/test_all.py nomodules -test_cnn
 
 rp2: $(PORT_DIR) $(SRC_ALL) src/manifest_unix.py
 	$(MAKE) -C $(MPY_DIR)/ports/rp2 V=1 USER_C_MODULES=$(C_MODULES_SRC_PATH)/micropython.cmake FROZEN_MANIFEST=$(MANIFEST_PATH) CFLAGS_EXTRA='-Wno-unused-function -Wno-unused-function' -j4
