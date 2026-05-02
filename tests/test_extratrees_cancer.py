@@ -66,7 +66,7 @@ def test_real_dataset():
         end_idx = start_idx + n_features
         features = array.array('h', X_test_flat[start_idx:end_idx])
         
-        predicted = model.predict_proba(features, probabilities)
+        predicted = model.predict(features, probabilities)
         actual = y_test[i]
         
         if predicted == actual:

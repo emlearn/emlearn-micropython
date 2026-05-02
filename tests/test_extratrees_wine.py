@@ -82,7 +82,7 @@ def test_wine():
         end_idx = start_idx + n_features
         features = array.array('h', X_test_flat[start_idx:end_idx])
         
-        predicted = model.predict_proba(features, probabilities)
+        predicted = model.predict(features, probabilities)
         actual = y_test[i]
         
         # Track per-class stats

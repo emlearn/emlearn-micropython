@@ -52,7 +52,7 @@ def test_xor_comprehensive():
     
     for features, expected in test_cases:
         test_features = array.array('h', features)
-        predicted = model.predict_proba(test_features, probabilities)
+        predicted = model.predict(test_features, probabilities)
         is_correct = predicted == expected
         if is_correct:
             correct += 1
@@ -76,7 +76,7 @@ def test_xor_comprehensive():
     
     for features, expected in interpolation_cases:
         test_features = array.array('h', features)
-        predicted = model.predict_proba(test_features, probabilities)
+        predicted = model.predict(test_features, probabilities)
         confidence = max(probabilities[0], probabilities[1])
         
         if expected == "?":
@@ -120,7 +120,7 @@ def test_xor_robustness():
         
         for features, expected in test_cases:
             test_features = array.array('h', features)
-            predicted = model.predict_proba(test_features, probabilities)
+            predicted = model.predict(test_features, probabilities)
             if predicted == expected:
                 correct += 1
         
@@ -178,7 +178,7 @@ def test_xor_different_values():
         
         for features, expected in test_cases:
             test_features = array.array('h', features)
-            predicted = model.predict_proba(test_features, probabilities)
+            predicted = model.predict(test_features, probabilities)
             if predicted == expected:
                 correct += 1
         

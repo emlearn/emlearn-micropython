@@ -2,6 +2,16 @@
 import array
 import emlearn_extratrees
 
+
+def argmax(arr, n):
+    best_idx = 0
+    best_val = arr[0]
+    for i in range(1, n):
+        if arr[i] > best_val:
+            best_val = arr[i]
+            best_idx = i
+    return best_idx
+
 def test_single_tree_prediction():
     """Test with just one tree to isolate prediction issues"""
     print("=== Single Tree Prediction Debug ===")
@@ -33,7 +43,7 @@ def test_single_tree_prediction():
             expected = y[i]
             
             test_features = array.array('h', [x1, x2])
-            predicted = model.predict_proba(test_features, probabilities)
+            predicted = model.predict(test_features, probabilities)
             
             print("  ({}, {}) -> pred={}, exp={}, probs=[{:.3f}, {:.3f}] {}".format(
                 x1, x2, predicted, expected,
@@ -68,12 +78,11 @@ def test_class_bias():
     
     # Test on a clear class 1 example
     test_features = array.array('h', [300, 300])
-    predicted = model.predict(test_features)
+    probabilities = array.array('f', [0.0, 0.0])
+    model.predict(test_features, probabilities)
+    predicted = argmax(probabilities, 2)
     
     print("Prediction for (300,300): {} (should strongly favor class 1)".format(predicted))
-    
-    probabilities = array.array('f', [0.0, 0.0])
-    model.predict_proba(test_features, probabilities)
     print("Probabilities: [{:.3f}, {:.3f}]".format(probabilities[0], probabilities[1]))
 
 def test_manual_verification():
@@ -122,7 +131,7 @@ def test_manual_verification():
     all_correct = True
     for x1_val, expected in test_cases:
         test_features = array.array('h', [x1_val, 500])  # x2 irrelevant
-        predicted = model.predict_proba(test_features, probabilities)
+        predicted = model.predict(test_features, probabilities)
         
         is_correct = predicted == expected
         if not is_correct:
@@ -180,12 +189,12 @@ def test_train_step_by_step():
     # Verify predictions still work
     probabilities = array.array('f', [0.0, 0.0])
     test_features = array.array('h', [0, 0])
-    predicted = model.predict_proba(test_features, probabilities)
+    predicted = model.predict(test_features, probabilities)
     print("Predict (0,0): {} probs=[{:.3f}, {:.3f}]".format(predicted, probabilities[0], probabilities[1]))
     assert predicted == 0, "Expected class 0"
     
     test_features = array.array('h', [300, 300])
-    predicted = model.predict_proba(test_features, probabilities)
+    predicted = model.predict(test_features, probabilities)
     print("Predict (300,300): {} probs=[{:.3f}, {:.3f}]".format(predicted, probabilities[0], probabilities[1]))
     assert predicted == 1, "Expected class 1"
     
@@ -216,12 +225,15 @@ def test_train_generator():
     assert model.get_n_trees_trained() == 5
     
     # Verify predictions
+    probabilities = array.array('f', [0.0, 0.0])
     test_features = array.array('h', [0, 0])
-    predicted = model.predict(test_features)
+    model.predict(test_features, probabilities)
+    predicted = argmax(probabilities, 2)
     assert predicted == 0, "Expected class 0"
     
     test_features = array.array('h', [300, 300])
-    predicted = model.predict(test_features)
+    model.predict(test_features, probabilities)
+    predicted = argmax(probabilities, 2)
     assert predicted == 1, "Expected class 1"
     
     print("✓ Generator training works")
