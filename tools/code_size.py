@@ -4,12 +4,17 @@
 Scans the build directory for emlearn .o files and reports per-module
 section sizes (code, rodata, data, bss).
 
+Works with two build layouts:
+  - MicroPython port build:  emlearn_<module>/<file>.o
+  - Per-module native build: emlearn_<module>/build/<file>.o
+
 Usage:
     python3 code_size.py <build_dir>
 
 Examples:
     python3 code_size.py build-standard
     python3 tools/code_size.py micropython/ports/unix/build-standard
+    python3 tools/code_size.py src
     make codesize
 """
 
@@ -51,23 +56,41 @@ def get_obj_sections(obj_path):
     return dict(sections)
 
 
+def extract_module_name(rel_path):
+    """Extract module name from a relative path containing 'emlearn_'.
+
+    Examples:
+        emlearn_logreg/logreg.o          -> logreg
+        emlearn_logreg/build/logreg.o    -> logreg
+        emlearn_iir_q15/build/iir.o     -> iir_q15
+    """
+    # Find the emlearn_<name> component
+    parts = rel_path.replace("\\", "/").split("/")
+    for part in parts:
+        if part.startswith("emlearn_"):
+            return part[len("emlearn_"):]
+    return None
+
+
 def scan_emlearn(build_dir):
     """Find emlearn .o files and return {module_name: {section: size}}."""
-    results = {}
+    results = defaultdict(lambda: defaultdict(int))
     for root, _dirs, files in os.walk(build_dir):
         for f in files:
-            if not f.endswith(".o") or not f.startswith(".") and "emlearn" not in root:
+            if not f.endswith(".o") or f.startswith("."):
                 continue
             rel = os.path.relpath(root, build_dir)
-            if not rel.startswith("emlearn_"):
+            if "emlearn_" not in rel:
                 continue
-            # e.g. "emlearn_logreg" -> "logreg"
-            name = rel.replace("emlearn_", "")
+            name = extract_module_name(rel)
+            if name is None:
+                continue
             path = os.path.join(root, f)
             sections = get_obj_sections(path)
             if sections:
-                results[name] = sections
-    return results
+                for sec, size in sections.items():
+                    results[name][sec] += size
+    return {k: dict(v) for k, v in results.items()}
 
 
 COLS = ["text", "rodata", "data.rel.ro", "data", "bss"]
