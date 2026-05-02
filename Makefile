@@ -1,7 +1,7 @@
 
 ARCH ?= x64
 MPY_ABI_VERSION ?= 6.3
-MPY_DIR ?= ../micropython
+MPY_DIR ?= ./dependencies/micropython
 MICROPYTHON_BIN ?= micropython
 
 # extmod settings
@@ -10,7 +10,7 @@ BOARD=ESP32_GENERIC_S3
 
 VERSION := $(shell git describe --tags --always)
 
-MPY_DIR_ABS = $(abspath $(MPY_DIR)) 
+MPY_DIR_ABS = $(abspath $(MPY_DIR))
 
 C_MODULES_SRC_PATH = $(abspath ./src)
 
@@ -39,6 +39,7 @@ MODULES = emlearn_trees \
 	emlearn_linreg \
 	emlearn_logreg \
 	emlearn_extratrees \
+	emlearn_plsr \
 	emlearn_cnn_int8 \
 	emlearn_cnn_fp32
 
@@ -62,6 +63,7 @@ emlearn_arrayutils_SRC = src/emlearn_arrayutils
 emlearn_linreg_SRC = src/emlearn_linreg
 emlearn_logreg_SRC = src/emlearn_logreg
 emlearn_extratrees_SRC = src/emlearn_extratrees
+emlearn_plsr_SRC = src/emlearn_plsr
 
 # Dependencies for each .mpy file: .c, .h, .py files, and Makefile
 $(foreach mod,$(MODULES),\
@@ -151,7 +153,10 @@ extmod: $(SRC_ALL) src/manifest_unix.py
 	cp -r $(PORT_BUILD_DIR)/micropython* $(PORT_DIST_DIR)
 	
 
-.PHONY: clean unix
+.PHONY: clean unix codesize
+
+codesize:
+	python3 tools/code_size.py $(MPY_DIR_ABS)/ports/unix/build-standard
 
 clean:
 	make -C src/emlearn_trees/ ARCH=$(ARCH) MPY_DIR=$(MPY_DIR_ABS) V=1 clean

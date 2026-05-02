@@ -30,12 +30,15 @@ TEST_MODULES=[
     'test_linreg_california',
     'test_logreg',
     'test_logreg_cancer',
+    'test_plsr',
     'test_neighbors',
     'test_trees',
     'test_extratrees',
     'test_extratrees_xor',
     'test_extratrees_cancer',
     'test_extratrees_wine',
+    'test_plsr_airquality',
+    'test_plsr_spectrofood',
 ]
 
 def main():
