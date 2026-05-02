@@ -24,8 +24,8 @@ void *memset(void *s, int c, size_t n) {
 // MicroPython type for ExtraTrees model
 typedef struct _mp_obj_extratrees_model_t {
     mp_obj_base_t base;
-    EmlTreesModel model;
-    EmlTreesWorkspace workspace;
+    EmlExtraTreesModel model;
+    EmlExtraTreesWorkspace workspace;
     mp_obj_t train_X_obj;  // Reference to X Python object (prevents GC during step training)
     mp_obj_t train_y_obj;  // Reference to y Python object (prevents GC during step training)
 } mp_obj_extratrees_model_t;
@@ -61,10 +61,10 @@ static mp_obj_t extratrees_model_new(size_t n_args, const mp_obj_t *args) {
     mp_obj_extratrees_model_t *o = \
         mp_obj_malloc(mp_obj_extratrees_model_t, (mp_obj_type_t *)&extratrees_model_type);
 
-    EmlTreesModel *model = &o->model;
-    EmlTreesWorkspace *workspace = &o->workspace;
-    memset(model, 0, sizeof(EmlTreesModel));
-    memset(workspace, 0, sizeof(EmlTreesWorkspace));
+    EmlExtraTreesModel *model = &o->model;
+    EmlExtraTreesWorkspace *workspace = &o->workspace;
+    memset(model, 0, sizeof(EmlExtraTreesModel));
+    memset(workspace, 0, sizeof(EmlExtraTreesWorkspace));
 
     // Configure model
     model->n_features = n_features;
@@ -85,7 +85,7 @@ static mp_obj_t extratrees_model_new(size_t n_args, const mp_obj_t *args) {
     model->config.use_global_feature_range = use_global_feature_range;
     
     // Allocate model buffers
-    model->nodes = m_new(EmlTreesNode, max_nodes);
+    model->nodes = m_new(EmlExtraTreesNode, max_nodes);
     model->tree_starts = m_new(int16_t, n_trees);
     
     // Allocate workspace buffers
@@ -110,7 +110,7 @@ static mp_obj_t extratrees_model_new(size_t n_args, const mp_obj_t *args) {
     o->train_y_obj = mp_const_none;
     
     // Initialize nodes and tree starts
-    memset(model->nodes, 0, sizeof(EmlTreesNode) * max_nodes);
+    memset(model->nodes, 0, sizeof(EmlExtraTreesNode) * max_nodes);
     memset(model->tree_starts, 0, sizeof(int16_t) * n_trees);
 
     return MP_OBJ_FROM_PTR(o);
@@ -121,11 +121,11 @@ static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(extratrees_model_new_obj, 2, 12, extr
 // Delete an instance
 static mp_obj_t extratrees_model_del(mp_obj_t self_obj) {
     mp_obj_extratrees_model_t *o = MP_OBJ_TO_PTR(self_obj);
-    EmlTreesModel *model = &o->model;
-    EmlTreesWorkspace *workspace = &o->workspace;
+    EmlExtraTreesModel *model = &o->model;
+    EmlExtraTreesWorkspace *workspace = &o->workspace;
 
     // Free allocated memory
-    m_del(EmlTreesNode, model->nodes, model->max_nodes);
+    m_del(EmlExtraTreesNode, model->nodes, model->max_nodes);
     m_del(int16_t, model->tree_starts, model->n_trees);
     m_del(uint16_t, workspace->sample_indices, model->max_samples);
     m_del(uint16_t, workspace->feature_indices, model->n_features);
@@ -155,8 +155,8 @@ static mp_obj_t extratrees_model_train(size_t n_args, const mp_obj_t *args) {
     }
     
     mp_obj_extratrees_model_t *o = MP_OBJ_TO_PTR(args[0]);
-    EmlTreesModel *model = &o->model;
-    EmlTreesWorkspace *workspace = &o->workspace;
+    EmlExtraTreesModel *model = &o->model;
+    EmlExtraTreesWorkspace *workspace = &o->workspace;
 
     // Extract X buffer
     mp_buffer_info_t X_bufinfo;
@@ -185,7 +185,7 @@ static mp_obj_t extratrees_model_train(size_t n_args, const mp_obj_t *args) {
     workspace->n_samples = n_samples;
 
     // Pass buffer pointers directly (no copy needed)
-    int16_t result = eml_trees_train(model, workspace, X, y);
+    int16_t result = eml_extratrees_train(model, workspace, X, y);
 
     if (result != 0) {
         mp_raise_ValueError(MP_ERROR_TEXT("Training failed"));
@@ -202,8 +202,8 @@ static mp_obj_t extratrees_model_train_init(size_t n_args, const mp_obj_t *args)
     }
     
     mp_obj_extratrees_model_t *o = MP_OBJ_TO_PTR(args[0]);
-    EmlTreesModel *model = &o->model;
-    EmlTreesWorkspace *workspace = &o->workspace;
+    EmlExtraTreesModel *model = &o->model;
+    EmlExtraTreesWorkspace *workspace = &o->workspace;
 
     // Extract X buffer
     mp_buffer_info_t X_bufinfo;
@@ -236,7 +236,7 @@ static mp_obj_t extratrees_model_train_init(size_t n_args, const mp_obj_t *args)
     o->train_y_obj = args[2];
 
     // Pass buffer pointers directly (no copy needed)
-    int16_t result = eml_trees_train_init(model, workspace, X, y);
+    int16_t result = eml_extratrees_train_init(model, workspace, X, y);
     if (result != 0) {
         o->train_X_obj = mp_const_none;
         o->train_y_obj = mp_const_none;
@@ -251,10 +251,10 @@ static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(extratrees_model_train_init_obj, 3, 3
 // Returns: 1=training complete, 0=more steps needed
 static mp_obj_t extratrees_model_train_step(mp_obj_t self_obj) {
     mp_obj_extratrees_model_t *o = MP_OBJ_TO_PTR(self_obj);
-    EmlTreesModel *model = &o->model;
-    EmlTreesWorkspace *workspace = &o->workspace;
+    EmlExtraTreesModel *model = &o->model;
+    EmlExtraTreesWorkspace *workspace = &o->workspace;
 
-    int16_t result = eml_trees_train_step(model, workspace);
+    int16_t result = eml_extratrees_train_step(model, workspace);
     if (result < 0) {
         mp_raise_ValueError(MP_ERROR_TEXT("Train step failed"));
     }
@@ -276,8 +276,8 @@ static mp_obj_t extratrees_model_predict_proba(size_t n_args, const mp_obj_t *ar
     }
 
     mp_obj_extratrees_model_t *o = MP_OBJ_TO_PTR(args[0]);
-    EmlTreesModel *model = &o->model;
-    EmlTreesWorkspace *workspace = &o->workspace;
+    EmlExtraTreesModel *model = &o->model;
+    EmlExtraTreesWorkspace *workspace = &o->workspace;
 
     // Extract features buffer pointer and verify typecode
     mp_buffer_info_t features_bufinfo;
@@ -306,7 +306,7 @@ static mp_obj_t extratrees_model_predict_proba(size_t n_args, const mp_obj_t *ar
     }
 
     // Make prediction using pre-allocated workspace arrays
-    int16_t predicted_class = eml_trees_predict_proba(model, features, probabilities, workspace->votes);
+    int16_t predicted_class = eml_extratrees_predict_proba(model, features, probabilities, workspace->votes);
 
     return mp_obj_new_int(predicted_class);
 }
@@ -319,8 +319,8 @@ static mp_obj_t extratrees_model_predict(size_t n_args, const mp_obj_t *args) {
     }
 
     mp_obj_extratrees_model_t *o = MP_OBJ_TO_PTR(args[0]);
-    EmlTreesModel *model = &o->model;
-    EmlTreesWorkspace *workspace = &o->workspace;
+    EmlExtraTreesModel *model = &o->model;
+    EmlExtraTreesWorkspace *workspace = &o->workspace;
 
     // Extract features buffer pointer and verify typecode
     mp_buffer_info_t features_bufinfo;
@@ -336,7 +336,7 @@ static mp_obj_t extratrees_model_predict(size_t n_args, const mp_obj_t *args) {
     }
 
     // Make prediction using pre-allocated workspace arrays
-    int16_t predicted_class = eml_trees_predict_proba(model, features, workspace->probabilities, workspace->votes);
+    int16_t predicted_class = eml_extratrees_predict_proba(model, features, workspace->probabilities, workspace->votes);
 
     return mp_obj_new_int(predicted_class);
 }
@@ -345,7 +345,7 @@ static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(extratrees_model_predict_obj, 2, 2, e
 // Get number of features
 static mp_obj_t extratrees_model_get_n_features(mp_obj_t self_obj) {
     mp_obj_extratrees_model_t *o = MP_OBJ_TO_PTR(self_obj);
-    EmlTreesModel *model = &o->model;
+    EmlExtraTreesModel *model = &o->model;
 
     return mp_obj_new_int(model->n_features);
 }
@@ -355,7 +355,7 @@ static MP_DEFINE_CONST_FUN_OBJ_1(extratrees_model_get_n_features_obj, extratrees
 // Get number of classes
 static mp_obj_t extratrees_model_get_n_classes(mp_obj_t self_obj) {
     mp_obj_extratrees_model_t *o = MP_OBJ_TO_PTR(self_obj);
-    EmlTreesModel *model = &o->model;
+    EmlExtraTreesModel *model = &o->model;
 
     return mp_obj_new_int(model->n_classes);
 }
@@ -365,7 +365,7 @@ static MP_DEFINE_CONST_FUN_OBJ_1(extratrees_model_get_n_classes_obj, extratrees_
 // Get number of trees
 static mp_obj_t extratrees_model_get_n_trees(mp_obj_t self_obj) {
     mp_obj_extratrees_model_t *o = MP_OBJ_TO_PTR(self_obj);
-    EmlTreesModel *model = &o->model;
+    EmlExtraTreesModel *model = &o->model;
 
     return mp_obj_new_int(model->n_trees);
 }
@@ -375,7 +375,7 @@ static MP_DEFINE_CONST_FUN_OBJ_1(extratrees_model_get_n_trees_obj, extratrees_mo
 // Get number of nodes used
 static mp_obj_t extratrees_model_get_n_nodes_used(mp_obj_t self_obj) {
     mp_obj_extratrees_model_t *o = MP_OBJ_TO_PTR(self_obj);
-    EmlTreesModel *model = &o->model;
+    EmlExtraTreesModel *model = &o->model;
 
     return mp_obj_new_int(model->n_nodes_used);
 }
@@ -384,7 +384,7 @@ static MP_DEFINE_CONST_FUN_OBJ_1(extratrees_model_get_n_nodes_used_obj, extratre
 // Get number of trees trained
 static mp_obj_t extratrees_model_get_n_trees_trained(mp_obj_t self_obj) {
     mp_obj_extratrees_model_t *o = MP_OBJ_TO_PTR(self_obj);
-    EmlTreesModel *model = &o->model;
+    EmlExtraTreesModel *model = &o->model;
 
     return mp_obj_new_int(model->n_trees_trained);
 }

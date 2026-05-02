@@ -12,12 +12,12 @@
 #define printf(fmt, ...) ((void)0)
 #endif
 
-typedef struct _EmlTreesNode {
+typedef struct _EmlExtraTreesNode {
     int8_t feature;   // -1 for leaf nodes
     int16_t value;    // threshold or class label
     int16_t left;     // left child index
     int16_t right;    // right child index
-} EmlTreesNode;
+} EmlExtraTreesNode;
 
 typedef struct _NodeState {
     int16_t node_idx;     // current node being processed
@@ -26,7 +26,7 @@ typedef struct _NodeState {
     int16_t depth;        // current depth
 } NodeState;
 
-typedef struct _EmlTreesConfig {
+typedef struct _EmlExtraTreesConfig {
     int16_t max_depth;
     int16_t min_samples_leaf;
     int16_t n_thresholds;
@@ -34,10 +34,10 @@ typedef struct _EmlTreesConfig {
     float feature_subsample_ratio;  // feature subsample ratio as float (0.0 to 1.0)
     int16_t use_global_feature_range; // 0: per-node min/max, 1: global min/max
     uint32_t rng_seed;
-} EmlTreesConfig;
+} EmlExtraTreesConfig;
 
-typedef struct _EmlTreesModel {
-    EmlTreesNode *nodes;          // Pre-allocated node array
+typedef struct _EmlExtraTreesModel {
+    EmlExtraTreesNode *nodes;          // Pre-allocated node array
     int16_t *tree_starts;         // Start index for each tree
     int16_t max_nodes;            // Maximum nodes available
     int16_t max_samples;           // Maximum samples in training data
@@ -46,10 +46,10 @@ typedef struct _EmlTreesModel {
     int16_t n_classes;            // Number of classes
     int16_t n_trees;              // Number of trees
     int16_t n_trees_trained;      // Number of trees fully trained
-    EmlTreesConfig config;
-} EmlTreesModel;
+    EmlExtraTreesConfig config;
+} EmlExtraTreesModel;
 
-typedef struct _EmlTreesWorkspace {
+typedef struct _EmlExtraTreesWorkspace {
     uint16_t *sample_indices;      // Sample indices for current tree
     uint16_t *feature_indices;     // Feature indices for current tree
     int16_t *min_vals;            // Min values per feature [n_features]
@@ -71,7 +71,7 @@ typedef struct _EmlTreesWorkspace {
     int16_t train_state;               // 0=idle, 1=training, 2=done
     const int16_t *train_features;    // Pointer to training features data
     const int16_t *train_labels;      // Pointer to training labels data
-} EmlTreesWorkspace;
+} EmlExtraTreesWorkspace;
 
 // Simple linear congruential generator
 static uint32_t eml_rand(uint32_t *state) {
@@ -108,8 +108,8 @@ static float calculate_gini_from_counts(const int16_t *counts, int16_t total, in
 
 
 // Partition samples based on feature threshold
-static int partition_samples(const int16_t *features, EmlTreesModel *model, 
-                                EmlTreesWorkspace *workspace, int start, int end, 
+static int partition_samples(const int16_t *features, EmlExtraTreesModel *model, 
+                                EmlExtraTreesWorkspace *workspace, int start, int end, 
                                 int8_t feature, int threshold) {
     int left = start;
     int right = end - 1;
@@ -142,8 +142,8 @@ static int partition_samples(const int16_t *features, EmlTreesModel *model,
 
 
 
-// Add this debug version of eml_trees_predict_proba
-static int16_t eml_trees_predict_proba(const EmlTreesModel *model, const int16_t *features, 
+// Add this debug version of eml_extratrees_predict_proba
+static int16_t eml_extratrees_predict_proba(const EmlExtraTreesModel *model, const int16_t *features, 
                                float *probabilities, int16_t *votes) {
     
     // Initialize vote counts
@@ -259,7 +259,7 @@ static int get_majority_class(const int16_t *labels, const uint16_t *indices,
 // but will lead to better splits at deeper levels
 
 static int find_best_split(const int16_t *features, const int16_t *labels,
-                              EmlTreesModel *model, EmlTreesWorkspace *workspace, 
+                              EmlExtraTreesModel *model, EmlExtraTreesWorkspace *workspace, 
                               int start, int end, int n_features_subset, 
                               int8_t *best_feature, int *best_threshold,
                               float *best_improvement_out) {
@@ -372,7 +372,7 @@ static int find_best_split(const int16_t *features, const int16_t *labels,
 }
 
 // ALSO: Ensure stopping criteria allow deep enough trees for XOR
-static int build_tree(EmlTreesModel *model, EmlTreesWorkspace *workspace,
+static int build_tree(EmlExtraTreesModel *model, EmlExtraTreesWorkspace *workspace,
                          const int16_t *features, const int16_t *labels) {
     
     int16_t tree_start = model->n_nodes_used;
@@ -554,7 +554,7 @@ static int build_tree(EmlTreesModel *model, EmlTreesWorkspace *workspace,
 
 
 // Initialize step-by-step training
-static int16_t eml_trees_train_init(EmlTreesModel *model, EmlTreesWorkspace *workspace,
+static int16_t eml_extratrees_train_init(EmlExtraTreesModel *model, EmlExtraTreesWorkspace *workspace,
                               const int16_t *features, const int16_t *labels) {
     model->n_nodes_used = 0;
     model->n_trees_trained = 0;
@@ -599,7 +599,7 @@ static int16_t eml_trees_train_init(EmlTreesModel *model, EmlTreesWorkspace *wor
 
 // Process one node in step-by-step training
 // Returns: 1=training complete, 0=more steps needed, -1=error
-static int16_t eml_trees_train_step(EmlTreesModel *model, EmlTreesWorkspace *workspace) {
+static int16_t eml_extratrees_train_step(EmlExtraTreesModel *model, EmlExtraTreesWorkspace *workspace) {
     if (workspace->train_state != 1) {
         return -1;
     }
@@ -766,14 +766,14 @@ static int16_t eml_trees_train_step(EmlTreesModel *model, EmlTreesWorkspace *wor
 }
 
 // Train all trees at once (convenience wrapper)
-static int16_t eml_trees_train(EmlTreesModel *model, EmlTreesWorkspace *workspace,
+static int16_t eml_extratrees_train(EmlExtraTreesModel *model, EmlExtraTreesWorkspace *workspace,
                        const int16_t *features, const int16_t *labels) {
     
-    int16_t result = eml_trees_train_init(model, workspace, features, labels);
+    int16_t result = eml_extratrees_train_init(model, workspace, features, labels);
     if (result != 0) return result;
     
     while (1) {
-        result = eml_trees_train_step(model, workspace);
+        result = eml_extratrees_train_step(model, workspace);
         if (result < 0) return result;
         if (result == 1) break; // done
     }
