@@ -1,5 +1,6 @@
 
 import sys
+import gc
 
 # Find the module path (architecture+version specific)
 sys_mpy = sys.implementation._mpy
@@ -63,6 +64,16 @@ def main():
     passed = 0
     failed = 0
 
+    # Test markers for external test runners (mpremote, etc.)
+    # These allow the runner to know when tests are complete without relying on timeouts
+    print('\n=== TEST START ===')
+
+    free = gc.mem_free()
+    alloc = gc.mem_alloc()
+    print(f"RAM free={free} used={alloc} total={free+alloc}")
+
+    print('sys.path', sys.path)
+
     for module_name in modules:
         mod = None
         print(f'{module_name}:')
@@ -74,6 +85,9 @@ def main():
             print() # spacing for readability 
             failed += 1
             continue
+
+        # Try to free space
+        gc.collect()
 
         module_attributes = dir(mod)
         tests = [ o for o in module_attributes if o.startswith('test_') ]
@@ -92,8 +106,12 @@ def main():
             print(f'\t PASS')
             passed += 1
 
+            # Try to free space
+            gc.collect()
+
     print(f'Passed: {passed}')
     print(f'Failed: {failed}')
+    print('\n=== TEST END ===')
 
     # Let status code reflect number of failures
     return failed

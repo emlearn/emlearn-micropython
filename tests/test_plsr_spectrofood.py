@@ -4,6 +4,7 @@
 import array
 import emlearn_plsr
 import npyfile
+import gc
 
 
 DATA_DIR = 'examples/datasets/spectrofood/'
@@ -25,6 +26,11 @@ def r2_score(y_true, y_pred):
 def test_plsr_spectrofood():
     """Test PLSR on SpectroFood dataset (regression with 421 spectral features)."""
     print("\n=== SpectroFood PLSR Test ===")
+
+    total_ram = gc.mem_alloc() + gc.mem_free()
+    if total_ram < 2000_000:
+        print("SKIP: insufficient RAM")
+        return
 
     # Load data
     shape_X_train, X_train = npyfile.load(DATA_DIR + 'X_train.npy')
