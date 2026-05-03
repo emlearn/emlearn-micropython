@@ -80,15 +80,27 @@ $(MODULES_PATH)/emlearn_cnn_int8.mpy: $(MODULES_PATH)/emlearn_cnn_fp32.mpy
 # Generate list of .mpy files
 MODULE_MPYS = $(addprefix $(MODULES_PATH)/,$(addsuffix .mpy,$(MODULES)))
 
-# Build dynamic native module (without forced clean)
-$(MODULES_PATH)/%.mpy:
+# Build dynamic native module
+$(MODULES_PATH)/%.mpy: $(ARCH_SENTINEL)
 	$(MAKE) -C $(or $($(*)_SRC),src/$*) \
 		ARCH=$(ARCH) MPY_DIR=$(MPY_DIR_ABS) CFLAGS_EXTRA=$(CFLAGS_EXTRA) \
 		V=1 $($(*)_CONFIG) dist
 
+# A file to track ARCH changes etc, to nuke old artifact
+ARCH_SENTINEL := .sentinel_arch_$(ARCH)
+$(ARCH_SENTINEL):
+	@echo "ARCH changed or not set — cleaning old build artifacts"
+	@rm -f .sentinel_arch_*
+	find src -name ".mpy_ld_cache" -type d -exec rm -rf {} + ; \
+	find src -name "build" -type d -exec rm -rf {} + ; \
+	find src -name "*.mpy" -delete ; \
+	find src -name "*.o" -delete
+	@mkdir -p $(MODULES_PATH)
+	@touch $@
+
 # CNN modules need clean build due to shared build directory
 # They must also build sequentially (fp32 first, then int8)
-$(MODULES_PATH)/emlearn_cnn_fp32.mpy:
+$(MODULES_PATH)/emlearn_cnn_fp32.mpy: $(ARCH_SENTINEL)
 	$(MAKE) -C src/tinymaix_cnn \
 		ARCH=$(ARCH) MPY_DIR=$(MPY_DIR_ABS) CFLAGS_EXTRA=$(CFLAGS_EXTRA) \
 		V=1 CONFIG=fp32 clean
@@ -96,7 +108,7 @@ $(MODULES_PATH)/emlearn_cnn_fp32.mpy:
 		ARCH=$(ARCH) MPY_DIR=$(MPY_DIR_ABS) CFLAGS_EXTRA=$(CFLAGS_EXTRA) \
 		V=1 CONFIG=fp32 dist
 
-$(MODULES_PATH)/emlearn_cnn_int8.mpy: $(MODULES_PATH)/emlearn_cnn_fp32.mpy
+$(MODULES_PATH)/emlearn_cnn_int8.mpy: $(MODULES_PATH)/emlearn_cnn_fp32.mpy $(ARCH_SENTINEL)
 	$(MAKE) -C src/tinymaix_cnn \
 		ARCH=$(ARCH) MPY_DIR=$(MPY_DIR_ABS) CFLAGS_EXTRA=$(CFLAGS_EXTRA) \
 		V=1 CONFIG=int8 clean
@@ -159,10 +171,7 @@ codesize:
 	python3 tools/code_size.py $(MPY_DIR_ABS)/ports/unix/build-standard
 
 clean:
-	make -C src/emlearn_trees/ ARCH=$(ARCH) MPY_DIR=$(MPY_DIR_ABS) V=1 clean
-	make -C src/emlearn_neighbors/ ARCH=$(ARCH) MPY_DIR=$(MPY_DIR_ABS) V=1 clean
-	make -C src/emlearn_iir/ ARCH=$(ARCH) MPY_DIR=$(MPY_DIR_ABS) V=1 clean
-	make -C src/emlearn_logreg/ ARCH=$(ARCH) MPY_DIR=$(MPY_DIR_ABS) V=1 clean
+	git clean -dfx src/
 	rm -rf ./dist
 
 RELEASE_NAME = emlearn-micropython-$(VERSION)
