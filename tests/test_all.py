@@ -2,10 +2,6 @@
 import sys
 import gc
 
-# Test markers for external test runners (mpremote, etc.)
-# These allow the runner to know when tests are complete without relying on timeouts
-print('\n=== TEST START ===')
-
 # Find the module path (architecture+version specific)
 sys_mpy = sys.implementation._mpy
 mpy_arch = [None, 'x86', 'x64',
@@ -67,6 +63,14 @@ def main():
 
     passed = 0
     failed = 0
+
+    # Test markers for external test runners (mpremote, etc.)
+    # These allow the runner to know when tests are complete without relying on timeouts
+    print('\n=== TEST START ===')
+
+    free = gc.mem_free()
+    alloc = gc.mem_alloc()
+    print(f"RAM free={free} used={alloc} total={free+alloc}")
 
     for module_name in modules:
         mod = None
