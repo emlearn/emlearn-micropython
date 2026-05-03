@@ -177,4 +177,24 @@ check: check_unix_natmod
 
 dist: $(MODULE_MPYS)
 
+# =============================================================================
+# QEMU MicroPython targets
+# =============================================================================
+
+QEMU_PORT_DIR = $(MPY_DIR)/ports/qemu
+QEMU_BOARD ?= MPS2_AN500
+QEMU_ARCH ?= armv7emdp
+QEMU_FIRMWARE = $(QEMU_PORT_DIR)/build-$(QEMU_BOARD)/firmware.elf
+
+# Build firmware for QEMU
+.PHONY: qemu_build
+qemu_build:
+	$(MAKE) -C $(QEMU_PORT_DIR) BOARD=$(QEMU_BOARD)
+
+# Run tests/test_all.py on QEMU using mpremote mount
+# Usage: make check_qemu QEMU_BOARD=MPS2_AN500 QEMU_ARCH=armv7emdp
+.PHONY: check_qemu
+check_qemu: $(QEMU_FIRMWARE)
+	python3 $(abspath tools/run_qemu_tests.py) --board $(QEMU_BOARD) --arch $(QEMU_ARCH) --abi-version $(MPY_ABI_VERSION) --mount $(abspath .)
+
 
