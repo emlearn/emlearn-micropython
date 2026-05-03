@@ -189,7 +189,7 @@ QEMU_FIRMWARE = $(QEMU_PORT_DIR)/build-$(QEMU_BOARD)/firmware.elf
 # Build firmware for QEMU
 .PHONY: qemu_build
 qemu_build:
-	$(MAKE) -C $(QEMU_PORT_DIR) BOARD=$(QEMU_BOARD)
+	$(MAKE) -C $(QEMU_PORT_DIR) BOARD=$(QEMU_BOARD) MICROPY_HEAP_SIZE=1024000
 
 # Run tests/test_all.py on QEMU using mpremote mount
 # Usage: make check_qemu QEMU_BOARD=MPS2_AN500 QEMU_ARCH=armv7emdp
