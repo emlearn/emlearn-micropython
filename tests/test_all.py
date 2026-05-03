@@ -1,6 +1,10 @@
 
 import sys
 
+# Test markers for external test runners (mpremote, etc.)
+# These allow the runner to know when tests are complete without relying on timeouts
+print('\n=== TEST START ===')
+
 # Find the module path (architecture+version specific)
 sys_mpy = sys.implementation._mpy
 mpy_arch = [None, 'x86', 'x64',
@@ -94,6 +98,7 @@ def main():
 
     print(f'Passed: {passed}')
     print(f'Failed: {failed}')
+    print('\n=== TEST END ===')
 
     # Let status code reflect number of failures
     return failed
