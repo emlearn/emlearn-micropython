@@ -40,6 +40,7 @@ def run_tests(pty_path, test_script, mount_path, modules_path, remote_modules):
     """Run the test script on QEMU using mpremote mount.
     
     Reads output line by line until TEST END marker is found.
+    Returns 0 only if tests completed with failed == 0.
     """
     test_script_path = Path(test_script)
     
@@ -64,7 +65,8 @@ def run_tests(pty_path, test_script, mount_path, modules_path, remote_modules):
     
     output_lines = []
     test_complete = False
-    return_code = 1
+    passed = None
+    failed = None
     
     while True:
         line = proc.stdout.readline()
@@ -77,13 +79,23 @@ def run_tests(pty_path, test_script, mount_path, modules_path, remote_modules):
             print(line, end='')
             sys.stdout.flush()
             
+            # Parse test results
+            if line.startswith('Passed: '):
+                passed = int(line.split(': ')[1].strip())
+            elif line.startswith('Failed: '):
+                failed = int(line.split(': ')[1].strip())
+            
             if '=== TEST END ===' in line:
                 test_complete = True
                 stderr = proc.stderr.read()
                 if stderr:
                     print("STDERR:", stderr, file=sys.stderr)
                 proc.wait()
-                return 0
+                if passed is not None and failed is not None and failed == 0:
+                    return 0
+                else:
+                    print(f"\nError: Tests failed (passed={passed}, failed={failed})", file=sys.stderr)
+                    return 1
         
         if proc.poll() is not None:
             debug_print(f"Process poll check: {proc.poll()}")
@@ -100,7 +112,7 @@ def run_tests(pty_path, test_script, mount_path, modules_path, remote_modules):
         for line in output_lines[-20:]:
             print(f"  {line.rstrip()}", file=sys.stderr)
     
-    return return_code
+    return 1
 
 
 def main():
