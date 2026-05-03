@@ -33,14 +33,10 @@ def test_wine():
     print("=== WINE DATASET TEST (3-class) ===")
     
     # Load preprocessed data
-    try:
-        X_train_flat = load_npy_features_int16(DATA_FILES['X_train'])
-        y_train = load_npy_labels_int16(DATA_FILES['y_train'])
-        X_test_flat = load_npy_features_int16(DATA_FILES['X_test'])
-        y_test = load_npy_labels_int16(DATA_FILES['y_test'])
-    except:
-        print("Error: Run wine/prepare.py first")
-        return
+    X_train_flat = load_npy_features_int16(DATA_FILES['X_train'])
+    y_train = load_npy_labels_int16(DATA_FILES['y_train'])
+    X_test_flat = load_npy_features_int16(DATA_FILES['X_test'])
+    y_test = load_npy_labels_int16(DATA_FILES['y_test'])
     
     n_features = 13  # 13 wine features (alcohol, malic_acid, ash, etc.)
     n_train = len(y_train)
@@ -54,12 +50,13 @@ def test_wine():
     print(f"Classes: {n_classes} (wine cultivars 0, 1, 2)")
     print("Task: Classify wine cultivar")
     
+    max_samples = n_train
     # Create model
     model = emlearn_extratrees.new(
         n_features, n_classes,
-        n_trees=20, max_depth=12, min_samples_leaf=2,
-        n_thresholds=15, subsample_ratio=0.8, feature_subsample_ratio=1.0,
-        max_nodes=3000, max_samples=500, rng_seed=42
+        n_trees=5, max_depth=5, min_samples_leaf=2,
+        n_thresholds=8, subsample_ratio=0.8, feature_subsample_ratio=1.0,
+        max_nodes=1000, max_samples=max_samples, rng_seed=42
     )
     
     train_start = time.ticks_ms()
