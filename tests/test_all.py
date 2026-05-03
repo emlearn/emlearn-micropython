@@ -72,6 +72,8 @@ def main():
     alloc = gc.mem_alloc()
     print(f"RAM free={free} used={alloc} total={free+alloc}")
 
+    print('sys.path', sys.path)
+
     for module_name in modules:
         mod = None
         print(f'{module_name}:')
