@@ -32,6 +32,8 @@ Builds on [emlearn](https://emlearn.org), a C99 library for Machine Learning on 
 - [Fast Fourier Transform (FFT)](https://en.wikipedia.org/wiki/Fast_Fourier_transform) for feature preprocessing, or general DSP
 - Infinite Impulse Response (IIR) filters for feature preprocessing, or general DSP
 - Clustering using K-means
+- On-device learning for tree-based classification using Extremely Randomized Trees (extratrees)
+- Joint feature reduction and regression using Partial Least Squares Regression (PLSR) 
 - Scaling and data type transformations for `array`, using `emlearn_arrayutils`.
 - Load/save Numpy .npy files using [micropython-npyfile](https://github.com/jonnor/micropython-npyfile/)
 - Installable as a MicroPython native module. No rebuild/flashing needed
