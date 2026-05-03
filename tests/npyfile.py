@@ -271,23 +271,21 @@ class Writer():
         #print('write', self.written_bytes)
 
 
-def load(filelike) -> tuple[tuple, array.array]:
+def load(filelike, chunk_size=64) -> tuple[tuple, array.array]:
     """
     Load array from .npy file
-
     Convenience function for doing it in one shot.
     For streaming, use npyfile.Reader instead
     """    
-
-    chunks = []
     with Reader(filelike) as reader:
-        # Just read everything in one chunk
         total_items = compute_items(reader.shape)
-        for c in reader.read_data_chunks(total_items):
-            chunks.append(c)
+        data = array.array(reader.typecode, (0 for _ in range(total_items)))
+        idx = 0
+        for chunk in reader.read_data_chunks(chunk_size):
+            data[idx:idx + len(chunk)] = chunk
+            idx += len(chunk)
+    return reader.shape, data
 
-    assert len(chunks) == 1
-    return reader.shape, chunks[0]
 
 def save(filelike, arr : array.array, shape=None, typecode=None):
     """
