@@ -19,15 +19,13 @@ def load_npy_features_int16(filename):
     """Load .npy file and convert to int16 array (scaled from float32)"""
     shape, data = npyfile.load(filename)
     # Scale float32 data to int16 range (multiply by 1000 and convert)
-    scaled = [int(v * 1000) for v in data]
-    return array.array('h', scaled)
+    return array.array('h', (int(v * 1000) for v in data))
 
 def load_npy_labels_int16(filename):
     """Load .npy file and convert to int16 array (labels, no scaling)"""
     shape, data = npyfile.load(filename)
     # Labels are already integers (0.0, 1.0, 2.0), just convert directly
-    labels = [int(v) for v in data]
-    return array.array('h', labels)
+    return array.array('h', (int(v) for v in data))
 
 def test_wine():
     print("=== WINE DATASET TEST (3-class) ===")
