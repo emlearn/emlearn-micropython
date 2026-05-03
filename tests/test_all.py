@@ -1,5 +1,6 @@
 
 import sys
+import gc
 
 # Test markers for external test runners (mpremote, etc.)
 # These allow the runner to know when tests are complete without relying on timeouts
@@ -79,6 +80,9 @@ def main():
             failed += 1
             continue
 
+        # Try to free space
+        gc.collect()
+
         module_attributes = dir(mod)
         tests = [ o for o in module_attributes if o.startswith('test_') ]
         for test_name in tests:
@@ -95,6 +99,9 @@ def main():
 
             print(f'\t PASS')
             passed += 1
+
+            # Try to free space
+            gc.collect()
 
     print(f'Passed: {passed}')
     print(f'Failed: {failed}')
