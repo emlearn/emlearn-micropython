@@ -42,34 +42,20 @@ def run_tests(pty_path, test_script, mount_path, modules_path, remote_modules):
     Reads output line by line until TEST END marker is found.
     """
     test_script_path = Path(test_script)
-    remote_base = "/remote"
     
     debug_print(f"test_script: {test_script}")
     debug_print(f"mount_path: {mount_path}")
-    debug_print(f"remote_modules: {remote_modules}")
-    
-    test_code = f'''
-import sys
-sys.path.insert(0, "{remote_base}/tests")
-'''
-    if remote_modules:
-        test_code += f'''
-sys.path.insert(0, "{remote_modules}")
-'''
-    test_code += f'''
-exec(open("{remote_base}/{test_script_path}").read())
-'''
     
     debug_print(f"Mounting {mount_path} on device...")
     debug_print(f"Running {test_script}...")
     print(f"Mounting {mount_path} on device...")
-    print(f"Running {test_script}...")
+    print(f"Running {test_script_path}...")
     sys.stdout.flush()
     
     cmd = [
         'mpremote', 'connect', pty_path,
         'mount', str(mount_path),
-        'exec', test_code
+        'run', str(test_script_path),
     ]
     
     debug_print(f"Running command: {' '.join(cmd)}")
@@ -249,7 +235,7 @@ def main():
     
     print("Waiting for MicroPython to boot...")
     sys.stdout.flush()
-    time.sleep(5)
+    time.sleep(2)
     
     result = run_tests(pty_path, args.test, mount_path, modules_path, remote_modules)
     
