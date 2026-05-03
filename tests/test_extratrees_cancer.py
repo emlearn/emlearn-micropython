@@ -27,14 +27,11 @@ def load_npy_labels_int16(filename):
     return array.array('h', labels)
 
 def test_real_dataset():
-    print("=== REAL DATASET TEST ===")
-    
     X_train_flat = load_npy_features_int16(DATA_FILES['X_train'])
     y_train = load_npy_labels_int16(DATA_FILES['y_train']) 
     X_test_flat = load_npy_features_int16(DATA_FILES['X_test'])
     y_test = load_npy_labels_int16(DATA_FILES['y_test'])
 
-    
     n_features = 30
     n_train = len(y_train)
     n_test = len(y_test)
