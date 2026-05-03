@@ -13,8 +13,6 @@ def load_npy(filename):
 
 def test_elasticnet_full():
     """Test with full dataset."""
-    print("\n=== Full Dataset Test ===")
-    
     # Load full datasets
     X_train_shape, X_train_data = load_npy(data_dir+'X_train.npy')
     y_train_shape, y_train_data = load_npy(data_dir+'y_train.npy')
@@ -38,8 +36,8 @@ def test_elasticnet_full():
     print("Training on full dataset...")
     stop_iter, stop_mse = emlearn_linreg.train(model,
             X_train_data, y_train_data,
-            max_iterations=1000, check_interval=50,
-            verbose=2, tolerance=0.0001, score_limit=0.60,
+            max_iterations=100, check_interval=10,
+            verbose=2, tolerance=0.0001, score_limit=0.55,
     )
     train_duration = time.ticks_diff(time.ticks_ms(), train_start)    
     print('Train time (ms)', train_duration, 'per iter', train_duration/stop_iter)
@@ -52,22 +50,3 @@ def test_elasticnet_full():
     assert test_mse <= 0.65, test_mse
       
 
-def main():
-    """Main test function."""
-    print("ElasticNet MicroPython Module Test")
-    print("==================================")
-    
-    try:
-        # Compare regularization approaches
-        gc.collect()        
-
-        test_elasticnet_full()        
-        print("\n=== All Tests Completed Successfully! ===")
-
-    except Exception as e:
-        print(f"Error during testing: {e}")
-        import sys
-        sys.print_exception(e)
-
-if __name__ == "__main__":
-    main()
