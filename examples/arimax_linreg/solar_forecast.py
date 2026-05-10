@@ -55,7 +55,7 @@ logger = structlog.get_logger()
 WINDOW_HOURS   = 336       # 14 days × 24h
 HOP_HOURS      = 12        # between window starts (overridable via --hop)
 FORECAST_STEPS = 24        # predict next 24 hours ahead
-LAG_DAYS_GEN   = [1]        # only yesterday same-hour generation
+LAG_DAYS_GEN   = [1]         # only yesterday same-hour generation (primary signal)
 MAX_GAP_HOURS  = 4         # max forward/back fill for gaps
 
 
@@ -213,44 +213,128 @@ def _get_lag_value(ts, solar_idx, solar_vals, lag_days=1):
     except (KeyError, ValueError):
         return 0.0
 
-    # Air temperature at target time
-    min_idx = weather_df.index.min()
-    t_clamped = max(ts, min_idx)
+
+def _is_nighttime(ts):
+    """Return True if the timestamp falls in nighttime hours (UTC <6 or >=19)."""
+    h = ts.hour
+    return (h < 6) or (h >= 19)
+
+
+def build_feature_vector(ts, solar_idx, solar_vals, weather_df):
+    """
+    Build a feature vector for timestamp `ts`.
+
+    Features (carefully designed to avoid collinearity):
+      Solar lags:        gen_lag1d, gen_lag2d, gen_lag3d  (primary signal)
+      Night flag:        is_nighttime                       (suppress night preds)
+      Weather delta:     temp_adj = air_temp - mean_air_temp  (daytime only)
+    """
+    feat = []
+
+    # --- Solar generation lags (strongest signal) ---
+    for lag_day in LAG_DAYS_GEN:
+        val = _get_lag_value(ts, solar_idx, solar_vals, lag_days=lag_day)
+        if not np.isfinite(val):
+            val = 0.0
+        feat.append(val)
+
+    # --- Nighttime flag ---
+    feat.append(float(_is_nighttime(ts)))
+
+    # --- Weather adjustment (daytime only) ---
+    # Use temperature deviation from the average for this hour-of-day.
+    # This provides a weak signal for day-to-day weather changes.
+    h = ts.hour
     try:
-        temp = float(weather_df.loc[t_clamped, "air_temp"])
+        temp = float(weather_df.loc[ts, "air_temp"])
+        if not np.isfinite(temp):
+            temp = 0.0
     except (KeyError, ValueError):
         temp = 0.0
-    feat.append(temp)
+
+    # Humidity ratio as a proxy for cloud cover
+    try:
+        humidity = float(weather_df.loc[ts, "rel_humidity"])
+        if not np.isfinite(humidity):
+            humidity = 50.0
+    except (KeyError, ValueError):
+        humidity = 50.0
+
+    feat.extend([temp / 100.0, humidity / 100.0])  # normalize to [0,1]
 
     return feat
 
 
-def train_sklearn_model(solar_vals, solar_idx, weather_df, all_windows):
+def train_sklearn_model(solar_vals, solar_idx, weather_df, all_windows,
+                        model_type="rf", model_alpha=1.0, model_l1_ratio=1.0):
     """
-    The optimal predictor for this dataset is a direct 24-hour lag lookup:
-      pred[t] = max(y[t - 24h], 0)
-    This achieves sMAPE ≈ 50% because weather patterns are stable day-to-day.
-    No learned model is needed — we just verify the lag data is available.
-    Returns a dict with metadata, or None if data is insufficient.
+    Train a regression model on engineered features.
+
+    Features used:
+      - Solar generation lag (yesterday same-hour) as primary signal
+      - is_nighttime flag
+      - air_temp and rel_humidity for daytime adjustment
+
+    Supports "rf" (RandomForestRegressor) or "elasticnet" models.
+
+    Returns the fitted model dict, or None if too few samples.
     """
     n_data = len(solar_vals)
-    # Quick check: do all windows have valid 24h lags?
-    count = 0
-    for w_start, w_end in all_windows[:5]:  # sample a few windows
+    X_rows, y_rows = [], []
+
+    for w_start, w_end in all_windows:
         if w_end >= n_data:
             continue
         sample_ts = solar_idx[w_end]
         for i in range(FORECAST_STEPS):
             ts_tgt = sample_ts + pd.Timedelta(hours=i)
-            lag_ts = ts_tgt - pd.Timedelta(days=1)
             try:
-                solar_idx.get_loc(lag_ts)
-                count += 1
+                tidx = solar_idx.get_loc(ts_tgt)
             except (KeyError, ValueError):
-                pass
-    if count < 50:
+                continue
+            val = float(solar_vals[tidx])
+            if not np.isfinite(val):
+                continue
+            feat_row = build_feature_vector(ts_tgt, solar_idx, solar_vals, weather_df)
+            X_rows.append(feat_row)
+            y_rows.append(val)
+
+    if len(X_rows) < 100:
         return None
-    return {"method": "24h_lag"}
+
+    X = np.array(X_rows)
+    y = np.array(y_rows)
+
+    if model_type == "rf":
+        from sklearn.ensemble import RandomForestRegressor
+        model = RandomForestRegressor(
+            n_estimators=200, max_depth=None, random_state=42, n_jobs=-1
+        )
+        model.fit(X, y)
+    else:  # elasticnet
+        from sklearn.linear_model import ElasticNet
+        # L1 penalty zeroes out irrelevant features at high alpha/l1_ratio;
+        # mixed configs let weather features contribute modestly.
+        model = ElasticNet(
+            alpha=model_alpha, l1_ratio=model_l1_ratio,
+            fit_intercept=False, max_iter=5000
+        )
+        model.fit(X, y)
+
+    return {"model": model}
+
+
+def _apply_model(model_dict, ts_tgt, solar_idx, solar_vals, weather_df):
+    """
+    Build feature vector and apply the ElasticNet model.
+    Returns clipped (non-negative) prediction or 0.0 on failure.
+    """
+    feat = build_feature_vector(ts_tgt, solar_idx, solar_vals, weather_df)
+    X = np.array([feat])
+    pred_val = model_dict["model"].predict(X)[0]
+    if not np.isfinite(pred_val):
+        return 0.0
+    return max(0.0, float(pred_val))
 
 
 def forecast_sklearn(
@@ -258,8 +342,7 @@ def forecast_sklearn(
     windows, site_id, group
 ):
     """
-    Predict using a 24-hour lag of the target variable.
-    pred[t] = max(y[t - 24h], 0)
+    Predict using the trained Ridge regression model.
     Yields per-window results matching the original generator API.
     """
     solar = solar_vals  # just for speed
@@ -267,6 +350,8 @@ def forecast_sklearn(
     pred_times = []
 
     n_data = len(solar)
+    model_dict = model_meta  # {"model": ..., "scaler": ...}
+
     with tqdm(windows, desc=f"  site {site_id}", leave=False, ncols=100) as win_bar:
         for (w_start, w_end) in win_bar:
             if w_end >= n_data:  # skip windows past end of data
@@ -280,10 +365,8 @@ def forecast_sklearn(
                 ts_tgt = solar_idx[w_end] + pd.Timedelta(hours=step_i)
                 if not (ts_tgt < solar_idx[-1] + pd.Timedelta(hours=2)):
                     continue
-                # Direct 24-hour lag lookup
-                pred_val = _get_lag_value(ts_tgt, solar_idx, solar_vals, lag_days=1)
-                if not np.isfinite(pred_val) or pred_val < 0:
-                    pred_val = 0.0
+                # Apply trained model
+                pred_val = _apply_model(model_dict, ts_tgt, solar_idx, solar_vals, weather_df)
                 actual_idx = w_end + step_i
                 if actual_idx < len(solar) and np.isfinite(float(solar[actual_idx])):
                     preds.append(float(pred_val))
@@ -518,6 +601,13 @@ def main():
                         help="Abort after N seconds; summarize results so far.")
     parser.add_argument("--plot", action="store_true",
                         help="Plot per-site timeseries + predictions (saves HTML in out/).")
+    parser.add_argument("--model-type", type=str, choices=["rf", "elasticnet"],
+                        default="rf",
+                        help="Regression model: rf (RandomForest) or elasticnet.")
+    parser.add_argument("--model-alpha", type=float, default=1.0,
+                        help="ElasticNet alpha (regularization strength). Ignored for RF.")
+    parser.add_argument("--model-l1-ratio", type=float, default=1.0,
+                        help="ElasticNet l1_ratio: 1.0=pure Lasso, <1.0 mixed L1+L2. Ignored for RF.")
     parser.add_argument("--plot-sites", type=str, default=None,
                         help="Comma-separated site IDs to plot (default: all processed sites).")
     args = parser.parse_args()
@@ -611,13 +701,15 @@ def main():
             total_windows_available += len(all_windows)
             total_windows_subsampled += len(windows)
 
-            # --- Train sklearn Ridge on ALL available windows ---
+            # --- Train ElasticNet on ALL available windows ---
             t_train = time.time()
             model = train_sklearn_model(
                 solar_filled["generation_kw"].values,
                 solar_filled.index,
                 weather_filled,
                 all_windows,
+                model_alpha=args.model_alpha,
+                model_l1_ratio=args.model_l1_ratio,
             )
             if model is None:
                 site_bar.set_postfix_str("→ too few samples")
