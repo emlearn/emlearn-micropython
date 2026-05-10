@@ -27,6 +27,8 @@ from statsmodels.tsa.statespace.sarimax import SARIMAX
 # Metrics & Logging
 # ---------------------------------------------------------------------------
 
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 import structlog
 from tqdm import tqdm
 from sktime.performance_metrics.forecasting import (
@@ -203,8 +205,13 @@ def build_site_data(solar_df, weather_df, hop=HOP_HOURS):
 def forecast_site_generator(site_id, group, windows, solar_df, weather_df, hop=HOP_HOURS):
     """
     Generator that yields one result dict per window.
-    Each yield contains: site_id, group, predictions (list), actuals (list),
-    fit_time_ms, pred_time_ms, error_msg or None.
+    Each yield contains:
+      site_id, group,
+      predictions (list), actuals (list) — aligned with forecast_timestamps
+      forecast_timestamps: list of pd.Timestamp for each pred/actual pair
+      train_start, train_end: index positions into solar series for the training window
+      train_timestamps: timestamps covering the training window
+      fit_time_ms, pred_time_ms, error_msg or None
 
     Usage in main loop:
         for win_result in forecast_site_generator(...):
@@ -297,10 +304,13 @@ def forecast_site_generator(site_id, group, windows, solar_df, weather_df, hop=H
                     actuals.append(av)
 
             yield {
-                "site_id": site_id,
-                "group": group,
-                "predictions": preds,
-                "actuals": actuals,
+                "site_id":           site_id,
+                "group":             group,
+                "predictions":       preds,
+                "actuals":           actuals,
+                "forecast_timestamps": [ts for ts in future_idx if ts in solar.index],
+                "train_start":       w_start,
+                "train_end":         w_end,
             }
 
     # Report timing summary once per site (after generator exhausted or aborted)
@@ -342,8 +352,156 @@ def smape_score(y_true, y_pred):
 
 
 # ---------------------------------------------------------------------------
-# Main Pipeline
+# Plotting
 # ---------------------------------------------------------------------------
+
+def plot_site_timeseries(site_id, group, solar_df, weather_df,
+                         window_forecasts):
+    """
+    Build a plotly figure with three subplots (sharing X axis):
+
+      Row 1 — Solar generation:
+        • Full timeseries as a thin line (light grey)
+        • Each prediction window drawn as its own dashed trace so that
+          no lines bridge across discontinuous / unconnected windows.
+        • Actuals at forecast times plotted as orange dots.
+
+      Row 2 — Air temperature (°C) sharing X axis.
+
+      Row 3 — Prediction error (actual − predicted) per window,
+              sharing X axis.
+
+    Returns a ``go.Figure``.
+    """
+    solar_idx = solar_df.index
+    solar_vals = solar_df["generation_kw"].values
+    temp_vals  = weather_df["air_temp"].values
+    n = len(solar_idx)
+
+    # ---- Collect all-indices markers (for legends / hover) ----
+    has_actual = np.zeros(n, dtype=bool)
+    actual_vals_arr = np.full(n, np.nan)
+
+    traces = []  # list of go.Scatter objects
+
+    for widx, wf in enumerate(window_forecasts):
+        fts = wf["forecast_timestamps"]   # pd.Timestamp per forecast step
+        preds  = wf["predictions"]
+        actuals = wf["actuals"]
+        if not fts or len(fts) == 0:
+            continue
+
+        x = list(fts)
+        y_pred = list(preds)
+        y_actual = [av for av in actuals]
+        n_pts = len(x)
+
+        # --- Plot prediction as its own trace (no bridging between windows) ---
+        traces.append(go.Scatter(
+            x=x, y=y_pred,
+            name=f"Pred #{widx + 1}",
+            mode="lines",
+            line=dict(color="#1f77b4", width=2, dash="dash"),
+            legendgroup=str(widx),          # group for click-to-toggle
+            showlegend=(widx == 0),        # only first in legend column
+        ))
+
+        # --- Actuals at forecast times (markers) ---
+        traces.append(go.Scatter(
+            x=x, y=y_actual,
+            name="Actual" if widx == 0 else None,
+            mode="markers",
+            marker=dict(color="#ff7f0e", size=4, opacity=0.6),
+            legendgroup=str(widx),
+            showlegend=(widx == 0),
+        ))
+
+        # --- Mark actuals for the full-timeseries overlay ---
+        for ts, av in zip(x, y_actual):
+            idx = solar_idx.get_loc(ts)
+            has_actual[idx] = True
+            if np.isfinite(av):
+                actual_vals_arr[idx] = av
+
+    # ---- Build per-window error traces (row 3) ----
+    for widx, wf in enumerate(window_forecasts):
+        fts = wf["forecast_timestamps"]
+        preds  = wf["predictions"]
+        actuals = wf["actuals"]
+        if not fts or len(fts) == 0:
+            continue
+        x = list(fts)
+        error = [av - pv for av, pv in zip(actuals, preds)]
+        traces.append(go.Scatter(
+            x=x, y=error,
+            name=f"Error #{widx + 1}",
+            mode="lines+markers",
+            line=dict(color="#d62728", width=1.5),
+            marker=dict(size=4),
+            legendgroup=str(widx),
+            showlegend=(widx == 0),
+        ))
+
+    # ---- Global solar generation trace ----
+    trace_solar = go.Scatter(
+        x=solar_idx, y=solar_vals,
+        name="Solar generation",
+        line=dict(color="#e0e0e0", width=1),
+        hoverinfo="skip",
+        showlegend=False,
+    )
+
+    # ---- Actuals overlay for row 1 ----
+    trace_actuals = go.Scatter(
+        x=solar_idx[has_actual], y=actual_vals_arr[has_actual],
+        name="Actual (at forecast time)",
+        mode="markers",
+        marker=dict(color="#ff7f0e", size=4, opacity=0.5),
+        showlegend=False,
+    )
+
+    # ---- Temperature trace ----
+    trace_temp = go.Scatter(
+        x=solar_idx, y=temp_vals,
+        name="Air temperature (°C)",
+        line=dict(color="#2ca02c", width=1.5),
+    )
+
+    # ---- Build figure ----
+    fig = make_subplots(
+        rows=3, cols=1,
+        shared_xaxes=True,
+        vertical_spacing=0.06,
+        row_heights=[0.47, 0.26, 0.27],
+        subplot_titles=("Solar Generation (kW)",
+                        "Air Temperature (°C)",
+                        "Prediction Error (kW)"),
+    )
+
+    fig.add_trace(trace_solar,          row=1, col=1)
+    fig.add_trace(trace_actuals,        row=1, col=1)
+    for tr in traces:
+        if any("Error #" in name for name in [tr.name] if tr.name):
+            fig.add_trace(tr, row=3, col=1)
+        else:
+            fig.add_trace(tr, row=1, col=1)
+
+    # temperature is always row 2
+    fig.add_trace(trace_temp, row=2, col=1)
+
+    fig.update_layout(
+        title=f"Site {site_id} ({group}) — Forecast Overlay",
+        height=800,
+        width=1200,
+        hovermode="x unified",
+        showlegend=True,
+        legend=dict(orientation="h", yanchor="bottom", y=1.03, xanchor="right", x=1),
+    )
+
+    fig.update_yaxes(title_text="kW", row=1, col=1)
+    fig.update_yaxes(title_text="°C", row=2, col=1)
+    fig.update_yaxes(title_text="kW", row=3, col=1)
+    return fig
 
 def main():
     parser = argparse.ArgumentParser(description="ARIMAX Solar Forecasting Pipeline")
@@ -353,6 +511,9 @@ def main():
                         help="Limit number of sites (for debugging)")
     parser.add_argument("--hop", type=int, default=HOP_HOURS,
                         help=f"Window hop in hours (default {HOP_HOURS})")
+    parser.add_argument("--subsample", type=int, default=10,
+                        help="Randomly subsample at most N windows per site "
+                             "(default 10, use -1 for no limit)")
     parser.add_argument("--until",
                         help="Only use data before this datetime (YYYY-MM-DD or full ISO) "
                              "for both training and testing.")
@@ -361,9 +522,18 @@ def main():
                              "(e.g. 20 for first 20%%). 1.0 = full range.")
     parser.add_argument("--timeout", type=float, default=None,
                         help="Abort after N seconds; summarize results so far.")
+    parser.add_argument("--plot", action="store_true",
+                        help="Plot per-site timeseries + predictions (saves HTML in out/).")
+    parser.add_argument("--plot-sites", type=str, default=None,
+                        help="Comma-separated site IDs to plot (default: all processed sites).")
     args = parser.parse_args()
 
     data_dir = args.data_dir
+    plot_dir = None
+    if args.plot:
+        plot_dir = os.path.join(
+            os.path.dirname(os.path.abspath(__file__)), "plot_output",
+        )
     hop = args.hop
     overall_start = time.time()
     print(f"Data: {data_dir}  |  Hop: {hop}h  |  Seed: {args.seed}")
@@ -390,9 +560,8 @@ def main():
 
     # --- Process each site (with generator + timeout support) ---
     results = []
-    total_tried = 0
-    total_dropped = 0
-    site_windows_seen = 0  # count of windows iterated (for timing estimate)
+    total_windows_available = 0
+    total_windows_subsampled = 0
 
     timed_out = False
 
@@ -425,59 +594,60 @@ def main():
             site_bar.set_postfix({"hr": len(solar_filled), "s_nans": s_nan, "w_nans": w_nan})
 
             # --- Build windows (fast) ---
-            windows, total_dropped_site = build_site_data(
+            all_windows, total_dropped_site = build_site_data(
                 solar_filled, weather_filled, hop=hop
             )
-            if windows is None or len(windows) == 0:
+            if all_windows is None or len(all_windows) == 0:
                 site_bar.set_postfix_str("→ no valid windows")
                 continue
+
+            # --- Optional random subsample of windows ---
+            if args.subsample > 0 and len(all_windows) > args.subsample:
+                rng = np.random.RandomState(args.seed)
+                subsample_idx = rng.choice(len(all_windows), size=args.subsample, replace=False)
+                subsample_idx.sort()
+                windows = [all_windows[i] for i in subsample_idx]
+            else:
+                windows = list(all_windows)
+            total_windows_available += len(all_windows)
+            total_windows_subsampled += len(windows)
 
             # --- Forecast loop with generator + timeout check ---
             site_preds = []
             site_actuals = []
-            n_fit_this_site = 0
+            window_forecasts = []  # list of dicts for plotting: timestamps, preds, actuals
 
             for win_result in forecast_site_generator(
                 site_id, group, windows, solar_filled, weather_filled, hop=hop
             ):
-                # Check timeout between each window
                 if args.timeout is not None:
                     elapsed = time.time() - overall_start
                     if elapsed > args.timeout:
                         timed_out = True
                         break
-
                 site_preds.extend(win_result["predictions"])
                 site_actuals.extend(win_result["actuals"])
-                n_fit_this_site += 1
-                site_windows_seen += 1
+                window_forecasts.append(win_result)
 
+            # --- Record results (unified: same path whether we continue or abort) ---
+            if not site_preds:
+                continue  # no forecasts produced, nothing to record
+            results.append({
+                "site_id":           site_id,
+                "group":             group,
+                "predictions":       site_preds,
+                "actuals":           site_actuals,
+                "windows_ok":        len(windows),
+                "windows_available": total_windows_subsampled - len(windows) + len(all_windows),
+                "window_forecasts":  window_forecasts,   # for plotting
+                "solar_df":          solar_filled.copy(), # for plotting
+                "weather_df":        weather_filled.copy(),# for plotting
+            })
+
+            # If timed out, print message and stop the outer site loop
             if timed_out:
-                # Save partial results for this site before aborting
                 print(f"\n⚠️  Timeout after {time.time()-overall_start:.0f}s — stopping.", flush=True)
-                if site_preds:  # save what we've got so far
-                    results.append({
-                        "site_id": site_id,
-                        "group": group,
-                        "predictions": site_preds,
-                        "actuals": site_actuals,
-                        "windows_tried": len(windows),
-                        "windows_dropped": total_dropped_site,
-                    })
-                    total_tried += len(windows)
-                    total_dropped += total_dropped_site
                 break
-            else:
-                results.append({
-                    "site_id": site_id,
-                    "group": group,
-                    "predictions": site_preds,
-                    "actuals": site_actuals,
-                    "windows_tried": len(windows),
-                    "windows_dropped": total_dropped_site,
-                })
-            total_tried += len(windows)
-            total_dropped += total_dropped_site
 
     # --- Evaluation ---
     if not results:
@@ -494,7 +664,7 @@ def main():
             "site_id":      r["site_id"],
             "group":        r["group"],
             "n_forecasts":  len(preds),
-            "windows_ok":   r["windows_tried"] - r["windows_dropped"],
+            "windows_ok":   r["windows_ok"],
             "mae_kw":       mean_absolute_error(actuals, preds),
             "rmse_kw":      root_mean_squared_error(actuals, preds),
             "smape_pct":    smape_score(actuals, preds) * 100,
@@ -508,12 +678,16 @@ def main():
     print(f"  ARIMAX SOLAR FORECASTING — {reason}")
     print("=" * 80)
 
-    valid_windows = total_tried - total_dropped
+    subsample_info = (
+        f" and subsampled to max {args.subsample} per site"
+        if args.subsample > 0 else ""
+    )
+    valid_windows = total_windows_subsampled
     print(f"\nSites processed:       {len(results)}")
     print(f"Window hop:            {hop}h")
-    print(f"Total windows tried:   {total_tried}")
-    print(f"Valid windows (no NaN):{valid_windows} "
-          f"(dropped {total_dropped}, {100*total_dropped/max(total_tried,1):.1f}%)")
+    print(f"Total windows available:{total_windows_available}")
+    print(f"Windows subsampled{subsample_info}: {total_windows_subsampled} "
+          f"(from {total_windows_available} total)")
 
     # Per-site table
     print("\nPer-Site Metrics:")
@@ -551,6 +725,35 @@ def main():
     print(f"  MAE:  {mean_absolute_error(all_a, all_p):.4f} kW")
     print(f"  RMSE: {root_mean_squared_error(all_a, all_p):.4f} kW")
     print(f"  sMAPE: {smape_score(all_a, all_p) * 100:.2f}%")
+
+    # ---- Plotting (optional) ----
+    if args.plot and plot_dir:
+        os.makedirs(plot_dir, exist_ok=True)
+
+        # Determine which sites to plot
+        if args.plot_sites:
+            plot_site_ids = {int(s.strip()) for s in args.plot_sites.split(",")}
+            results_to_plot = [r for r in results if r["site_id"] in plot_site_ids]
+        else:
+            results_to_plot = results
+
+        print(f"\nSaving {len(results_to_plot)} site plots to: {plot_dir}")
+        for r in results_to_plot:
+            sid = int(r["site_id"])
+            solar_df_plot = r.get("solar_df")
+            weather_df_plot = r.get("weather_df")
+            if solar_df_plot is None or not r.get("window_forecasts"):
+                print(f"  Site {sid}: skipped (no data / no forecasts for plotting)")
+                continue
+
+            fig = plot_site_timeseries(
+                sid, r["group"],
+                solar_df_plot, weather_df_plot,
+                r["window_forecasts"],
+            )
+            out_path = os.path.join(plot_dir, f"site_{sid}.html")
+            fig.write_html(out_path)  # self-contained HTML
+            print(f"  Site {sid}: saved → {out_path}")
 
     # ---- Save detailed results ----
     out_csv = os.path.join(os.path.dirname(os.path.abspath(__file__)), "forecast_results.csv")
