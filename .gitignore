@@ -8,3 +8,5 @@ venv/
 .ipynb_checkpoints/
 __pycache__/
 .mpy_ld_cache/
+
+**/dist

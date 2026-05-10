@@ -27,8 +27,8 @@ Standard external C modules build.
 ! Windows only supported using Windows Subsystem for Linux?
 - API refererence documentation.
 Using stub files sphinx with sphinx-autodoc-typehints
-- ?? How to use the stubs for typechecking, like micropython stubs
-
+- stubs can be installed from a local clone using  : `pip install ./stubs`
+  or from the github repository using : `pip install git+https://github.com/emlearn/emlearn-micropython#subdirectory=stubs`
 ## Examples
 
 - emlearn-micropython, https://github.com/emlearn/emlearn-micropython/

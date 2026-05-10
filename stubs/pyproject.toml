@@ -1,0 +1,22 @@
+[build-system]
+requires = ["hatchling>=1.24"]
+build-backend = "hatchling.build"
+
+[project]
+name = "emlearn-micropython-stubs"
+version = "0.11.1"
+description = "Stub-only package for emlearn MicroPython modules"
+requires-python = ">=3.8"
+license = { text = "MIT" }
+authors = [
+  { name = "Jon Nordby" }
+]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "Typing :: Stubs Only",
+]
+
+[tool.hatch.build.targets.wheel]
+include = [
+  "*.pyi",
+]
