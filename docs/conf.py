@@ -17,9 +17,6 @@ import os
 import sys
 import subprocess
 
-# Adjust path so we can find the .py files with API documentation
-sys.path.insert(0, os.path.abspath('../stubs'))
-
 # -- Project information -----------------------------------------------------
 
 project = 'emlearn-micropython'
@@ -44,8 +41,7 @@ release = ''
 extensions = [
     'sphinx.ext.mathjax',
     'sphinx.ext.viewcode',
-    'sphinx.ext.autodoc',
-    'sphinx_autodoc_typehints',
+    'autoapi.extension',
     'sphinx.ext.doctest',
     'sphinx.ext.coverage',
     'sphinx.ext.autosectionlabel',
@@ -202,6 +198,22 @@ epub_exclude_files = ['search.html']
 
 # -- Extension configuration -------------------------------------------------
 
+# -- AutoAPI
+autoapi_dirs = [os.path.abspath('../stubs')]
+autoapi_file_patterns = ['*.pyi']
+autoapi_type = 'python'
+autoapi_member_order = 'groupwise'
+autoapi_generate_api_docs = False
+autoapi_keep_files = False
+autoapi_add_toctree_entry = False
+autoapi_options = [
+    'members',
+    'undoc-members',
+    'show-inheritance',
+    'show-module-summary',
+    'special-members',
+]
+
 # -- Intersphinx
 intersphinx_mapping = {
     "emlearn": ("https://emlearn.readthedocs.io/en/latest/", None),
@@ -213,9 +225,7 @@ intersphinx_mapping = {
 # https://www.sphinx-doc.org/en/master/usage/extensions/intersphinx.html#confval-intersphinx_disabled_reftypes
 intersphinx_disabled_reftypes = ["*"]
 
-# -- autodoc typehints
-always_document_param_types = True
-typehints_fully_qualified = True
-always_use_bars_union = True
+# -- type display preferences
+python_use_unqualified_type_names = True
 
 
