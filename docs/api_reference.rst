@@ -21,21 +21,21 @@ API reference
 emlearn_trees - Decision tree ensembles
 ----------------------------------------------------
 
-.. automodule:: emlearn_trees
+.. autoapimodule:: emlearn_trees
    :members:
 
 .. _emlearn_linreg:
 emlearn_linreg - Linear regression
 ----------------------------------------------------
 
-.. automodule:: emlearn_linreg
+.. autoapimodule:: emlearn_linreg
    :members:
 
 .. _emlearn_cnn:
 emlearn_cnn - Convolutional Neural Networks
 ----------------------------------------------------------
 
-.. automodule:: emlearn_cnn
+.. autoapimodule:: emlearn_cnn
    :members:
 
 
@@ -43,7 +43,7 @@ emlearn_cnn - Convolutional Neural Networks
 emlearn_neighbors - K Nearest Neighbors (KNN)
 ---------------------------------------------------------
 
-.. automodule:: emlearn_neighbors
+.. autoapimodule:: emlearn_neighbors
    :members:
 
 
@@ -51,7 +51,7 @@ emlearn_neighbors - K Nearest Neighbors (KNN)
 emlearn_fft - Fast Fourier Transform
 ---------------------------------------------------------
 
-.. automodule:: emlearn_fft
+.. autoapimodule:: emlearn_fft
    :members:
 
 
@@ -59,7 +59,7 @@ emlearn_fft - Fast Fourier Transform
 emlearn_iir - Infinite Impulse Reponse filters
 ---------------------------------------------------------
 
-.. automodule:: emlearn_iir
+.. autoapimodule:: emlearn_iir
    :members:
 
 
@@ -67,6 +67,6 @@ emlearn_iir - Infinite Impulse Reponse filters
 emlearn_arrayutils - Efficient utilities for array.array
 ---------------------------------------------------------
 
-.. automodule:: emlearn_arrayutils
+.. autoapimodule:: emlearn_arrayutils
    :members:
 
