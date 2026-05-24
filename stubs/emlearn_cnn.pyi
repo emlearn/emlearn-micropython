@@ -1,5 +1,4 @@
 # Stub file (PEP 484) with API definitions and documentation for native module
-# Is called .py because Sphinx autodoc currently does not support .pyi files
 
 """
 Convolutional Neural Network module.
