@@ -196,7 +196,7 @@ QEMU_ARCH ?= armv7emdp
 QEMU_FIRMWARE = $(QEMU_PORT_DIR)/build-$(QEMU_BOARD)/firmware.elf
 
 # Build firmware for QEMU
-.PHONY: qemu_build
+.PHONY: qemu_build check_types
 qemu_build:
 	$(MAKE) -C $(QEMU_PORT_DIR) BOARD=$(QEMU_BOARD) MICROPY_HEAP_SIZE=1024000
 
@@ -206,4 +206,13 @@ qemu_build:
 check_qemu: $(QEMU_FIRMWARE)
 	python3 $(abspath tools/run_qemu_tests.py) --board $(QEMU_BOARD) --arch $(QEMU_ARCH) --abi-version $(MPY_ABI_VERSION) --mount $(abspath .)
 
+
+# Type-check examples/ and tests/ against stubs/ with mypy.
+# Uses --follow-imports=skip to skip imports of third-party packages not
+# installed.
+# Excludes subdirs that have duplicate module names or 3rd-party deps.
+check_types:
+	MYPYPATH=./stubs python3 -m mypy \
+		--follow-imports=skip \
+		tests/
 
