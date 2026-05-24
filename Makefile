@@ -214,5 +214,6 @@ check_qemu: $(QEMU_FIRMWARE)
 check_types:
 	MYPYPATH=./stubs python3 -m mypy \
 		--follow-imports=skip \
+		--exclude tests/tools/ \
 		tests/
 
