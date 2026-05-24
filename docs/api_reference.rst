@@ -18,7 +18,7 @@ API reference
 
 
 .. _emlearn_trees:
-emlearn_trees - Decision tree ensembles
+emlearn_trees - Decision tree ensemble inference
 ----------------------------------------------------
 
 .. autoapimodule:: emlearn_trees
@@ -31,8 +31,27 @@ emlearn_linreg - Linear regression
 .. autoapimodule:: emlearn_linreg
    :members:
 
+.. _emlearn_linreg:
+emlearn_logreg - Logistic regression classification
+----------------------------------------------------
+
+.. autoapimodule:: emlearn_logreg
+   :members:
+
+emlearn_extratrees - Learning decision tree ensembles
+----------------------------------------------------
+
+.. autoapimodule:: emlearn_extratrees
+   :members:
+
+emlearn_plsr - Partial Least Squares Regression (PLSR)
+----------------------------------------------------
+
+.. autoapimodule:: emlearn_plsr
+   :members:
+
 .. _emlearn_cnn:
-emlearn_cnn - Convolutional Neural Networks
+emlearn_cnn - Convolutional Neural Networks inference
 ----------------------------------------------------------
 
 .. autoapimodule:: emlearn_cnn
