@@ -226,6 +226,6 @@ if __name__ == "__main__":
     except Exception as e:
         print(f"❌ Error: {e}")
         import sys
-        sys.print_exception(e)
+        sys.print_exception(e)  # type: ignore[attr-defined]
     
     print("\n" + "="*60)
