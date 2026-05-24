@@ -301,3 +301,18 @@ jobs:
           READTHEDOCS: 'True'
         run: |
             make html
+
+  check-types:
+    runs-on: ubuntu-24.04
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: true
+    - uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
+    - name: Install Python dependencies
+      run: |
+        pip install -r requirements.txt -r requirements.dev.txt
+    - name: Run type checks
+      run: make check_types
