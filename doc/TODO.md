@@ -14,15 +14,16 @@
 - First demo video published. DONE, toothbrush
 - First test by other users. DONE, Cornell university
 - Complete example for full flow. Data collect, train, deploy. DONE, HAR
-- First course held
+- First course held. DONE, Aarhus TinyMLDays
 - Can run on-device training example
 - Can run inference example in browser
 - Can do data collection, training in browser, deploy to device
 
-
 # TODO
 
-sequence. On-device training demo
+### sequence
+
+On-device training demo
 
 - Use accelerometer instead of piezo. On M5StickC, for example
 - Compute impulsive-ness feature. Magnitude, RMS, exponential smooth, then Delta * times level ?
@@ -47,9 +48,8 @@ sequence. On-device training demo
 
 #### In-browser demo
 
-- Test MicroPython build for WASM/browser.
-Requires user/external C module build support.
-https://github.com/emlearn/emlearn-micropython/issues/18
 - Test getting audio input into MicroPython Webassembly
 - Test getting IMU data (ie on phone), in browser
-- Test running scikit-learn and/or Keras training in browser. With Pyiodine
+- Show using scikit-learn training in browser (using pyodine), combined with emlearn
+
+

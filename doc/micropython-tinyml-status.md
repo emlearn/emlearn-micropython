@@ -218,9 +218,11 @@ Not available?
 
 ### Linear models
 
-!not available.
-Logistic regression.
-Support Vector Machine. Especially linear+binary.
+Logistic regression. Available as `emlearn_logreg` in emlearn-micropython.
+
+Linear regression. Available as `emlearn_linreg` in emlearn-micropython.
+
+Support Vector Machine. Especially linear+binary. Not available
 
 ### Tree-based ensembles (Random Forest / Decision Trees)
 
