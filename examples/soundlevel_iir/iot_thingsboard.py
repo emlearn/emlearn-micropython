@@ -14,7 +14,6 @@ class ThingsBoard():
             protocol='https',
         ):
         
-
         self._telemetry_url = protocol + '://' + hostname + '/api/v1/' + token + '/telemetry'
     
     def post_telemetry(self, values : list[dict]):
@@ -35,9 +34,23 @@ class ThingsBoard():
 
         payload = [ encode_one(v) for v in values ]
 
-
+        print('\nCHECK', payload)
         r = requests.post(self._telemetry_url, json=payload)
         assert r.status_code == 200, (r.status_code, r.content)
+
+    def post_telemetry_datapoint(self, timestamp : int, data : dict):
+        """
+        Send a single datapoint at specified time (Unix milliseconds)
+        """
+        datapoint = dict(**data)
+        datapoint['time'] = timestamp
+        values = [ datapoint ]
+        return self.post_telemetry(values)
+
+    def post_telemetry_now(self, data : dict):
+        ts_seconds = unix_time_seconds()
+        ts_ms = int(unix_time_seconds() * 1000)
+        return self.post_telemetry_datapoint(ts_ms, data)
 
 def unix_time_seconds():
     timestamp = time.time()
@@ -54,18 +67,27 @@ def unix_time_seconds():
 
     return float(timestamp)
 
-# bc3ab311-4e92-11ef-b45a-8f71ad378839
-ACCESS_TOKEN = '7AiV0dXRPWKrxrLcI4wO'
-api = ThingsBoard(token=ACCESS_TOKEN)
+def main():
 
-t = int(unix_time_seconds() * 1000)
+    # bc3ab311-4e92-11ef-b45a-8f71ad378839
+    ACCESS_TOKEN = '7AiV0dXRPWKrxrLcI4wO'
+    api = ThingsBoard(token=ACCESS_TOKEN)
 
-values = []
-for s in range(0, 60, 10):
-    v = {'time': t-(s*1000), 'db2': 78.0+s, 'hex': 'ABCEDFE123122312452231DFABCEDF'}
-    values.append(v)
+    t = int(unix_time_seconds() * 1000)
 
-api.post_telemetry(values)
-print(values)
-print('Posted telemetry')
+    values = []
+    for s in range(0, 60, 10):
+        v = {'time': t-(s*1000), 'db2': 78.0+s, 'hex': 'ABCEDFE123122312452231DFABCEDF'}
+        values.append(v)
+
+    #api.post_telemetry(values)
+    print('Posted telemetry batch')
+
+    api.post_telemetry_now({'db2': 33.0, 'hex': 'ABCD'})
+    print('Posted telemetry single')
+    
+
+if __name__ == '__main__':
+    main()
+
 
