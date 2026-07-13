@@ -99,6 +99,23 @@ https://github.com/micropython/micropython/issues/15513
 For storing multi-dimensional arrays. Basic compression support using ZIP.
 Efficient implementation available in [micropython-npyfile](https://github.com/jonnor/micropython-npyfile), including compression with [micropython-zipfile](https://github.com/jonnor/micropython-zipfile). Good
 
+### Comma-separated .csv files
+
+! no mip installable CSV library available??
+
+CSV files, although not great, are very common in data-science land.
+Would want to be able to process CSV files in a streaming manner.
+Keep memory usage bounded and low, limiting uneccesary allocations.
+Also 
+
+A couple of ports of CPython standard-library `csv` inside forks of micropython-lib.
+https://github.com/cr0mbly/micropython-lib/blob/3704eed9585c3394f3453cf16c7bf8d0fab0861c/csv/csv.py
+https://github.com/tekktrik/micropython-lib/blob/feature/add-csv-module/python-stdlib/csv/csv.py
+The `csv` writer/reader and DictReader/DictWriter interface should generally be streaming-friendly.
+
+Also some other implementations. nano-csv explicitly targets memory-efficiency.
+https://codeberg.org/Eadaen1/nano-csv
+
 ### Audio files
 !No mip-installable library for *.wav* files.
 Just various example code lying around at various locations.
@@ -106,6 +123,7 @@ Note that CPython defines the API for a wavefile module.
 Ideally would be compatible with that.
 
 ?No ready-to-install libraries for OPUS/MP3 encoding/decoding.
+Good candidate for native C modules.
 
 ### Image files
 
