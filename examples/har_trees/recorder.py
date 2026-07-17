@@ -49,6 +49,7 @@ class Recorder():
     def __init__(self, samplerate, duration,
             classname='unknown', directory='recorder_data', suffix='.npy',
             items_per_sample=3,
+            verbose=1,
             ):
         # config      
         self._directory = directory
@@ -56,6 +57,7 @@ class Recorder():
         self._suffix  = suffix
         self._recording_samples = int(duration * samplerate)
         self._items_per_sample = items_per_sample
+        self._verbose = verbose
 
         # state
         self._recording_file = None
@@ -67,12 +69,14 @@ class Recorder():
 
     def start(self):
         self._recording = True
-        print('recorder-start')
+        if self._verbose >= 1:
+            print('recorder-start')
 
     def stop(self):
         self.close()
         self._recording = False
-        print('recorder-stop')
+        if self._verbose >= 1:
+            print('recorder-stop')
 
     def set_class(self, name):
         self._classname = name
@@ -95,20 +99,24 @@ class Recorder():
             self._recording_file_path = out_path
             self._recording_file = npyfile.Writer(open(out_path, 'wb'), out_shape, out_typecode)
             self._recording_file._write_header()
-            print(f'record-file-open t={t:.3f} file={out_path}')
+            if self._verbose >= 2:
+                print(f'record-file-open t={t:.3f} file={out_path}')
 
         # TODO: avoid writing too much at end of file
         self._recording_file.write_values(data)
-        print(f'recorder-write-chunk t={t:.3f}')
+        if self._verbose >= 3:
+            print(f'recorder-write-chunk t={t:.3f}')
         if self._recording_file.written_bytes >= items*2*self._recording_samples:
             # rotate file
             self.close()
-            print(f'record-file-rotate t={t:.3f}')
+            if self._verbose >= 3:
+                print(f'record-file-rotate t={t:.3f}')
 
     def delete(self):
         for f in os.listdir(self._directory):
             p = self._directory + '/' + f
-            print('recorder-delete-file', p)
+            if self._verbose >= 2:
+                print('recorder-delete-file', p)
             os.unlink(p)
 
     def close(self):
