@@ -113,6 +113,9 @@ https://github.com/cr0mbly/micropython-lib/blob/3704eed9585c3394f3453cf16c7bf8d0
 https://github.com/tekktrik/micropython-lib/blob/feature/add-csv-module/python-stdlib/csv/csv.py
 The `csv` writer/reader and DictReader/DictWriter interface should generally be streaming-friendly.
 
+Using the CPython tests would give high confidence for API and file compatibility
+https://github.com/python/cpython/blob/main/Lib/test/test_csv.py
+
 Also some other implementations. nano-csv explicitly targets memory-efficiency.
 https://codeberg.org/Eadaen1/nano-csv
 
@@ -121,6 +124,15 @@ https://codeberg.org/Eadaen1/nano-csv
 Just various example code lying around at various locations.
 Note that CPython defines the API for a wavefile module.
 Ideally would be compatible with that.
+
+Wanted: a mip installable library implementing the wave module from CPython standard library
+https://docs.python.org/3/library/wave.html
+There is some MicroPython code here that could be a starting point
+https://docs.micropython.org/en/latest/pyboard/tutorial/amp_skin.html#example-code
+A copy also seems to be at
+https://github.com/joeky888/awesome-micropython-lib/tree/master/Audio
+Ideally one would port/reuse the CPython test suite - that would give very good coverage and confidence it works
+https://github.com/python/cpython/blob/main/Lib/test/test_wave.py
 
 ?No ready-to-install libraries for OPUS/MP3 encoding/decoding.
 Good candidate for native C modules.
