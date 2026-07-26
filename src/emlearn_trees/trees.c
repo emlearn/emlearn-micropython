@@ -82,7 +82,7 @@ static mp_obj_t builder_new(mp_obj_t trees_obj, mp_obj_t nodes_obj, mp_obj_t lea
     self->trees.n_trees = 0;
     self->trees.tree_roots = roots;
 
-    self->trees.leaf_bits = 0; // XXX: only class supported so far 
+    self->trees.leaf_bits = 0; // default to majority voting
     self->trees.n_leaves = 0;
     self->trees.leaves = leaves;
 
@@ -114,17 +114,19 @@ static mp_obj_t builder_del(mp_obj_t trees_obj) {
 static MP_DEFINE_CONST_FUN_OBJ_1(builder_del_obj, builder_del);
 
 // set number of features and classes
-static mp_obj_t builder_setdata(mp_obj_t self_obj, mp_obj_t features_obj, mp_obj_t classes_obj) {
+static mp_obj_t builder_setdata(size_t n_args, const mp_obj_t *args) {
 
-    mp_obj_trees_builder_t *o = MP_OBJ_TO_PTR(self_obj);
+    //mp_obj_t self_obj, mp_obj_t features_obj, mp_obj_t classes_obj, mp_obj_t leaf_bits_obj
+    mp_obj_trees_builder_t *o = MP_OBJ_TO_PTR(args[0]);
     EmlTreesBuilder *self = &o->builder;    
 
-    self->trees.n_features = mp_obj_get_int(features_obj);
-    self->trees.n_classes = mp_obj_get_int(classes_obj);
+    self->trees.n_features = mp_obj_get_int(args[1]);
+    self->trees.n_classes = mp_obj_get_int(args[2]);
+    self->trees.leaf_bits = mp_obj_get_int(args[3]);
 
     return MP_OBJ_FROM_PTR(o);
 }
-static MP_DEFINE_CONST_FUN_OBJ_3(builder_setdata_obj, builder_setdata);
+static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(builder_setdata_obj, 4, 4, builder_setdata);
 
 
 // Add a node to the tree
@@ -187,14 +189,22 @@ static mp_obj_t builder_addleaf(mp_obj_t self_obj, mp_obj_t leaf_obj) {
     mp_obj_trees_builder_t *o = MP_OBJ_TO_PTR(self_obj);
     EmlTreesBuilder *self = &o->builder;    
 
-    mp_int_t leaf_value = mp_obj_get_int(leaf_obj);
-
     if (self->trees.n_leaves >= self->max_leaves) {
         mp_raise_ValueError(MP_ERROR_TEXT("max leaves"));
     }
 
     const int leaf_index = self->trees.n_leaves++;
-    self->trees.leaves[leaf_index] = (uint8_t)leaf_value;
+
+    if (self->trees.leaf_bits == 0) {
+        // majority voting, leaf should be a single integer (class index)
+        //mp_float_t leaf_value = mp_obj_get_float(leaf_obj);
+        mp_int_t leaf_int = mp_obj_get_int(leaf_obj);
+        self->trees.leaves[leaf_index] = (uint8_t)leaf_int;        
+    } else if (self->trees.leaf_bits == 32) {
+        //const mp_float_t leaf_value = mp_obj_get_float(leaf_obj);
+        float *leaves = (float *)self->trees.leaves;
+        leaves[leaf_index] = mp_obj_get_float_to_f(leaf_obj);
+    }
 
     return mp_const_none;
  }
