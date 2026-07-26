@@ -35,6 +35,8 @@ $(DIST_FILE): $(MOD).mpy $(DIST_DIR)
 # Include to get the rules for compiling and linking the module
 include $(MPY_DIR)/py/dynruntime.mk
 
-CFLAGS += -I$(CONFIG_DIR) -I$(TINYMAIX_DIR)/include -I$(TINYMAIX_DIR)/src -Wno-error=unused-variable -Wno-error=multichar -Wdouble-promotion
+CONFIG_DEFINE = CONFIG_$(shell echo $(CONFIG) | tr '[:lower:]' '[:upper:]')
+
+CFLAGS += -D${CONFIG_DEFINE} -I$(CONFIG_DIR) -I$(TINYMAIX_DIR)/include -I$(TINYMAIX_DIR)/src -Wno-error=unused-variable -Wno-error=multichar -Wdouble-promotion
 
 dist: $(DIST_FILE)
