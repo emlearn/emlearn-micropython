@@ -4,8 +4,8 @@
   "description": "Enables MicroPython applications to run efficient Machine Learning models on microcontroller, without having to touch any C code",
   "author": "Jon Nordby",
   "license": "MIT",
-  "homepage": "https://emlearn.github.io/emlearn-micropython",
-  "arch": ["x64", "armv6m", "armv7m", "armv7emsp", "xtensawin"],
+  "homepage": "https://github.com/emlearn/emlearn-micropython",
+  "arch": ["x64", "armv6m", "armv7m", "armv7emsp", "xtensawin", "rv32imc" ],
   "mpy":  ["6.3"],
   "urls": [
     ["emlearn_arrayutils.mpy",    "{ARCH}_{MPY}/emlearn_arrayutils.mpy"],
@@ -15,6 +15,9 @@
     ["emlearn_kmeans.mpy",        "{ARCH}_{MPY}/emlearn_kmeans.mpy"],
     ["emlearn_neighbors.mpy",     "{ARCH}_{MPY}/emlearn_neighbors.mpy"],
     ["emlearn_trees.mpy",         "{ARCH}_{MPY}/emlearn_trees.mpy"],
-    ["emlearn_cnn.mpy",           "{ARCH}_{MPY}/emlearn_cnn.mpy"]
+    ["emlearn_logreg.mpy",        "{ARCH}_{MPY}/emlearn_logreg.mpy"],
+    ["emlearn_linreg.mpy",        "{ARCH}_{MPY}/emlearn_linreg.mpy"],
+    ["emlearn_cnn_int8.mpy",      "{ARCH}_{MPY}/emlearn_cnn_int8.mpy"],
+    ["emlearn_cnn_fp32.mpy",      "{ARCH}_{MPY}/emlearn_cnn_fp32.mpy"]
   ]
 }
