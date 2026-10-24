@@ -38,6 +38,7 @@ MODULES = emlearn_trees \
 	emlearn_arrayutils \
 	emlearn_linreg \
 	emlearn_logreg \
+	emlearn_sefr \
 	emlearn_extratrees \
 	emlearn_plsr \
 	emlearn_cnn_int8 \
@@ -62,6 +63,7 @@ emlearn_iir_q15_SRC = src/emlearn_iir_q15
 emlearn_arrayutils_SRC = src/emlearn_arrayutils
 emlearn_linreg_SRC = src/emlearn_linreg
 emlearn_logreg_SRC = src/emlearn_logreg
+emlearn_sefr_SRC = src/emlearn_sefr
 emlearn_extratrees_SRC = src/emlearn_extratrees
 emlearn_plsr_SRC = src/emlearn_plsr
 

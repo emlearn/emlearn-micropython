@@ -250,6 +250,8 @@ Not available?
 
 Logistic regression. Available as `emlearn_logreg` in emlearn-micropython.
 
+SEFR linear classifier, trained in one pass. Available as `emlearn_sefr` in emlearn-micropython.
+
 Linear regression. Available as `emlearn_linreg` in emlearn-micropython.
 
 Support Vector Machine. Especially linear+binary. Not available
