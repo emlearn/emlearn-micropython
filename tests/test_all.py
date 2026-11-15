@@ -31,6 +31,7 @@ TEST_MODULES=[
     'test_linreg_california',
     'test_logreg',
     'test_logreg_cancer',
+    'test_sefr',
     'test_plsr',
     'test_neighbors',
     'test_trees',

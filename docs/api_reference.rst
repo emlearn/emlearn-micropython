@@ -38,6 +38,12 @@ emlearn_logreg - Logistic regression classification
 .. autoapimodule:: emlearn_logreg
    :members:
 
+emlearn_sefr - SEFR linear classification
+-----------------------------------------
+
+.. autoapimodule:: emlearn_sefr
+   :members:
+
 emlearn_extratrees - Learning decision tree ensembles
 ----------------------------------------------------
 
